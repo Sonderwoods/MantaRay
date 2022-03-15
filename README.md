@@ -11,9 +11,10 @@ an educational tool to work directly with radiance through grasshopper
 
 * Install CShell using 
 
-        $ sudo apt-get install csh
+      $ sudo apt-get install csh
 * Install libqt5 (a GUI program for some of the radiance GUIs) using:
-         $ sudo apt-get install libqt5gui5
+
+      $ sudo apt-get install libqt5gui5
 * Setup symbolic links to access your windows simulation folder in linux. (ie, making a shortcut to ~/simulation in linux to target your C:\users\<username>\Simulation in windows)
          $ ln -s /mnt/c/Users/<username>/simulation ~/simulation
 * Now you can always find your simulations by typinc
