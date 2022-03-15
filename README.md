@@ -4,6 +4,12 @@ This allows you to utilize all the linux native Radiance commands including the 
 
 In pure Linux fashion the Grasshopper components will pipe the results to the next component.
 
+## Status:
+
+SSH Connection in Grasshopper is now established
+![image](https://user-images.githubusercontent.com/19936679/158470596-a3eab3e0-bc0a-447b-bd46-eba8a3877785.png)
+
+
 
 ## Preparations
 
