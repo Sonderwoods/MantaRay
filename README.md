@@ -10,6 +10,7 @@ an educational tool to work directly with radiance through grasshopper
   Don't make your username too long and dont make your password too complex. Do not make the PW the same as your windows user.
 
 * Install CShell using 
+
         $ sudo apt-get install csh
 * Install libqt5 (a GUI program for some of the radiance GUIs) using:
          $ sudo apt-get install libqt5gui5
