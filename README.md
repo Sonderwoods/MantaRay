@@ -18,4 +18,8 @@ an educational tool to work directly with radiance through grasshopper
 * Now you can always find your simulations by typinc
 *         cd ~/simulation
 * I assume you installed Xlaunch as per the first tutorial. Now start it as described in the tutorial.
-     wdw
+* Make sure your linux is pointing towards the XLaunch display driver by adding it to the .bashrc file:
+*         sudo nano ~/.bashrc
+* This will open the bashrc file. Go to the end of the file and add these two lines. (I cant remember how to paste, so you'll type them manually):
+*         export LIBGL_ALWAYS_INDIRECT=1
+          export DISPLAY=$(ip route list default | awk ‘{print $3}’):0
