@@ -1,5 +1,8 @@
-# GrasshopperRadianceLinuxConnector
-an educational tool to work directly with radiance through grasshopper
+## GrasshopperRadianceLinuxConnector
+An educational tool to work directly with [Radiance](https://www.radiance-online.org/) through [Grasshopper](https://www.grasshopper3d.com/).
+This allows you to utilize all the linux native Radiance commands including the GUI tools such as rvu, bsdfviewer etc.
+
+In pure Linux fashion the Grasshopper components will pipe the results to the next component.
 
 
 ## Preparations
