@@ -16,12 +16,24 @@ an educational tool to work directly with radiance through grasshopper
 
       $ sudo apt-get install libqt5gui5
 * Setup symbolic links to access your windows simulation folder in linux. (ie, making a shortcut to ~/simulation in linux to target your C:\users\<username>\Simulation in windows)
-         $ ln -s /mnt/c/Users/<username>/simulation ~/simulation
+
+      $ ln -s /mnt/c/Users/<username>/simulation ~/simulation
 * Now you can always find your simulations by typinc
-         cd ~/simulation
+
+      cd ~/simulation
 * I assume you installed Xlaunch as per the first tutorial. Now start it as described in the tutorial.
 * Make sure your linux is pointing towards the XLaunch display driver by adding it to the .bashrc file:
-         sudo nano ~/.bashrc
+
+      sudo nano ~/.bashrc
 * This will open the bashrc file. Go to the end of the file and add these two lines. (I cant remember how to paste, so you'll type them manually):
-         export LIBGL_ALWAYS_INDIRECT=1
-         export DISPLAY=$(ip route list default | awk ‘{print $3}’):0
+
+      export LIBGL_ALWAYS_INDIRECT=1
+      export DISPLAY=$(ip route list default | awk ‘{print $3}’):0
+
+### Setup SSH in linux and connect to it from Windows
+
+* Follow the tutorial on this [link](https://www.illuminiastudios.com/dev-diaries/ssh-on-windows-subsystem-for-linux/). However I didnt manage to get the disable password part to work. Confirm that it's working by starting PowerShell and type:
+
+      ssh <mylinuxusername>@127.0.0.1
+
+If it prompts you for your password you should be good!
