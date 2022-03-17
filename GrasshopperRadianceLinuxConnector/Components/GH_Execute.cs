@@ -4,16 +4,16 @@ using System.Text;
 using Grasshopper.Kernel;
 using Rhino.Geometry;
 
-namespace GrasshopperRadianceLinuxConnector.Components
+namespace GrasshopperRadianceLinuxConnector
 {
-    public class GH_TestConnection : GH_Template
+    public class GH_Execute : GH_Template
     {
         /// <summary>
-        /// Initializes a new instance of the GH_TestConnection class.
+        /// Initializes a new instance of the GH_Execute class.
         /// </summary>
-        public GH_TestConnection()
-          : base("TestConnection", "TestConnection",
-              "Test connection",
+        public GH_Execute()
+          : base("Execute SSH", "Execute SSH",
+              "Use me to execute a SSH Command",
               "SSH")
         {
         }
@@ -23,6 +23,8 @@ namespace GrasshopperRadianceLinuxConnector.Components
         /// </summary>
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
+            pManager.AddTextParameter("SSH Commands", "SSH commands", "SSH commands. Each item in list will be executed", GH_ParamAccess.list);
+            pManager.AddBooleanParameter("Run", "Run", "Run", GH_ParamAccess.item);
         }
 
         /// <summary>
@@ -30,7 +32,7 @@ namespace GrasshopperRadianceLinuxConnector.Components
         /// </summary>
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
-            pManager.AddTextParameter("status", "status", "status", GH_ParamAccess.item);
+            pManager.AddTextParameter("stout", "stout", "stout", GH_ParamAccess.item);
         }
 
         /// <summary>
@@ -39,25 +41,15 @@ namespace GrasshopperRadianceLinuxConnector.Components
         /// <param name="DA">The DA object is used to retrieve from inputs and store in outputs.</param>
         protected override void SolveInstance(IGH_DataAccess DA)
         {
-
-            StringBuilder sb = new StringBuilder();
-
-
-            try
+            if (DA.Fetch<bool>("Run"))
             {
-                SSH_Helper.Execute("cd ~ && ls -lah", sb);
-                SSH_Helper.Execute("pwd", sb);
-            }
-            catch (Renci.SshNet.Common.SshConnectionException e)
-            {
-                sb.Append(e.Message);
-            }
-            
+                List<string> commands = DA.FetchList<string>("SSH Commands");
+                string command = String.Join(";", commands);
+                DA.SetData("stout", SSH_Helper.Execute(command));
 
+            }
 
-            DA.SetData("status", sb.ToString());
         }
-
 
 
         /// <summary>
@@ -65,7 +57,7 @@ namespace GrasshopperRadianceLinuxConnector.Components
         /// </summary>
         public override Guid ComponentGuid
         {
-            get { return new Guid("76F064E6-AF97-49F4-856B-05521601AEF2"); }
+            get { return new Guid("257C7A8C-330E-43F5-AC6B-19F517F3F528"); }
         }
     }
 }

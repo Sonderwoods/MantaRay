@@ -11,7 +11,7 @@ namespace GrasshopperRadianceLinuxConnector
     {
 
         public GH_Template(string name, string nickname, string description, string subcategory = "Test") :
-            base(name, nickname, description, "Rad", subcategory)
+            base(name, nickname, description + "\n\nPart of GrasshopperRadianceLinuxConnector by Mathias Sønderskov, 2022", "Rad", subcategory)
         {
             
 

@@ -18,7 +18,7 @@ namespace GrasshopperRadianceLinuxConnector
           : base("GH_MeshToRad", "GH_MeshToRad",
               "GH_MeshToRad. Heavily inspired by\n" +
                 "https://github.com/ladybug-tools/honeybee-legacy/blob/master/userObjects/Honeybee_MSH2RAD.ghuser",
-              "Geometry")
+              "Geo")
         {
         }
 
@@ -39,8 +39,9 @@ namespace GrasshopperRadianceLinuxConnector
         /// </summary>
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
-            pManager.AddTextParameter("Local Files", "Local Files", "Local Files", GH_ParamAccess.list);
-            pManager.AddTextParameter("Mapping File Path", "mpf", "", GH_ParamAccess.item);
+            pManager.AddTextParameter("Local File Paths", "Local File Paths", "Local Files", GH_ParamAccess.list);
+            pManager.AddTextParameter("Mapping File Path", "Mapping File Path", "", GH_ParamAccess.item);
+            
         }
 
         /// <summary>
@@ -49,11 +50,23 @@ namespace GrasshopperRadianceLinuxConnector
         /// <param name="DA">The DA object is used to retrieve from inputs and store in outputs.</param>
         protected override void SolveInstance(IGH_DataAccess DA)
         {
+
+            if (!DA.Fetch<bool>("Run"))
+                return;
+
             Grasshopper.Kernel.Data.GH_Structure<GH_Mesh> inMeshes = DA.FetchTree<GH_Mesh>("Mesh");
 
             Grasshopper.Kernel.Data.GH_Structure<GH_String> names = DA.FetchTree<GH_String>("Name");
 
             Grasshopper.Kernel.Data.GH_Structure<GH_String> modifierNames = DA.FetchTree<GH_String>("ModifierName");
+
+            if (modifierNames.Branches.Count != inMeshes.Branches.Count || inMeshes.Branches.Count != names.Branches.Count)
+            {
+                throw new ArgumentOutOfRangeException(String.Format("Meshes ({0}), Names ({1}) and ModifierNames ({2}) have different branch count.",
+                    inMeshes.Branches.Count,
+                    names.Branches.Count,
+                    modifierNames.Branches.Count));
+            }
 
             string workingDir = DA.Fetch<string>("Local Working Directory");
 
@@ -61,101 +74,87 @@ namespace GrasshopperRadianceLinuxConnector
 
             string mappingFilePath = workingDir + "mapping.map";
 
-            bool run = DA.Fetch<bool>("Run");
+            
+            object myLock = new object();
 
-            if (run)
+
+            // Write the mapping.map file
+
+            StringBuilder mapping = new StringBuilder();
+
+            List<string> localFilePaths = new List<string>(inMeshes.Branches.Count);
+
+            for (int i = 0; i < inMeshes.Branches.Count; i++)
             {
-                object myLock = new object();
+
+                string modifierName = modifierNames[i][0].Value.Replace(" ", "_");
+
+                string name = names[i][0].Value.Replace(" ", "_");
+
+                mapping.AppendFormat("{0} (Group \"{1}\")\n", modifierName, name);
+
+                localFilePaths.Add(workingDir + name + ".obj");
+            }
+
+            System.IO.File.WriteAllText(mappingFilePath, mapping.ToString());
 
 
-                // Write the mapping.map file
-                
-                StringBuilder mapping = new StringBuilder();
 
-                List<string> localFilePaths = new List<string>(inMeshes.Branches.Count);
+            // Write an obj file for each branch in the meshes list
 
-                for (int i = 0; i < inMeshes.Branches.Count; i++)
+            //Parallel.For(0, inMeshes.Branches.Count, q =>
+            //{
+            for (int q = 0; q < inMeshes.Branches.Count; q++)
+            {
+
+
+                string name = names[q][0].Value.Replace(" ", "_"); //TODO: more fixes?
+
+                string geometryFilePath = workingDir + $"{name}.obj";
+
+                StringBuilder geometryFile = new StringBuilder();
+
+                geometryFile.Append("# Written with GrasshopperRadianceLinuxConnector/GH_MeshToRad\n");
+
+                geometryFile.AppendFormat("g {0}\n", name);
+
+                foreach (GH_Mesh gmesh in inMeshes[q])
                 {
-                    string modifierName = modifierNames[i][0].Value.Replace(" ", "_");
+                    Mesh mesh = gmesh.Value;
 
-                    string name = names[i][0].Value.Replace(" ", "_");
-
-                    mapping.AppendFormat("{0} (Group \"{1}\")\n", modifierName, name);
-
-                    localFilePaths.Add(workingDir + name + ".obj");
-                }
-
-                System.IO.File.WriteAllText(mappingFilePath, mapping.ToString());
-
-
-
-                // Write an obj file for each branch in the meshes list
-
-                //Parallel.For(0, inMeshes.Branches.Count, q =>
-                //{
-                for (int q = 0; q < inMeshes.Branches.Count; q++)
-                {
-
-
-                    string name = names[q][0].Value.Replace(" ", "_"); //TODO: more fixes?
-
-                    string geometryFilePath = workingDir + $"{name}.obj";
-
-                    StringBuilder geometryFile = new StringBuilder();
-
-                    geometryFile.Append("# Written with GrasshopperRadianceLinuxConnector/GH_MeshToRad\n");
-
-                    geometryFile.AppendFormat("g {0}\n", name);
-
-                    foreach (Mesh mesh in inMeshes[q].Select(m => m.Value))
+                    for (int j = 0; j < mesh.Vertices.Count; j++)
                     {
-
-
-                        for (int j = 0; j < mesh.Vertices.Count; j++)
-                        {
-                            geometryFile.AppendFormat("v {0:0.000} {1:0.000} {2:0.000}\n", mesh.Vertices[j].X, mesh.Vertices[j].Y, mesh.Vertices[j].Z);
-                            //TODO: Tolerances/Units?
-                        }
-
-                        for (int j = 0; j < mesh.Faces.Count; j++)
-                        {
-                            if (mesh.Faces[j].IsQuad)
-                            {
-                                geometryFile.AppendFormat("f {0} {1} {2} {3}\n", mesh.Faces[j].A, mesh.Faces[j].B, mesh.Faces[j].C, mesh.Faces[j].D);
-                            }
-                            else
-                            {
-                                geometryFile.AppendFormat("f {0} {1} {2}\n", mesh.Faces[j].A, mesh.Faces[j].B, mesh.Faces[j].C, mesh.Faces[j].D);
-                            }
-                        }
+                        geometryFile.AppendFormat("v {0:0.000} {1:0.000} {2:0.000}\n", mesh.Vertices[j].X, mesh.Vertices[j].Y, mesh.Vertices[j].Z);
+                        //TODO: Tolerances/Units?
                     }
 
-                    System.IO.File.WriteAllText(geometryFilePath, geometryFile.ToString());
+                    for (int j = 0; j < mesh.Faces.Count; j++)
+                    {
+                        if (mesh.Faces[j].IsQuad)
+                        {
+                            geometryFile.AppendFormat("f {0} {1} {2} {3}\n", mesh.Faces[j].A, mesh.Faces[j].B, mesh.Faces[j].C, mesh.Faces[j].D);
+                        }
+                        else
+                        {
+                            geometryFile.AppendFormat("f {0} {1} {2}\n", mesh.Faces[j].A, mesh.Faces[j].B, mesh.Faces[j].C, mesh.Faces[j].D);
+                        }
+                    }
                 }
-                //});
 
-
-                DA.SetDataList("Local File Paths", localFilePaths);
-                DA.SetData("Mapping File Path", mappingFilePath);
-
-
+                System.IO.File.WriteAllText(geometryFilePath, geometryFile.ToString());
             }
+            //});
+
+
+            DA.SetDataList("Local File Paths", localFilePaths);
+            DA.SetData("Mapping File Path", mappingFilePath);
+
+
+
 
 
         }
 
-        /// <summary>
-        /// Provides an Icon for the component.
-        /// </summary>
-        protected override System.Drawing.Bitmap Icon
-        {
-            get
-            {
-                //You can add image files to your project resources and access them like this:
-                // return Resources.IconForThisComponent;
-                return null;
-            }
-        }
 
         /// <summary>
         /// Gets the unique ID for this component. Do not change this ID after release.

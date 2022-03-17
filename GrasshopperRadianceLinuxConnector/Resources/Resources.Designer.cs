@@ -69,5 +69,15 @@ namespace GrasshopperRadianceLinuxConnector.Resources {
                 return ((System.Drawing.Bitmap)(obj));
             }
         }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap Ra_IconDark {
+            get {
+                object obj = ResourceManager.GetObject("Ra_IconDark", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
     }
 }

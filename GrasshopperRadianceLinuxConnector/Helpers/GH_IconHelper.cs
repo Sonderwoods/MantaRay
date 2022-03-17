@@ -1,0 +1,21 @@
+﻿using Grasshopper;
+using Grasshopper.Kernel;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace GrasshopperRadianceLinuxConnector
+{
+    public class GH_IconHelper: GH_AssemblyPriority
+    {
+        public override GH_LoadingInstruction PriorityLoad()
+        {
+            Instances.ComponentServer.AddCategoryIcon("Rad", Resources.Resources.Ra_IconDark);
+            Instances.ComponentServer.AddCategorySymbolName("Rad", 'R');
+            return GH_LoadingInstruction.Proceed;
+        }
+    }
+
+}

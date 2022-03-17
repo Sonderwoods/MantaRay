@@ -7,6 +7,7 @@ using Renci.SshNet;
 using System.Text;
 using System.Windows.Forms;
 using System.Drawing;
+using System.Diagnostics;
 
 namespace GrasshopperRadianceLinuxConnector.Components
 {
@@ -80,7 +81,7 @@ namespace GrasshopperRadianceLinuxConnector.Components
                         // Pasword based Authentication
                         new PasswordAuthenticationMethod(username, password),
 
-                        //// Key Based Authentication (using keys in OpenSSH Format)
+                        //// Key Based Authentication (using keys in OpenSSH Format) Uncomment if you need the fingerprint!
                         //new PrivateKeyAuthenticationMethod(
                         //    username,
                         //    new PrivateKeyFile[]
@@ -92,46 +93,64 @@ namespace GrasshopperRadianceLinuxConnector.Components
                     }
 
                 );
-
+                Stopwatch stopwatch = new Stopwatch();
                 //Connect SSH
                 SSH_Helper.SshClient = new SshClient(ConnNfo);
                 try
                 {
-
                     SSH_Helper.SshClient.Connect();
+
+                    sb.AppendFormat("SSH:  Connected in {0} ms\n", stopwatch.ElapsedMilliseconds);
+
                 }
                 catch (Renci.SshNet.Common.SshAuthenticationException e)
                 {
-                    sb.AppendLine("Wrong password??\n" + e.Message);
+                    sb.AppendLine("SSH:  Wrong password??\n" + e.Message);
+                }
+                catch (System.Net.Sockets.SocketException e)
+                {
+                    sb.AppendFormat("SSH:  Could not find the SSH server\n      {0}\n      Try restarting it locally in " +
+                        "your bash with the command:\n    $ sudo service ssh start\n", e.Message);
                 }
                 catch (Exception e)
                 {
-                    sb.AppendLine(e.Message);
+                    sb.AppendFormat("SSH:  {0}\n", e.Message);
                 }
 
+                
+                sb.Append("\n");
 
-                //Connect FTP
+                stopwatch.Restart();
+
+                //Connect Sftp
                 SSH_Helper.SftpClient = new SftpClient(ConnNfo);
                 try
                 {
-
                     SSH_Helper.SftpClient.Connect();
+
+                    sb.AppendFormat("Sftp: Connected in {0} ms\n", stopwatch.ElapsedMilliseconds);
+
                 }
                 catch (Renci.SshNet.Common.SftpPermissionDeniedException e)
                 {
-                    sb.AppendLine("Wrong password??\n" + e.Message);
+                    sb.AppendLine("Sftp: Wrong password??\n" + e.Message);
+                }
+                catch (System.Net.Sockets.SocketException e)
+                {
+                    sb.AppendFormat("Sftp: Could not find the Sftp server\n      {0}\n      Try restarting it locally in " +
+                        "your bash with the command:\n    $ sudo service ssh start\n", e.Message);
                 }
                 catch (Exception e)
                 {
-                    sb.AppendLine(e.Message);
+                    sb.AppendFormat("Sftp: {0}\n", e.Message);
                 }
-
-                sb.Append(SSH_Helper.SftpClient.ToString());
+                
+                sb.Append("\n");
             }
             else
             {
                 TryDisconnect();
-                sb.Append("Disconnected");
+                sb.Append("Sftp + SSH: Disconnected\n");
             }
 
 
