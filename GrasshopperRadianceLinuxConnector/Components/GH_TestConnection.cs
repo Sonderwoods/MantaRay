@@ -39,25 +39,25 @@ namespace GrasshopperRadianceLinuxConnector.Components
         /// <param name="DA">The DA object is used to retrieve from inputs and store in outputs.</param>
         protected override void SolveInstance(IGH_DataAccess DA)
         {
-            if (SSH_Helper.Client != null && SSH_Helper.Client.IsConnected)
+            if (SSH_Helper.SshClient != null && SSH_Helper.SshClient.IsConnected)
             {
-                using (var cl = SSH_Helper.Client)
-                {
-                    StringBuilder sb = new StringBuilder();
+                var cl = SSH_Helper.SshClient;
+
+                StringBuilder sb = new StringBuilder();
 
 
-                    
-                        // quick way to use ist, but not best practice - SshCommand is not Disposed, ExitStatus not checked...
-                        sb.AppendLine(cl.CreateCommand("cd ~ && ls -lah").Execute());
-                        sb.AppendLine(cl.CreateCommand("pwd").Execute());
-                        //sb.AppendLine(cl.CreateCommand("cd /tmp/uploadtest && ls -lah").Execute());
-                                            
+
+                // quick way to use ist, but not best practice - SshCommand is not Disposed, ExitStatus not checked...
+                sb.AppendLine(cl.CreateCommand("cd ~ && ls -lah").Execute());
+                sb.AppendLine(cl.CreateCommand("pwd").Execute());
+                //sb.AppendLine(cl.CreateCommand("cd /tmp/uploadtest && ls -lah").Execute());
 
 
-                    DA.SetData("status", sb.ToString());
-                }
+
+                DA.SetData("status", sb.ToString());
+
             }
-            else if (SSH_Helper.Client != null)
+            else if (SSH_Helper.SshClient != null)
             {
                 DA.SetData("status", "there is a client but no connection");
             }
@@ -67,7 +67,7 @@ namespace GrasshopperRadianceLinuxConnector.Components
             }
         }
 
-        
+
 
         /// <summary>
         /// Gets the unique ID for this component. Do not change this ID after release.

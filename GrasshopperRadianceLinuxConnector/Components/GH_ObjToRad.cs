@@ -1,8 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-
+using System.Text;
 using Grasshopper.Kernel;
 using Rhino.Geometry;
+using Renci.SshNet;
 
 namespace GrasshopperRadianceLinuxConnector.Components
 {
@@ -26,6 +27,8 @@ namespace GrasshopperRadianceLinuxConnector.Components
         {
             pManager.AddTextParameter("obj file paths", "obj file paths", "", GH_ParamAccess.list);
             pManager.AddTextParameter("map file", "map file", "mapping file", GH_ParamAccess.item);
+            pManager.AddTextParameter("linux target folder", "linux target folder", "", GH_ParamAccess.item);
+            pManager.AddBooleanParameter("Run", "Run", "Run", GH_ParamAccess.item);
         }
 
         /// <summary>
@@ -34,7 +37,7 @@ namespace GrasshopperRadianceLinuxConnector.Components
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
             pManager.AddTextParameter("status", "status", "status", GH_ParamAccess.item);
-            pManager.AddTextParameter("rad file path", "rad file path", "rad file path", GH_ParamAccess.item);
+            pManager.AddTextParameter("rad file paths", "rad file paths", "rad file paths", GH_ParamAccess.item);
         }
 
         /// <summary>
@@ -43,47 +46,53 @@ namespace GrasshopperRadianceLinuxConnector.Components
         /// <param name="DA">The DA object is used to retrieve from inputs and store in outputs.</param>
         protected override void SolveInstance(IGH_DataAccess DA)
         {
-            if (SSH_Helper.Client != null && SSH_Helper.Client.IsConnected)
+            if (!DA.Fetch<bool>("Run"))
+                return;
+
+
+            List<string> allFilePaths = DA.FetchList<string>("obj file paths");
+            
+            allFilePaths.Add(DA.Fetch<string>("map file"));
+            allFilePaths.Reverse(); //to make sure the map comes first in the upload process.
+
+            List<string> radFilePaths = new List<string>(allFilePaths.Count);
+
+            string sshPath = DA.Fetch<string>("linux target folder");
+
+            StringBuilder sb = new StringBuilder();
+
+
+
+
+            //SSH_Helper.Execute("cd ~ && ls -lah", sb);
+            //SSH_Helper.Execute("pwd", sb);
+
+            // quick way to use ist, but not best practice - SshCommand is not Disposed, ExitStatus not checked...
+            //sb.AppendLine(cl.CreateCommand("cd ~ && ls -lah").Execute());
+            //sb.AppendLine(cl.CreateCommand("pwd").Execute());
+            //sb.AppendLine(cl.CreateCommand("cd /tmp/uploadtest && ls -lah").Execute());
+
+
+            for (int i = 0; i < allFilePaths.Count; i++)
             {
-                using (var cl = SSH_Helper.Client)
+                SSH_Helper.Upload(allFilePaths[i], sshPath);
+                
+                sb.AppendFormat("Uploaded {0}\n", allFilePaths[i]);
+
+                if (i > 0) // skipping a command at the map file
                 {
-                    StringBuilder sb = new StringBuilder();
-
-
-
-                    // quick way to use ist, but not best practice - SshCommand is not Disposed, ExitStatus not checked...
-                    sb.AppendLine(cl.CreateCommand("cd ~ && ls -lah").Execute());
-                    sb.AppendLine(cl.CreateCommand("pwd").Execute());
-                    //sb.AppendLine(cl.CreateCommand("cd /tmp/uploadtest && ls -lah").Execute());
-
-
-
-                    DA.SetData("status", sb.ToString());
+                    string radFilePath = System.IO.Path.GetFileNameWithoutExtension(allFilePaths[i]) + ".rad";
+                    SSH_Helper.Execute($"obj2rad -m {allFilePaths[0]} -f {allFilePaths[i]} > {radFilePath}.rad", sb);
+                    radFilePaths.Add(radFilePath);
                 }
             }
-            else if (SSH_Helper.Client != null)
-            {
-                DA.SetData("status", "there is a client but no connection");
-            }
-            else
-            {
-                DA.SetData("status", "no client");
-            }
+            
+
+            
 
 
-            // Upload A File
-            using (var sftp = new SftpClient(ConnNfo))
-            {
-                string uploadfn = "Renci.SshNet.dll";
-
-                sftp.Connect();
-                sftp.ChangeDirectory("/tmp/uploadtest");
-                using (var uplfileStream = System.IO.File.OpenRead(uploadfn))
-                {
-                    sftp.UploadFile(uplfileStream, uploadfn, true);
-                }
-                sftp.Disconnect();
-            }
+            DA.SetData("status", sb.ToString());
+            DA.SetDataList("rad file paths", radFilePaths);
         }
 
         /// <summary>

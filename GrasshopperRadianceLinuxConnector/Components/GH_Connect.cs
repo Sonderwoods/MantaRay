@@ -93,12 +93,12 @@ namespace GrasshopperRadianceLinuxConnector.Components
 
                 );
 
-                // Execute (SHELL) Commands
-                SSH_Helper.Client = new SshClient(ConnNfo);
+                //Connect SSH
+                SSH_Helper.SshClient = new SshClient(ConnNfo);
                 try
                 {
 
-                    SSH_Helper.Client.Connect();
+                    SSH_Helper.SshClient.Connect();
                 }
                 catch (Renci.SshNet.Common.SshAuthenticationException e)
                 {
@@ -109,7 +109,24 @@ namespace GrasshopperRadianceLinuxConnector.Components
                     sb.AppendLine(e.Message);
                 }
 
-                sb.Append(SSH_Helper.Client.ToString());
+
+                //Connect FTP
+                SSH_Helper.SftpClient = new SftpClient(ConnNfo);
+                try
+                {
+
+                    SSH_Helper.SftpClient.Connect();
+                }
+                catch (Renci.SshNet.Common.SftpPermissionDeniedException e)
+                {
+                    sb.AppendLine("Wrong password??\n" + e.Message);
+                }
+                catch (Exception e)
+                {
+                    sb.AppendLine(e.Message);
+                }
+
+                sb.Append(SSH_Helper.SftpClient.ToString());
             }
             else
             {
