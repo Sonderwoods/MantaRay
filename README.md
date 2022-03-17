@@ -9,6 +9,11 @@ In pure Linux fashion the Grasshopper components will pipe the results to the ne
 SSH Connection in Grasshopper is now established
 ![image](https://user-images.githubusercontent.com/19936679/158470596-a3eab3e0-bc0a-447b-bd46-eba8a3877785.png)
 
+![image](https://user-images.githubusercontent.com/19936679/158892497-523d0546-15f3-4ed2-8a1c-1a44e2777272.png)
+
+Parallel Meshing and mesh2obj creation (in gh)
+![image](https://user-images.githubusercontent.com/19936679/158892631-188c4ab0-b364-4b0c-820a-eff9101058e2.png)
+
 
 
 ## Preparations
