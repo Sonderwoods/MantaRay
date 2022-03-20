@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -29,6 +30,8 @@ namespace GrasshopperRadianceLinuxConnector
             }
         }
 
+        public static string HomeDirectory { get; set; } = null;
+
         private static SshClient sshClient;
 
 
@@ -38,7 +41,11 @@ namespace GrasshopperRadianceLinuxConnector
             set
             {
                 if (sftpClient == null)
+                {
                     sftpClient = value;
+                    sftpClient.BufferSize = 4096; // bypass Payload error large files https://gist.github.com/DavidDeSloovere/96f3a827b54f20d52bcfda4fe7a16a0b
+                    
+                }
 
                 else
                 {
@@ -53,28 +60,30 @@ namespace GrasshopperRadianceLinuxConnector
 
         private static SftpClient sftpClient;
 
-        public static void Upload(string localFileName, string SshPath = "~/simulation")
+
+        public static void Upload(string localFileName, string SshPath = "~/simulation", StringBuilder sb = null)
         {
 
             if (SSH_Helper.SftpClient != null && SSH_Helper.SftpClient.IsConnected)
             {
                 try
                 {
-
-                SSH_Helper.SftpClient.ChangeDirectory(SshPath);
+                    HomeDirectory = HomeDirectory ?? sftpClient.WorkingDirectory;
+                    SshPath = SshPath.Replace("~", HomeDirectory);
+                    SSH_Helper.SftpClient.ChangeDirectory(SshPath);
                 }
-                catch(Renci.SshNet.Common.SftpPathNotFoundException e)
+                catch (Renci.SshNet.Common.SftpPathNotFoundException e)
                 {
-                    throw new Renci.SshNet.Common.SftpPathNotFoundException("Linux Path not found: " + e.Message);
+                    throw new Renci.SshNet.Common.SftpPathNotFoundException($"Linux Path not found {e.Message}.\nTry {HomeDirectory}\nThe current working directory is {sftpClient.WorkingDirectory}");
                 }
 
-                if (!System.IO.File.Exists(localFileName))
-                    throw new System.IO.FileNotFoundException("Local file not found: " + localFileName);
+                if (!File.Exists(localFileName))
+                    throw new FileNotFoundException("Local file not found: " + localFileName);
 
 
-                using (var uplfileStream = System.IO.File.OpenRead(localFileName))
+                using (var uplfileStream = File.OpenRead(localFileName))
                 {
-                    SSH_Helper.SftpClient.UploadFile(uplfileStream, localFileName, true);
+                    SSH_Helper.SftpClient.UploadFile(uplfileStream, Path.GetFileName(localFileName), true);
                 }
 
 
@@ -86,6 +95,19 @@ namespace GrasshopperRadianceLinuxConnector
             else
             {
                 throw new Renci.SshNet.Common.SshConnectionException("Sftp: There is no Sftp client. Please run the Connect SSH Component");
+            }
+
+            if(sb != null)
+            {
+                sb.Append("[");
+                sb.Append(DateTime.Now.ToShortDateString());
+                sb.Append(" ");
+                sb.Append(DateTime.Now.ToShortTimeString());
+                sb.Append("] Uploaded ");
+                sb.Append(SshPath);
+                sb.Append("/");
+                sb.Append(Path.GetFileName(localFileName));
+                sb.Append("\n");
             }
 
 
@@ -117,7 +139,7 @@ namespace GrasshopperRadianceLinuxConnector
         {
             if (IsSshConnected())
             {
-                sb.Append("\n\n[");
+                sb.Append("\n[");
                 sb.Append(DateTime.Now.ToShortDateString());
                 sb.Append(" ");
                 sb.Append(DateTime.Now.ToShortTimeString());

@@ -72,16 +72,26 @@ namespace GrasshopperRadianceLinuxConnector.Components
             //sb.AppendLine(cl.CreateCommand("pwd").Execute());
             //sb.AppendLine(cl.CreateCommand("cd /tmp/uploadtest && ls -lah").Execute());
 
+            SSH_Helper.Execute($"pwd", sb);
+
 
             for (int i = 0; i < allFilePaths.Count; i++)
             {
-                SSH_Helper.Upload(allFilePaths[i], sshPath);
+                try
+                {
+                SSH_Helper.Upload(allFilePaths[i], sshPath, sb);
+
+                }
+                catch (Renci.SshNet.Common.SftpPathNotFoundException e)
+                {
+                    sb.AppendFormat("Could not upload files - Path not found ({0})! {1}", sshPath, e.Message);
+                    break;
+                }
                 
-                sb.AppendFormat("Uploaded {0}\n", allFilePaths[i]);
 
                 if (i > 0) // skipping a command at the map file
                 {
-                    string radFilePath = System.IO.Path.GetFileNameWithoutExtension(allFilePaths[i]) + ".rad";
+                    string radFilePath = System.IO.Path.GetFileNameWithoutExtension(allFilePaths[i]);
                     SSH_Helper.Execute($"obj2rad -m {allFilePaths[0]} -f {allFilePaths[i]} > {radFilePath}.rad", sb);
                     radFilePaths.Add(radFilePath);
                 }
