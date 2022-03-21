@@ -43,6 +43,17 @@ Parallel Meshing and mesh2obj creation (in gh)
 
       export LIBGL_ALWAYS_INDIRECT=1
       export DISPLAY=$(ip route list default | awk ‘{print $3}’):0
+      
+* Get the meta files to work such as meta2tga and meta2tif:
+  Download the auxiliary files from [https://github.com/LBNL-ETA/Radiance/releases](https://github.com/LBNL-ETA/Radiance/releases/download/05eb231c/Radiance_Auxiliary_05eb231c.zip)
+  Place them in simulation folder on windows
+  Run the following on linux (This may allow everyone to change your lib folder! You should look into what is the default chmod setting for the lib folder.. I did overwrite mine, so I'm unsure).
+  This will give us write access to our lib folder.
+  
+      sudo chmod 777 /usr/local/lib
+  Then copy the meta files to the lib folder using:
+      
+      cp -R ~/simulation/meta /usr/local/lib/meta
 
 ### Setup SSH in linux and connect to it from Windows
 
