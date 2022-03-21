@@ -56,6 +56,9 @@ Parallel Meshing and mesh2obj creation (in gh)
   Then copy the meta files to the lib folder using:
       
       cp -R ~/simulation/meta /usr/local/lib/meta
+      
+* Install ImageMagick
+  Follow [this guide](https://linoxide.com/install-latest-imagemagick-on-ubuntu-20-04/)
 
 ### Setup SSH in linux and connect to it from Windows
 
