@@ -42,7 +42,7 @@ Parallel Meshing and mesh2obj creation (in gh)
 * This will open the bashrc file. Go to the end of the file and add these two lines. (I cant remember how to paste, so you'll type them manually):
 
       export LIBGL_ALWAYS_INDIRECT=1
-      export DISPLAY=$(ip route list default | awk ‘{print $3}’):0
+      export DISPLAY=$(ip route list default | awk '{print $3}'):0
       
 * Get the meta files to work such as meta2tga and meta2tif:
   Download the auxiliary files from [https://github.com/LBNL-ETA/Radiance/releases](https://github.com/LBNL-ETA/Radiance/releases/download/05eb231c/Radiance_Auxiliary_05eb231c.zip)
