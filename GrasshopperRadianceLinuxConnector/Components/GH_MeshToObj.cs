@@ -80,9 +80,11 @@ namespace GrasshopperRadianceLinuxConnector
 
             // Write the mapping.map file
 
-            StringBuilder mapping = new StringBuilder();
+            StringBuilder mapping = new StringBuilder("default;");
 
             List<string> localFilePaths = new List<string>(inMeshes.Branches.Count);
+
+            
 
             for (int i = 0; i < inMeshes.Branches.Count; i++)
             {
@@ -91,7 +93,7 @@ namespace GrasshopperRadianceLinuxConnector
 
                 string name = names[i][0].Value.Replace(" ", "_");
 
-                mapping.AppendFormat("{0} (Group \"{1}\")\n", modifierName, name);
+                mapping.AppendFormat("\n{0} (Group \"{1}\");", modifierName, name);
 
                 localFilePaths.Add(workingDir + name + ".obj");
             }
@@ -114,9 +116,9 @@ namespace GrasshopperRadianceLinuxConnector
 
                 StringBuilder geometryFile = new StringBuilder();
 
-                geometryFile.Append("# Written with GrasshopperRadianceLinuxConnector/GH_MeshToRad\n");
+                geometryFile.Append("# Written with GrasshopperRadianceLinuxConnector/GH_MeshToRad\r\n");
 
-                geometryFile.AppendFormat("g {0}\n", name);
+                geometryFile.AppendFormat("g {0}\r\n", name);
 
                 foreach (GH_Mesh gmesh in inMeshes[q])
                 {
@@ -124,7 +126,7 @@ namespace GrasshopperRadianceLinuxConnector
 
                     for (int j = 0; j < mesh.Vertices.Count; j++)
                     {
-                        geometryFile.AppendFormat("v {0:0.000} {1:0.000} {2:0.000}\n", mesh.Vertices[j].X, mesh.Vertices[j].Y, mesh.Vertices[j].Z);
+                        geometryFile.AppendFormat("v {0:0.000} {1:0.000} {2:0.000}\r\n", mesh.Vertices[j].X, mesh.Vertices[j].Y, mesh.Vertices[j].Z);
                         //TODO: Tolerances/Units?
                     }
 
@@ -132,11 +134,11 @@ namespace GrasshopperRadianceLinuxConnector
                     {
                         if (mesh.Faces[j].IsQuad)
                         {
-                            geometryFile.AppendFormat("f {0} {1} {2} {3}\n", mesh.Faces[j].A, mesh.Faces[j].B, mesh.Faces[j].C, mesh.Faces[j].D);
+                            geometryFile.AppendFormat("f {0} {1} {2} {3}\r\n", mesh.Faces[j].A+1, mesh.Faces[j].B+1, mesh.Faces[j].C+1, mesh.Faces[j].D+1);
                         }
                         else
                         {
-                            geometryFile.AppendFormat("f {0} {1} {2}\n", mesh.Faces[j].A, mesh.Faces[j].B, mesh.Faces[j].C, mesh.Faces[j].D);
+                            geometryFile.AppendFormat("f {0} {1} {2}\r\n", mesh.Faces[j].A+1, mesh.Faces[j].B+1, mesh.Faces[j].C+1, mesh.Faces[j].D+1);
                         }
                     }
                 }

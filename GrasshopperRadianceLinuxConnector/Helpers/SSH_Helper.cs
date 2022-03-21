@@ -69,8 +69,9 @@ namespace GrasshopperRadianceLinuxConnector
                 try
                 {
                     HomeDirectory = HomeDirectory ?? sftpClient.WorkingDirectory;
-                    SshPath = SshPath.Replace("~", HomeDirectory);
-                    SSH_Helper.SftpClient.ChangeDirectory(SshPath);
+                    //SshPath = SshPath.Replace("~", HomeDirectory);
+                    //SSH_Helper.SftpClient.ChangeDirectory(SshPath);
+                    SSH_Helper.SftpClient.ChangeDirectory(HomeDirectory);
                 }
                 catch (Renci.SshNet.Common.SftpPathNotFoundException e)
                 {
@@ -85,6 +86,8 @@ namespace GrasshopperRadianceLinuxConnector
                 {
                     SSH_Helper.SftpClient.UploadFile(uplfileStream, Path.GetFileName(localFileName), true);
                 }
+
+                //SSH_Helper.Execute($"cd ~;mv {Path.GetFileName(localFileName)} {SshPath}", sb);
 
 
             }
@@ -146,7 +149,9 @@ namespace GrasshopperRadianceLinuxConnector
                 sb.Append("] $ ");
                 sb.Append(command);
                 sb.Append("\n");
-                sb.AppendLine(sshClient.CreateCommand(command).Execute());
+                var cmd = sshClient.CreateCommand(command);
+                cmd.Execute();
+                sb.AppendLine(cmd.Result);
             }
 
         }

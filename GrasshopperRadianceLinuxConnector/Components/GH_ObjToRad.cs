@@ -4,6 +4,7 @@ using System.Text;
 using Grasshopper.Kernel;
 using Rhino.Geometry;
 using Renci.SshNet;
+using System.IO;
 
 namespace GrasshopperRadianceLinuxConnector.Components
 {
@@ -27,7 +28,7 @@ namespace GrasshopperRadianceLinuxConnector.Components
         {
             pManager.AddTextParameter("obj file paths", "obj file paths", "", GH_ParamAccess.list);
             pManager.AddTextParameter("map file", "map file", "mapping file", GH_ParamAccess.item);
-            pManager.AddTextParameter("linux target folder", "linux target folder", "", GH_ParamAccess.item);
+            pManager[pManager.AddTextParameter("linux target folder", "linux target folder", "", GH_ParamAccess.item, "~")].Optional = true;
             pManager.AddBooleanParameter("Run", "Run", "Run", GH_ParamAccess.item);
         }
 
@@ -92,7 +93,7 @@ namespace GrasshopperRadianceLinuxConnector.Components
                 if (i > 0) // skipping a command at the map file
                 {
                     string radFilePath = System.IO.Path.GetFileNameWithoutExtension(allFilePaths[i]);
-                    SSH_Helper.Execute($"obj2rad -m {allFilePaths[0]} -f {allFilePaths[i]} > {radFilePath}.rad", sb);
+                    SSH_Helper.Execute($"cd {sshPath};obj2rad -m {Path.GetFileName(allFilePaths[0])} -f {Path.GetFileName(allFilePaths[i])} > {radFilePath}.rad", sb);
                     radFilePaths.Add(radFilePath);
                 }
             }
