@@ -73,7 +73,7 @@ namespace GrasshopperRadianceLinuxConnector.Components
             //sb.AppendLine(cl.CreateCommand("pwd").Execute());
             //sb.AppendLine(cl.CreateCommand("cd /tmp/uploadtest && ls -lah").Execute());
 
-            SSH_Helper.Execute($"pwd", sb);
+            //SSH_Helper.Execute($"pwd", sb);
 
 
             for (int i = 0; i < allFilePaths.Count; i++)
@@ -92,9 +92,9 @@ namespace GrasshopperRadianceLinuxConnector.Components
 
                 if (i > 0) // skipping a command at the map file
                 {
-                    string radFilePath = System.IO.Path.GetFileNameWithoutExtension(allFilePaths[i]);
-                    SSH_Helper.Execute($"cd {sshPath};obj2rad -m {Path.GetFileName(allFilePaths[0])} -f {Path.GetFileName(allFilePaths[i])} > {radFilePath}.rad", sb);
-                    radFilePaths.Add(radFilePath);
+                    string radFilePath = Path.GetFileNameWithoutExtension(allFilePaths[i]);
+                    SSH_Helper.Execute($"obj2rad -m {sshPath}/{Path.GetFileName(allFilePaths[0])} -f {sshPath}/{Path.GetFileName(allFilePaths[i])} 2>&1 1>{sshPath}/{radFilePath}.rad", sb);
+                    radFilePaths.Add($"{sshPath}/{radFilePath}.rad");
                 }
             }
             

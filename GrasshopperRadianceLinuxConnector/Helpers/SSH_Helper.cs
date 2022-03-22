@@ -30,7 +30,20 @@ namespace GrasshopperRadianceLinuxConnector
             }
         }
 
+        /// <summary>
+        /// Will be set on connection
+        /// </summary>
         public static string HomeDirectory { get; set; } = null;
+
+        /// <summary>
+        /// The suffixes to setup before any commands. Temporary fix untill we get .bashrc correctly setup.
+        /// </summary>
+        public static List<string> Suffixes { get; set; } = new List<string>() {
+            "export PATH=$PATH:/usr/local/radiance/bin",
+            "export RAYPATH=./usr/local/radiance/lib",
+            "export DISPLAY=$(ip route list default | awk '{print $3}'):0",
+            "export LIBGL_ALWAYS_INDIRECT = 1"
+        };
 
         private static SshClient sshClient;
 
@@ -44,7 +57,7 @@ namespace GrasshopperRadianceLinuxConnector
                 {
                     sftpClient = value;
                     sftpClient.BufferSize = 4096; // bypass Payload error large files https://gist.github.com/DavidDeSloovere/96f3a827b54f20d52bcfda4fe7a16a0b
-                    
+
                 }
 
                 else
@@ -100,7 +113,7 @@ namespace GrasshopperRadianceLinuxConnector
                 throw new Renci.SshNet.Common.SshConnectionException("Sftp: There is no Sftp client. Please run the Connect SSH Component");
             }
 
-            if(sb != null)
+            if (sb != null)
             {
                 sb.Append("[");
                 sb.Append(DateTime.Now.ToShortDateString());
@@ -138,28 +151,46 @@ namespace GrasshopperRadianceLinuxConnector
         }
 
 
-        public static void Execute(string command, StringBuilder sb)
+        public static void Execute(string command, StringBuilder sb, bool prependSuffix = true)
         {
             if (IsSshConnected())
             {
-                sb.Append("\n[");
+                
+
+                sb.Append("[");
                 sb.Append(DateTime.Now.ToShortDateString());
                 sb.Append(" ");
                 sb.Append(DateTime.Now.ToShortTimeString());
                 sb.Append("] $ ");
                 sb.Append(command);
-                sb.Append("\n");
+                
+
+                if (prependSuffix)
+                    command = String.Join(";", Suffixes) + ";" + command;
+
                 var cmd = sshClient.CreateCommand(command);
                 cmd.Execute();
+
+                
+                sb.Append("\n");
                 sb.AppendLine(cmd.Result);
+
+
             }
 
         }
 
-        public static string Execute(string command)
+        public static string Execute(string command, bool prependSuffix = true)
         {
             if (IsSshConnected())
-                return sshClient.CreateCommand(command).Execute();
+            {
+                if (prependSuffix)
+                    command += ";" + String.Join(";", Suffixes);
+                var cmd = sshClient.CreateCommand(command);
+                cmd.Execute();
+                return cmd.Result;
+
+            }
             else return null;
         }
 
