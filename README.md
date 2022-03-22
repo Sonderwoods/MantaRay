@@ -11,8 +11,13 @@ SSH Connection in Grasshopper is now established
 
 ![image](https://user-images.githubusercontent.com/19936679/158892497-523d0546-15f3-4ed2-8a1c-1a44e2777272.png)
 
-Parallel Meshing and mesh2obj creation (in gh)
+Parallel Meshing and mesh2obj creation (in gh).. And it's ok fast compared to LBT (hint, hint)
 ![image](https://user-images.githubusercontent.com/19936679/158892631-188c4ab0-b364-4b0c-820a-eff9101058e2.png)
+
+Access to ImageMagick and the meta functions in Radiance
+![image](https://user-images.githubusercontent.com/19936679/159573035-72523b98-e2ad-40d1-ae82-ecc9f5068288.png)
+
+
 
 
 
