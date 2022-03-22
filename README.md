@@ -52,13 +52,17 @@ Parallel Meshing and mesh2obj creation (in gh)
   You should look into what is the default chmod setting for the lib folder.. I did overwrite mine, so I'm unsure.
   This will give us write access to our lib folder.
   
-      sudo chmod 777 /usr/local/lib
+      $ sudo chmod 777 /usr/local/lib
   Then copy the meta files to the lib folder using:
       
-      cp -R ~/simulation/meta /usr/local/lib/meta
+      $ cp -R ~/simulation/meta /usr/local/lib/meta
       
-* Install ImageMagick
-  Follow [this guide](https://linoxide.com/install-latest-imagemagick-on-ubuntu-20-04/)
+* Install ImageMagick. This will grant you access to mogrify and convert. See more in the [Radiance Tutorial](http://www.jaloxa.eu/resources/radiance/documentation/docs/radiance_tutorial.pdf)
+
+
+      $ sudo apt update
+      $ sudo apt install imagemagick
+      
 
 ### Setup SSH in linux and connect to it from Windows
 
