@@ -17,7 +17,8 @@ namespace GrasshopperRadianceLinuxConnector
         public GH_MeshToObj()
           : base("GH_MeshToRad", "GH_MeshToRad",
               "GH_MeshToRad. Heavily inspired by\n" +
-                "https://github.com/ladybug-tools/honeybee-legacy/blob/master/userObjects/Honeybee_MSH2RAD.ghuser",
+                "https://github.com/ladybug-tools/honeybee-legacy/blob/master/userObjects/Honeybee_MSH2RAD.ghuser\n" +
+                "CAUTION: Does not export any UV mapping of materials etc. Just applies the modifer that you input.",
               "Geo")
         {
         }
@@ -30,7 +31,7 @@ namespace GrasshopperRadianceLinuxConnector
             pManager.AddMeshParameter("Mesh", "Mesh", "Mesh", GH_ParamAccess.tree); //TODO: change to tree and allow parallel runs
             pManager.AddTextParameter("Name", "Name", "Name (will save name.rad)", GH_ParamAccess.tree);
             pManager.AddTextParameter("ModifierName", "ModifierName", "ModifierName - Name of the radiance material", GH_ParamAccess.tree);
-            pManager.AddTextParameter("Local Working Directory", "Local Working Directory", "Working Directory locally on your machine. WINDOWS dir.", GH_ParamAccess.item);
+            pManager[pManager.AddTextParameter("Subfolder", "Subfolder", "Optional. Override the subfolder from the connection component.", GH_ParamAccess.item, "")].Optional = true;
             pManager.AddBooleanParameter("Run", "Run", "Run", GH_ParamAccess.item);
         }
 
@@ -51,8 +52,14 @@ namespace GrasshopperRadianceLinuxConnector
         protected override void SolveInstance(IGH_DataAccess DA)
         {
 
+
+
             if (!DA.Fetch<bool>("Run"))
                 return;
+
+            string workingDir;
+
+            string subfolder = DA.Fetch<string>("Subfolder");
 
             Grasshopper.Kernel.Data.GH_Structure<GH_Mesh> inMeshes = DA.FetchTree<GH_Mesh>("Mesh");
 
@@ -68,11 +75,20 @@ namespace GrasshopperRadianceLinuxConnector
                     modifierNames.Branches.Count));
             }
 
-            string workingDir = DA.Fetch<string>("Local Working Directory");
+            
+
+            if (string.IsNullOrEmpty(subfolder))
+            {
+                workingDir = SSH_Helper.WindowsFullpath;
+            }
+            else
+            {
+                workingDir = SSH_Helper.WindowsParentPath + "\\" + subfolder;
+            }
 
             workingDir = (workingDir.EndsWith("\\") || workingDir.EndsWith("/")) ? workingDir : workingDir + "\\";
 
-            string mappingFilePath = workingDir + "mapping.map";
+            string mappingFilePath = $"{workingDir}mapping.map";
 
             
             object myLock = new object();

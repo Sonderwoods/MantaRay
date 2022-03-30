@@ -30,6 +30,9 @@ namespace GrasshopperRadianceLinuxConnector.Components
         {
             pManager.AddTextParameter("user", "user", "input a string containing the linux user name.\nFor instance:\nmyName", GH_ParamAccess.item);
             pManager.AddTextParameter("ip", "ip", "input a string containing the SSH ip address.\nFor instance:\n127.0.0.1", GH_ParamAccess.item);
+            pManager[pManager.AddTextParameter("LinuxDir", "LinuxDir", "LinuxDir", GH_ParamAccess.item, "")].Optional = true;
+            pManager[pManager.AddTextParameter("WindowsDir", "WindowsDir", "WindowsDir", GH_ParamAccess.item, "")].Optional = true;
+            pManager[pManager.AddTextParameter("Subfolder", "Subfolder", "Subfolder", GH_ParamAccess.item, "")].Optional = true;
             pManager[pManager.AddTextParameter("password", "password", "password. Leave empty to prompt.", GH_ParamAccess.item, "_prompt")].Optional = true;
             pManager[pManager.AddIntegerParameter("_port", "_port", "_port", GH_ParamAccess.item, 22)].Optional = true;
             pManager[pManager.AddBooleanParameter("connect", "connect", "connect", GH_ParamAccess.item, false)].Optional = true;
@@ -43,6 +46,8 @@ namespace GrasshopperRadianceLinuxConnector.Components
             pManager.AddTextParameter("status", "status", "status", GH_ParamAccess.item);
         }
 
+       
+
         /// <summary>
         /// This is the method that actually does the work.
         /// </summary>
@@ -51,6 +56,9 @@ namespace GrasshopperRadianceLinuxConnector.Components
         {
             string username = DA.Fetch<string>("user");
             string password = DA.Fetch<string>("password");
+            string linDir = DA.Fetch<string>("LinuxDir");
+            string winDir = DA.Fetch<string>("WindowsDir");
+            string subfolder = DA.Fetch<string>("Subfolder");
             string ip = DA.Fetch<string>("ip");
             int port = DA.Fetch<int>("_port");
             bool run = DA.Fetch<bool>("connect");
@@ -60,7 +68,7 @@ namespace GrasshopperRadianceLinuxConnector.Components
             if (run)
             {
 
-                if (password == "_prompt")
+                if (password == "_prompt") //Default saved in the component
                 {
                     if (GetPassword(username, out string pw))
                         password = pw;
@@ -96,6 +104,26 @@ namespace GrasshopperRadianceLinuxConnector.Components
                 Stopwatch stopwatch = new Stopwatch();
                 //Connect SSH
                 SSH_Helper.SshClient = new SshClient(ConnNfo);
+
+                if (!string.IsNullOrEmpty(winDir))
+                {
+                    SSH_Helper.WindowsParentPath = System.IO.Path.GetDirectoryName(winDir);
+                }
+
+                if (!string.IsNullOrEmpty(linDir))
+                {
+                    SSH_Helper.LinuxParentPath = System.IO.Path.GetDirectoryName(linDir);
+                }
+
+                if (!string.IsNullOrEmpty(subfolder))
+                {
+                    SSH_Helper.DefaultSubfolder = subfolder;
+                }
+
+                sb.AppendFormat("SSH:  Setup windows folder to {0}", SSH_Helper.WindowsFullpath);
+                sb.AppendFormat("SSH:  Setup linux folder to {0}", SSH_Helper.LinuxFullpath);
+
+
                 try
                 {
                     SSH_Helper.SshClient.Connect();
@@ -164,12 +192,35 @@ namespace GrasshopperRadianceLinuxConnector.Components
 
         public override void RemovedFromDocument(GH_Document document)
         {
-            base.RemovedFromDocument(document);
-
             TryDisconnect();
+
+            base.RemovedFromDocument(document);
 
 
         }
+
+        public override void DocumentContextChanged(GH_Document document, GH_DocumentContext context)
+        {
+            TryDisconnect();
+
+            base.DocumentContextChanged(document, context);
+        }
+
+        public override void AddedToDocument(GH_Document document)
+        {
+
+            Grasshopper.Instances.ActiveCanvas.Disposed -= ActiveCanvas_Disposed;
+            Grasshopper.Instances.ActiveCanvas.Disposed += ActiveCanvas_Disposed;
+            //TODO: Other events to subscribe to, to make sure to disconnect???
+
+            base.AddedToDocument(document);
+        }
+
+        private void ActiveCanvas_Disposed(object sender, EventArgs e)
+        {
+            TryDisconnect();
+        }
+
 
 
 
