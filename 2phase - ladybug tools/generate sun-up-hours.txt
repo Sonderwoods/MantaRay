@@ -1,0 +1,4 @@
+honeybee-radiance sunpath parse-hours suns.mod --name sun-up-hours.txt
+
+see more
+https://github.com/ladybug-tools/honeybee-radiance/blob/ffb8d8df513318ea5ef6643024dc411ef2027388/honeybee_radiance/cli/sunpath.py#L299

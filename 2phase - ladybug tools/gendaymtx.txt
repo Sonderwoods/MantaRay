@@ -1,0 +1,1 @@
+gendaymtx -O0 -d -r 0.0 -u C:/Users/mm1013/simulation/ProjectName/tmptoh0qww1/sky.wea > C:/Users/mm1013/simulation/ProjectName/tmptoh0qww1/sky.mtx
