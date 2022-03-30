@@ -28,7 +28,7 @@ namespace GrasshopperRadianceLinuxConnector.Components
         {
             pManager.AddTextParameter("obj file paths", "obj file paths", "", GH_ParamAccess.list);
             pManager.AddTextParameter("map file", "map file", "mapping file", GH_ParamAccess.item);
-            pManager[pManager.AddTextParameter("linux target folder", "linux target folder", "", GH_ParamAccess.item, "~")].Optional = true;
+            pManager[pManager.AddTextParameter("Subfolder Override", "Subfolder Override", "Subfolder Override", GH_ParamAccess.item, "")].Optional = true;
             pManager.AddBooleanParameter("Run", "Run", "Run", GH_ParamAccess.item);
         }
 
@@ -58,7 +58,7 @@ namespace GrasshopperRadianceLinuxConnector.Components
 
             List<string> radFilePaths = new List<string>(allFilePaths.Count);
 
-            string sshPath = DA.Fetch<string>("linux target folder");
+            string subfolderOverride = DA.Fetch<string>("Subfolder Override");
 
             StringBuilder sb = new StringBuilder();
 
@@ -80,12 +80,12 @@ namespace GrasshopperRadianceLinuxConnector.Components
             {
                 try
                 {
-                SSH_Helper.Upload(allFilePaths[i], sshPath, sb);
+                SSH_Helper.Upload(allFilePaths[i], subfolderOverride, sb);
 
                 }
                 catch (Renci.SshNet.Common.SftpPathNotFoundException e)
                 {
-                    sb.AppendFormat("Could not upload files - Path not found ({0})! {1}", sshPath, e.Message);
+                    sb.AppendFormat("Could not upload files - Path not found ({0})! {1}", subfolderOverride, e.Message);
                     break;
                 }
                 
@@ -93,8 +93,8 @@ namespace GrasshopperRadianceLinuxConnector.Components
                 if (i > 0) // skipping a command at the map file
                 {
                     string radFilePath = Path.GetFileNameWithoutExtension(allFilePaths[i]);
-                    SSH_Helper.Execute($"obj2rad -m {sshPath}/{Path.GetFileName(allFilePaths[0])} -f {sshPath}/{Path.GetFileName(allFilePaths[i])} 2>&1 1>{sshPath}/{radFilePath}.rad", sb);
-                    radFilePaths.Add($"{sshPath}/{radFilePath}.rad");
+                    SSH_Helper.Execute($"obj2rad -m {subfolderOverride}/{Path.GetFileName(allFilePaths[0])} -f {subfolderOverride}/{Path.GetFileName(allFilePaths[i])} 2>&1 1>{subfolderOverride}/{radFilePath}.rad", sb);
+                    radFilePaths.Add($"{subfolderOverride}/{radFilePath}.rad");
                 }
             }
             

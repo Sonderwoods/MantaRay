@@ -23,13 +23,15 @@ namespace GrasshopperRadianceLinuxConnector.Components
         {
         }
 
+        private string _pw;
+
         /// <summary>
         /// Registers all the input parameters for this component.
         /// </summary>
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
-            pManager.AddTextParameter("user", "user", "input a string containing the linux user name.\nFor instance:\nmyName", GH_ParamAccess.item);
-            pManager.AddTextParameter("ip", "ip", "input a string containing the SSH ip address.\nFor instance:\n127.0.0.1", GH_ParamAccess.item);
+            pManager[pManager.AddTextParameter("user", "user", "input a string containing the linux user name.\nFor instance:\nmyName", GH_ParamAccess.item, System.Environment.UserName)].Optional = true;
+            pManager[pManager.AddTextParameter("ip", "ip", "input a string containing the SSH ip address.\nFor instance:\n127.0.0.1", GH_ParamAccess.item, "127.0.0.1")].Optional = true;
             pManager[pManager.AddTextParameter("LinuxDir", "LinuxDir", "LinuxDir", GH_ParamAccess.item, "")].Optional = true;
             pManager[pManager.AddTextParameter("WindowsDir", "WindowsDir", "WindowsDir", GH_ParamAccess.item, "")].Optional = true;
             pManager[pManager.AddTextParameter("Subfolder", "Subfolder", "Subfolder", GH_ParamAccess.item, "")].Optional = true;
@@ -70,12 +72,26 @@ namespace GrasshopperRadianceLinuxConnector.Components
 
                 if (password == "_prompt") //Default saved in the component
                 {
-                    if (GetPassword(username, out string pw))
-                        password = pw;
-                    else
-                        run = false;
+                    if (_pw == null)
+                    {
+                        if (GetPassword(username, out string pw))
+                            _pw = pw;
+                        else
+                            run = false;
+                    }
+                    
                 }
+                else
+                {
+                    _pw = password;
+                }
+                
             }
+            else
+            {
+                _pw = null; //reset
+            }
+            
 
             if (run)
             {
@@ -87,7 +103,7 @@ namespace GrasshopperRadianceLinuxConnector.Components
                     {
 
                         // Pasword based Authentication
-                        new PasswordAuthenticationMethod(username, password),
+                        new PasswordAuthenticationMethod(username, _pw),
 
                         //// Key Based Authentication (using keys in OpenSSH Format) Uncomment if you need the fingerprint!
                         //new PrivateKeyAuthenticationMethod(
@@ -120,8 +136,8 @@ namespace GrasshopperRadianceLinuxConnector.Components
                     SSH_Helper.DefaultSubfolder = subfolder;
                 }
 
-                sb.AppendFormat("SSH:  Setup windows folder to {0}", SSH_Helper.WindowsFullpath);
-                sb.AppendFormat("SSH:  Setup linux folder to {0}", SSH_Helper.LinuxFullpath);
+                sb.AppendFormat("SSH:  Setup windows folder to {0}\n", SSH_Helper.WindowsFullpath);
+                sb.AppendFormat("SSH:  Setup linux folder to {0}\n", SSH_Helper.LinuxFullpath);
 
 
                 try
@@ -177,6 +193,7 @@ namespace GrasshopperRadianceLinuxConnector.Components
             }
             else
             {
+                
                 TryDisconnect();
                 sb.Append("Sftp + SSH: Disconnected\n");
             }

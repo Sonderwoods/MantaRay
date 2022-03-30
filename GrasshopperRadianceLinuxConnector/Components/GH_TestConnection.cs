@@ -31,6 +31,7 @@ namespace GrasshopperRadianceLinuxConnector.Components
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
             pManager.AddTextParameter("status", "status", "status", GH_ParamAccess.item);
+            pManager.AddTextParameter("errors", "errors", "errors", GH_ParamAccess.list);
         }
 
         /// <summary>
@@ -42,11 +43,11 @@ namespace GrasshopperRadianceLinuxConnector.Components
 
             StringBuilder sb = new StringBuilder();
 
-
+            List<string> errors = new List<string>();
             try
             {
-                SSH_Helper.Execute("cd ~ && ls -lah", sb);
-                SSH_Helper.Execute("pwd", sb);
+                SSH_Helper.Execute("cd ~ && ls -lah | head", stdout:sb);
+                SSH_Helper.Execute("pwd", stdout:sb);
             }
             catch (Renci.SshNet.Common.SshConnectionException e)
             {

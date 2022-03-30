@@ -32,7 +32,9 @@ namespace GrasshopperRadianceLinuxConnector
         /// </summary>
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
-            pManager.AddTextParameter("stout", "stout", "stout", GH_ParamAccess.item);
+            pManager.AddTextParameter("stdout", "stdout", "stdout", GH_ParamAccess.item);
+            pManager.AddTextParameter("stderr", "stderr", "stderr", GH_ParamAccess.item);
+            pManager.AddTextParameter("log", "log", "log", GH_ParamAccess.item);
         }
 
         /// <summary>
@@ -43,9 +45,17 @@ namespace GrasshopperRadianceLinuxConnector
         {
             if (DA.Fetch<bool>("Run"))
             {
+                StringBuilder log = new StringBuilder();
+                StringBuilder stdout = new StringBuilder();
+                StringBuilder errors = new StringBuilder();
                 List<string> commands = DA.FetchList<string>("SSH Commands");
                 string command = String.Join(";", commands);
-                DA.SetData("stout", SSH_Helper.Execute(command));
+
+                SSH_Helper.Execute(command, log, stdout, errors, prependSuffix: true);
+
+                DA.SetData("stdout", stdout);
+                DA.SetData("stderr", errors);
+                DA.SetData("log", log);
 
             }
 

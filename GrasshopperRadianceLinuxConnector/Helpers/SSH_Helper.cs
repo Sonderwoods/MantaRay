@@ -30,24 +30,44 @@ namespace GrasshopperRadianceLinuxConnector
             }
         }
 
-        public static string LinuxDir(this string s)
+        public static string ToLinuxPath(this string s)
         {
             if (s.StartsWith(WindowsParentPath))
             {
-                return linuxParentPath + "/" + s.Substring(0, WindowsFullpath.Length).Replace("\\", "/");
+                return linuxParentPath + "/" + s.Substring(0, WindowsFullpath.Length).Replace(@"\", "/");
             }
             else
-                return s.Replace("\\", "/");
+                return s.Replace(@"\", "/");
         }
 
-        public static string WindowsDir(this string s)
+        public static string ToWindowsPath(this string s)
         {
             if (s.StartsWith(LinuxParentPath))
             {
-                return windowsParentPath + "\\" + s.Substring(0, LinuxParentPath.Length).Replace("/", "\\");
+                return windowsParentPath + @"\" + s.Substring(0, LinuxParentPath.Length).Replace("/", @"\");
             }
             else
-                return s.Replace("/", "\\");
+                return s.Replace("/", @"\");
+        }
+
+        public static string LinuxDir(string subfolderOverride = null)
+        {
+            if (!string.IsNullOrEmpty(subfolderOverride))
+            {
+                return linuxParentPath + "/" + subfolderOverride.Replace(@"\", "/");
+            }
+            else
+                return _linuxFullpath;
+        }
+
+        public static string WindowsDir(string subfolderOverride = null)
+        {
+            if (!string.IsNullOrEmpty(subfolderOverride))
+            {
+                return windowsParentPath + @"\" + subfolderOverride.Replace("/", @"\");
+            }
+            else
+                return _windowsFullpath;
         }
 
 
@@ -62,7 +82,7 @@ namespace GrasshopperRadianceLinuxConnector
         /// Path without any ending backslash
         /// </summary>
         public static string WindowsParentPath { get => windowsParentPath; set { windowsParentPath = value; UpdatePaths(); } }
-        static string windowsParentPath = Environment.SpecialFolder.UserProfile + "\\";
+        static string windowsParentPath = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
 
         /// <summary>
         /// default subfolder WITHOUT starting slash.
@@ -70,8 +90,8 @@ namespace GrasshopperRadianceLinuxConnector
         public static string DefaultSubfolder { get => defaultSubfolder; set { defaultSubfolder = value; UpdatePaths(); } }
         static string defaultSubfolder = "simulation";
 
-        static string _linuxFullpath = linuxParentPath + "/" + defaultSubfolder.Replace("\\", "/");
-        static string _windowsFullpath = windowsParentPath + "/" + defaultSubfolder.Replace("/", "\\");
+        static string _linuxFullpath = linuxParentPath + "/" + defaultSubfolder.Replace(@"\", "/");
+        static string _windowsFullpath = windowsParentPath + @"\" + defaultSubfolder.Replace("/", @"\");
 
         public static string LinuxFullpath => _linuxFullpath;
         public static string WindowsFullpath => _windowsFullpath;
@@ -91,7 +111,7 @@ namespace GrasshopperRadianceLinuxConnector
             "export PATH=$PATH:/usr/local/radiance/bin",
             "export RAYPATH=./usr/local/radiance/lib",
             "export DISPLAY=$(ip route list default | awk '{print $3}'):0",
-            "export LIBGL_ALWAYS_INDIRECT = 1"
+            "export LIBGL_ALWAYS_INDIRECT=1"
         };
 
         private static SshClient sshClient;
@@ -123,8 +143,12 @@ namespace GrasshopperRadianceLinuxConnector
         private static SftpClient sftpClient;
 
 
-        public static void Upload(string localFileName, string SshPath = "~/simulation", StringBuilder sb = null)
+        public static void Upload(string localFileName, string sshPath = null, StringBuilder sb = null)
         {
+            if (string.IsNullOrEmpty(sshPath))
+            {
+                sshPath = _linuxFullpath;
+            }
 
             if (SSH_Helper.SftpClient != null && SSH_Helper.SftpClient.IsConnected)
             {
@@ -169,7 +193,7 @@ namespace GrasshopperRadianceLinuxConnector
                 sb.Append(" ");
                 sb.Append(DateTime.Now.ToShortTimeString());
                 sb.Append("] Uploaded ");
-                sb.Append(SshPath);
+                sb.Append(sshPath);
                 sb.Append("/");
                 sb.Append(Path.GetFileName(localFileName));
                 sb.Append("\n");
@@ -200,47 +224,85 @@ namespace GrasshopperRadianceLinuxConnector
         }
 
 
-        public static void Execute(string command, StringBuilder sb, bool prependSuffix = true)
+
+
+        public static void Execute(string command, StringBuilder log = null, StringBuilder stdout = null, StringBuilder errors = null, bool prependSuffix = true)
         {
+
+
             if (IsSshConnected())
             {
-
-
-                sb.Append("[");
-                sb.Append(DateTime.Now.ToShortDateString());
-                sb.Append(" ");
-                sb.Append(DateTime.Now.ToShortTimeString());
-                sb.Append("] $ ");
-                sb.Append(command);
+                if (log != null)
+                {
+                    log.Append("[");
+                    log.Append(DateTime.Now.ToShortDateString());
+                    log.Append(" ");
+                    log.Append(DateTime.Now.ToShortTimeString());
+                    log.Append("] $ ");
+                    log.Append(command);
+                }
 
 
                 if (prependSuffix)
-                    command = String.Join(";", Suffixes) + ";" + command;
+                    command = String.Join("\n", Suffixes) + ";" + command;
 
                 var cmd = sshClient.CreateCommand(command);
                 cmd.Execute();
 
 
-                sb.Append("\n");
-                sb.AppendLine(cmd.Result);
+
+                if (!string.IsNullOrEmpty(cmd.Error) && errors != null)
+                {
+                    errors.Append("[");
+                    errors.Append(DateTime.Now.ToShortDateString());
+                    errors.Append(" ");
+                    errors.Append(DateTime.Now.ToShortTimeString());
+                    errors.Append("] $ ");
+                    errors.Append(command.Substring(0, Math.Min(30, command.Length - 1)));
+                    errors.Append("\n");
+
+                    errors.Append(cmd.Error);
+                    errors.Append("\n");
+
+
+                }
+
+
+                //stdout.Append("\n");
+                if (stdout != null)
+                {
+                    stdout.Append(cmd.Result.Trim('\n', '\r'));
+
+                }
 
 
             }
 
         }
 
-        public static string Execute(string command, bool prependSuffix = true)
+
+
+        public static string Execute(string command, out string error, bool prependSuffix = true)
         {
             if (IsSshConnected())
             {
                 if (prependSuffix)
                     command += ";" + String.Join(";", Suffixes);
-                var cmd = sshClient.CreateCommand(command);
+                //string randomFilename = Path.GetRandomFileName();
+                var cmd = sshClient.CreateCommand($"{command}");
                 cmd.Execute();
-                return cmd.Result;
+
+                error = cmd.Error;
+
+                return cmd.Result.Trim('\n', '\r');
 
             }
-            else return null;
+
+            {
+                error = "Not Connected";
+                return null;
+
+            }
         }
 
 
@@ -260,23 +322,23 @@ namespace GrasshopperRadianceLinuxConnector
         static void UpdatePaths()
         {
 
-            windowsParentPath = windowsParentPath.Replace("/", "\\");
+            windowsParentPath = windowsParentPath.Replace("/", @"\");
 
-            if (windowsParentPath.EndsWith("\\"))
+            if (windowsParentPath.EndsWith(@"\"))
             {
                 windowsParentPath = windowsParentPath.Substring(0, windowsParentPath.Length - 1);
             }
 
 
-            linuxParentPath = linuxParentPath.Replace("\\", "/");
+            linuxParentPath = linuxParentPath.Replace(@"\", "/");
 
             if (linuxParentPath.EndsWith("/"))
             {
                 linuxParentPath = linuxParentPath.Substring(0, linuxParentPath.Length - 1);
             }
 
-            _linuxFullpath = linuxParentPath + "/" + defaultSubfolder.Replace("\\", "/");
-            _windowsFullpath = windowsParentPath + "/" + defaultSubfolder.Replace("/", "\\");
+            _linuxFullpath = linuxParentPath + "/" + defaultSubfolder.Replace(@"\", "/");
+            _windowsFullpath = windowsParentPath + "/" + defaultSubfolder.Replace("/", @"\");
 
         }
     }

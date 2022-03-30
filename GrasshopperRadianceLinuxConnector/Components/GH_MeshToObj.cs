@@ -83,10 +83,10 @@ namespace GrasshopperRadianceLinuxConnector
             }
             else
             {
-                workingDir = SSH_Helper.WindowsParentPath + "\\" + subfolder;
+                workingDir = SSH_Helper.WindowsParentPath + @"\" + subfolder;
             }
 
-            workingDir = (workingDir.EndsWith("\\") || workingDir.EndsWith("/")) ? workingDir : workingDir + "\\";
+            workingDir = (workingDir.EndsWith(@"\") || workingDir.EndsWith("/")) ? workingDir : workingDir + @"\";
 
             string mappingFilePath = $"{workingDir}mapping.map";
 

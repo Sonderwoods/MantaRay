@@ -56,6 +56,8 @@ namespace GrasshopperRadianceLinuxConnector.Components
             List<Point3d> pts = DA.FetchList<Point3d>("Points");
             List<Vector3d> vects = DA.FetchList<Vector3d>("Vectors");
             StringBuilder ptsFile = new StringBuilder();
+            StringBuilder sb = new StringBuilder();
+            
 
             if (pts.Count == 0)
             {
@@ -106,6 +108,18 @@ namespace GrasshopperRadianceLinuxConnector.Components
             }
 
             System.IO.File.WriteAllText(ptsFilePath, ptsFile.ToString());
+
+
+            try
+            {
+                SSH_Helper.Upload(ptsFilePath, ptsFilePath, sb);
+
+            }
+            catch (Renci.SshNet.Common.SftpPathNotFoundException e)
+            {
+                sb.AppendFormat("Could not upload files - Path not found ({0})! {1}", ptsFilePath, e.Message);
+                
+            }
 
 
         }
