@@ -34,7 +34,7 @@ namespace GrasshopperRadianceLinuxConnector
         {
             if (s.StartsWith(WindowsParentPath))
             {
-                return linuxParentPath + "/" + s.Substring(0, WindowsFullpath.Length).Replace(@"\", "/");
+                return linuxParentPath + s.Substring(WindowsParentPath.Length).Replace(@"\", "/");
             }
             else
                 return s.Replace(@"\", "/");
@@ -44,7 +44,7 @@ namespace GrasshopperRadianceLinuxConnector
         {
             if (s.StartsWith(LinuxParentPath))
             {
-                return windowsParentPath + @"\" + s.Substring(0, LinuxParentPath.Length).Replace("/", @"\");
+                return windowsParentPath + s.Substring(0, LinuxParentPath.Length).Replace("/", @"\");
             }
             else
                 return s.Replace("/", @"\");
@@ -145,23 +145,30 @@ namespace GrasshopperRadianceLinuxConnector
 
         public static void Upload(string localFileName, string sshPath = null, StringBuilder sb = null)
         {
-            if (string.IsNullOrEmpty(sshPath))
-            {
-                sshPath = _linuxFullpath;
-            }
+            localFileName = localFileName.Replace("/", "\\");
 
             if (SSH_Helper.SftpClient != null && SSH_Helper.SftpClient.IsConnected)
             {
                 try
                 {
                     HomeDirectory = HomeDirectory ?? sftpClient.WorkingDirectory;
-                    //SshPath = SshPath.Replace("~", HomeDirectory);
+
+                    if (string.IsNullOrEmpty(sshPath))
+                    {
+                        sshPath = _linuxFullpath;
+                    }
+
+                    sshPath = sshPath.TrimEnd('/');
+
+                    sshPath = sshPath.Replace("~", HomeDirectory);
+
+                    SSH_Helper.Execute($"mkdir -p {sshPath}");
                     //SSH_Helper.SftpClient.ChangeDirectory(SshPath);
-                    SSH_Helper.SftpClient.ChangeDirectory(HomeDirectory);
+                    SSH_Helper.SftpClient.ChangeDirectory(sshPath);
                 }
                 catch (Renci.SshNet.Common.SftpPathNotFoundException e)
                 {
-                    throw new Renci.SshNet.Common.SftpPathNotFoundException($"Linux Path not found {e.Message}.\nTry {HomeDirectory}\nThe current working directory is {sftpClient.WorkingDirectory}");
+                    throw new Renci.SshNet.Common.SftpPathNotFoundException($"Linux Path not found\n{e.Message}.\nTry {HomeDirectory}\nThe current working directory is {sftpClient.WorkingDirectory}");
                 }
 
                 if (!File.Exists(localFileName))
@@ -170,7 +177,15 @@ namespace GrasshopperRadianceLinuxConnector
 
                 using (var uplfileStream = File.OpenRead(localFileName))
                 {
+                    try
+                    {
                     SSH_Helper.SftpClient.UploadFile(uplfileStream, Path.GetFileName(localFileName), true);
+
+                    }
+                    catch (Renci.SshNet.Common.SftpPermissionDeniedException e)
+                    {
+                        throw new Renci.SshNet.Common.SftpPermissionDeniedException($"Tried accessing {sshPath}\nLocal file is {localFileName}\n{e.Message}", e);
+                    }
                 }
 
                 //SSH_Helper.Execute($"cd ~;mv {Path.GetFileName(localFileName)} {SshPath}", sb);
@@ -189,9 +204,7 @@ namespace GrasshopperRadianceLinuxConnector
             if (sb != null)
             {
                 sb.Append("[");
-                sb.Append(DateTime.Now.ToShortDateString());
-                sb.Append(" ");
-                sb.Append(DateTime.Now.ToShortTimeString());
+                sb.Append(DateTime.Now.ToString("G"));
                 sb.Append("] Uploaded ");
                 sb.Append(sshPath);
                 sb.Append("/");
@@ -203,50 +216,57 @@ namespace GrasshopperRadianceLinuxConnector
 
         }
 
-        public static bool IsSshConnected()
+        public static ConnectionDetails CheckConnection()
         {
             if (SSH_Helper.SshClient != null && SSH_Helper.SshClient.IsConnected)
             {
 
 
-                return true;
+                return ConnectionDetails.Connected;
 
 
             }
             else if (SSH_Helper.SshClient != null)
             {
-                throw new Renci.SshNet.Common.SshConnectionException("SSH: There is a SSH client but no connection. Please run the Connect SSH Component");
+                return ConnectionDetails.ClientNoConnection;
             }
             else
             {
-                throw new Renci.SshNet.Common.SshConnectionException("SSH: There is no SSH Client. Please run the Connect SSH Component");
+                return ConnectionDetails.NoClient;
             }
+        }
+
+        public enum ConnectionDetails
+        {
+            Connected,
+            ClientNoConnection,
+            NoClient
         }
 
 
 
 
-        public static void Execute(string command, StringBuilder log = null, StringBuilder stdout = null, StringBuilder errors = null, bool prependSuffix = true)
+        public static bool Execute(string command, StringBuilder log = null, StringBuilder stdout = null, StringBuilder errors = null, bool prependSuffix = true)
         {
+            bool success = true;
 
-
-            if (IsSshConnected())
+            if (CheckConnection() == ConnectionDetails.Connected)
             {
                 if (log != null)
                 {
                     log.Append("[");
-                    log.Append(DateTime.Now.ToShortDateString());
-                    log.Append(" ");
-                    log.Append(DateTime.Now.ToShortTimeString());
+                    log.Append(DateTime.Now.ToString("G"));
+
                     log.Append("] $ ");
                     log.Append(command);
+                    log.Append("\n");
                 }
 
 
-                if (prependSuffix)
-                    command = String.Join("\n", Suffixes) + ";" + command;
+                //if (prependSuffix)
+                //    command = String.Join("\n", Suffixes) + ";" + command;
 
-                var cmd = sshClient.CreateCommand(command);
+                var cmd = sshClient.CreateCommand(prependSuffix ? String.Join("\n", Suffixes) + ";" + command : command);
                 cmd.Execute();
 
 
@@ -254,15 +274,15 @@ namespace GrasshopperRadianceLinuxConnector
                 if (!string.IsNullOrEmpty(cmd.Error) && errors != null)
                 {
                     errors.Append("[");
-                    errors.Append(DateTime.Now.ToShortDateString());
-                    errors.Append(" ");
-                    errors.Append(DateTime.Now.ToShortTimeString());
-                    errors.Append("] $ ");
-                    errors.Append(command.Substring(0, Math.Min(30, command.Length - 1)));
+                    errors.Append(DateTime.Now.ToString("G"));
+                    errors.Append("] stderrr $ ");
+                    errors.Append(command.Substring(0, Math.Min(500, command.Length)).Replace("\n","\n    ").Replace(";","\n    "));
                     errors.Append("\n");
 
                     errors.Append(cmd.Error);
                     errors.Append("\n");
+
+                    success = false;
 
 
                 }
@@ -277,6 +297,31 @@ namespace GrasshopperRadianceLinuxConnector
 
 
             }
+            else
+            {
+                if (log != null)
+                {
+                    log.Append("[");
+                    log.Append(DateTime.Now.ToString("G"));
+
+                    log.Append("] $ ");
+                    log.Append(command);
+                    log.Append("\n ERROR: There was no connection. Please run the connect component again");
+                }
+
+                if (errors != null)
+                {
+                    errors.Append("[");
+                    errors.Append(DateTime.Now.ToString("G"));
+
+                    errors.Append("] $ ");
+                    errors.Append(command);
+                    errors.Append("\n ERROR: There was no connection. Please run the connect component again");
+                }
+                return false;
+            }
+
+            return success;
 
         }
 
@@ -284,7 +329,7 @@ namespace GrasshopperRadianceLinuxConnector
 
         public static string Execute(string command, out string error, bool prependSuffix = true)
         {
-            if (IsSshConnected())
+            if (CheckConnection() == ConnectionDetails.Connected)
             {
                 if (prependSuffix)
                     command += ";" + String.Join(";", Suffixes);

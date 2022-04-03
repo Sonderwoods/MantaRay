@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Grasshopper.Kernel;
+using Grasshopper.Kernel.Data;
 using Grasshopper.Kernel.Types;
 using Rhino.Geometry;
 
@@ -15,10 +16,11 @@ namespace GrasshopperRadianceLinuxConnector
         /// Initializes a new instance of the GH_MeshToRad class.
         /// </summary>
         public GH_MeshToObj()
-          : base("GH_MeshToRad", "GH_MeshToRad",
-              "GH_MeshToRad. Heavily inspired by\n" +
+          : base("MeshToObj", "Mesh2Obj",
+              "MeshToRad. Heavily inspired by\n" +
                 "https://github.com/ladybug-tools/honeybee-legacy/blob/master/userObjects/Honeybee_MSH2RAD.ghuser\n" +
-                "CAUTION: Does not export any UV mapping of materials etc. Just applies the modifer that you input.",
+                "CAUTION: Does not export any UV mapping of materials etc. Just applies the modifer that you input.\n" +
+                "Connect me to the ObjToRad component for rad files.",
               "Geo")
         {
         }
@@ -31,7 +33,9 @@ namespace GrasshopperRadianceLinuxConnector
             pManager.AddMeshParameter("Mesh", "Mesh", "Mesh", GH_ParamAccess.tree); //TODO: change to tree and allow parallel runs
             pManager.AddTextParameter("Name", "Name", "Name (will save name.rad)", GH_ParamAccess.tree);
             pManager.AddTextParameter("ModifierName", "ModifierName", "ModifierName - Name of the radiance material", GH_ParamAccess.tree);
-            pManager[pManager.AddTextParameter("Subfolder", "Subfolder", "Optional. Override the subfolder from the connection component.", GH_ParamAccess.item, "")].Optional = true;
+            pManager[pManager.AddTextParameter("Subfolder Override", "Subfolder", "Optional. Override the subfolder from the connection component.\n" +
+                "Example:\n" +
+                "simulation/objFiles", GH_ParamAccess.item, "")].Optional = true;
             pManager.AddBooleanParameter("Run", "Run", "Run", GH_ParamAccess.item);
         }
 
@@ -40,8 +44,9 @@ namespace GrasshopperRadianceLinuxConnector
         /// </summary>
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
-            pManager.AddTextParameter("Local File Paths", "Local File Paths", "Local Files", GH_ParamAccess.list);
-            pManager.AddTextParameter("Mapping File Path", "Mapping File Path", "", GH_ParamAccess.item);
+            pManager.AddTextParameter("Obj Files", "Obj Files", "path for exported obj files. Full local windows path. Output me into the obj2rad component.", GH_ParamAccess.list);
+            pManager.AddTextParameter("Map File", "Map File", "", GH_ParamAccess.item);
+            pManager.AddBooleanParameter("Run", "Run", "Run", GH_ParamAccess.tree);
             
         }
 
@@ -51,15 +56,18 @@ namespace GrasshopperRadianceLinuxConnector
         /// <param name="DA">The DA object is used to retrieve from inputs and store in outputs.</param>
         protected override void SolveInstance(IGH_DataAccess DA)
         {
-
-
+            //Read and parse the input.
+            var runTree = new GH_Structure<GH_Boolean>();
+            runTree.Append(new GH_Boolean(DA.Fetch<bool>("Run")));
+            Params.Output[Params.Output.Count - 1].ClearData();
+            DA.SetDataTree(Params.Output.Count - 1, runTree);
 
             if (!DA.Fetch<bool>("Run"))
                 return;
 
             string workingDir;
 
-            string subfolder = DA.Fetch<string>("Subfolder");
+            string subfolder = DA.Fetch<string>("Subfolder Override").Replace('/', '\\').Trim('\\'); //keep backslash as we're in windows.
 
             Grasshopper.Kernel.Data.GH_Structure<GH_Mesh> inMeshes = DA.FetchTree<GH_Mesh>("Mesh");
 
@@ -114,6 +122,9 @@ namespace GrasshopperRadianceLinuxConnector
                 localFilePaths.Add(workingDir + name + ".obj");
             }
 
+            if (!System.IO.Directory.Exists(System.IO.Path.GetDirectoryName(mappingFilePath)))
+                System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(mappingFilePath));
+
             System.IO.File.WriteAllText(mappingFilePath, mapping.ToString());
 
 
@@ -164,8 +175,9 @@ namespace GrasshopperRadianceLinuxConnector
             //});
 
 
-            DA.SetDataList("Local File Paths", localFilePaths);
-            DA.SetData("Mapping File Path", mappingFilePath);
+            DA.SetDataList("Obj Files", localFilePaths);
+            DA.SetData("Map File", mappingFilePath);
+
 
 
 

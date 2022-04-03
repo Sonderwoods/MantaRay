@@ -8,6 +8,8 @@ using System.Text;
 using System.Windows.Forms;
 using System.Drawing;
 using System.Diagnostics;
+using Grasshopper.Kernel.Data;
+using Grasshopper.Kernel.Types;
 
 namespace GrasshopperRadianceLinuxConnector.Components
 {
@@ -46,9 +48,10 @@ namespace GrasshopperRadianceLinuxConnector.Components
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
             pManager.AddTextParameter("status", "status", "status", GH_ParamAccess.item);
+            pManager.AddTextParameter("Run", "Run", "Run", GH_ParamAccess.tree);
         }
 
-       
+
 
         /// <summary>
         /// This is the method that actually does the work.
@@ -79,19 +82,19 @@ namespace GrasshopperRadianceLinuxConnector.Components
                         else
                             run = false;
                     }
-                    
+
                 }
                 else
                 {
                     _pw = password;
                 }
-                
+
             }
             else
             {
                 _pw = null; //reset
             }
-            
+
 
             if (run)
             {
@@ -161,7 +164,7 @@ namespace GrasshopperRadianceLinuxConnector.Components
                     sb.AppendFormat("SSH:  {0}\n", e.Message);
                 }
 
-                
+
                 sb.Append("\n");
 
                 stopwatch.Restart();
@@ -188,18 +191,27 @@ namespace GrasshopperRadianceLinuxConnector.Components
                 {
                     sb.AppendFormat("Sftp: {0}\n", e.Message);
                 }
-                
+
                 sb.Append("\n");
             }
             else
             {
-                
+
                 TryDisconnect();
                 sb.Append("Sftp + SSH: Disconnected\n");
             }
 
 
             DA.SetData("status", sb.ToString());
+
+
+            //the run output
+            var runTree = new GH_Structure<GH_Boolean>();
+            runTree.Append(new GH_Boolean(SSH_Helper.CheckConnection() == SSH_Helper.ConnectionDetails.Connected));
+            Params.Output[Params.Output.Count - 1].ClearData();
+            DA.SetDataTree(Params.Output.Count - 1, runTree);
+
+
         }
 
         public void TryDisconnect()

@@ -16,7 +16,7 @@ namespace GrasshopperRadianceLinuxConnector.Components
           : base("Points To .pts", "Points2pts",
               "Export a list of points and vectors to a pts  file. If no vectors are supplied, we assume vect=Z.\n" +
                 "Uploads the pts file to the linux server",
-              "Export")
+              "Geo")
         {
         }
 
@@ -27,8 +27,8 @@ namespace GrasshopperRadianceLinuxConnector.Components
         {
             pManager.AddPointParameter("Points", "Points", "Points", GH_ParamAccess.list);
             pManager[pManager.AddVectorParameter("Vectors","Vectors","Vectors. Default is 0,0,1", GH_ParamAccess.list, new Vector3d(0,0,1))].Optional = true;
-            pManager[pManager.AddTextParameter("Name", "Name", "Name (will save name.pts)", GH_ParamAccess.item, "")].Optional = true;
-            pManager[pManager.AddTextParameter("Subfolder", "Subfolder", "Optional. Override the subfolder from the connection component.", GH_ParamAccess.item, "")].Optional = true;
+            pManager[pManager.AddTextParameter("Name", "Name", "Name (will save name.pts)", GH_ParamAccess.item, "points")].Optional = true;
+            pManager[pManager.AddTextParameter("Subfolder Override", "Subfolder Override", "Optional. Override the subfolder from the connection component.", GH_ParamAccess.item, "")].Optional = true;
             pManager.AddBooleanParameter("Run", "Run", "Run", GH_ParamAccess.item);
 
         }
@@ -50,6 +50,7 @@ namespace GrasshopperRadianceLinuxConnector.Components
 
             if (!DA.Fetch<bool>("Run"))
                 return;
+
 
             string name = DA.Fetch<string>("Name");
 
@@ -84,35 +85,63 @@ namespace GrasshopperRadianceLinuxConnector.Components
 
             string workingDir;
 
-            string subfolder = DA.Fetch<string>("Subfolder");
+            string subfolderOverride = DA.Fetch<string>("Subfolder Override").Replace('\\','/').Trim('/');
 
 
-            if (string.IsNullOrEmpty(subfolder))
+            if (string.IsNullOrEmpty(subfolderOverride))
             {
                 workingDir = SSH_Helper.WindowsFullpath;
             }
             else
             {
-                workingDir = SSH_Helper.WindowsParentPath + "\\" + subfolder;
+                workingDir = SSH_Helper.WindowsParentPath + "\\" + subfolderOverride;
             }
 
             workingDir = (workingDir.EndsWith("\\") || workingDir.EndsWith("/")) ? workingDir : workingDir + "\\";
 
-            string ptsFilePath = $"{workingDir}{name}.obj";
+            
 
 
+            switch(Rhino.RhinoDoc.ActiveDoc.GetUnitSystemName(true, false, true, false))
+                {
+                case "meter":
+                    for (int i = 0; i < pts.Count; i++)
+                    {
+                        ptsFile.AppendFormat("{0:0.000} {1:0.000} {2:0.000} {3:0.000} {4:0.000} {5:0.000}\r\n", pts[i].X, pts[i].Y, pts[i].Z, vects[i].X, vects[i].Y, vects[i].Z);
+                    }
+                    break;
+                case "millimeter":
+                    for (int i = 0; i < pts.Count; i++)
+                    {
+                        ptsFile.AppendFormat("{0:0} {1:0} {2:0} {3:0} {4:0} {5:0}\r\n", pts[i].X, pts[i].Y, pts[i].Z, vects[i].X, vects[i].Y, vects[i].Z);
+                    }
+                    break;
+                default:
+                    for (int i = 0; i < pts.Count; i++)
+                    {
+                        ptsFile.AppendFormat("{0} {1} {2} {3} {4} {5}\r\n", pts[i].X, pts[i].Y, pts[i].Z, vects[i].X, vects[i].Y, vects[i].Z);
+                    }
+                    break;
 
-            for (int i = 0; i < pts.Count; i++)
-            {
-                ptsFile.AppendFormat("{0} {1} {2} {3} {4} {5} {6}\r\n", pts[i].X, pts[i].Y, pts[i].Z, vects[i].X, vects[i].Y, vects[i].Z);
+
             }
 
+            string ptsFilePath = $"{workingDir}{name}.pts";
+
+            // Create windows directories
+            if (!System.IO.Directory.Exists(System.IO.Path.GetDirectoryName(ptsFilePath)))
+                System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(ptsFilePath));
+
+            
             System.IO.File.WriteAllText(ptsFilePath, ptsFile.ToString());
 
+            string linuxPath = string.IsNullOrEmpty(subfolderOverride) ? SSH_Helper.LinuxFullpath : SSH_Helper.LinuxParentPath + "/" + subfolderOverride;
 
             try
             {
-                SSH_Helper.Upload(ptsFilePath, ptsFilePath, sb);
+                
+                //SSH_Helper.Upload(ptsFilePath, linuxPath, sb);
+                SSH_Helper.Upload(ptsFilePath, linuxPath, sb);
 
             }
             catch (Renci.SshNet.Common.SftpPathNotFoundException e)
@@ -121,21 +150,11 @@ namespace GrasshopperRadianceLinuxConnector.Components
                 
             }
 
+            DA.SetData(0, ptsFilePath.ToLinuxPath());
+
 
         }
 
-        /// <summary>
-        /// Provides an Icon for the component.
-        /// </summary>
-        protected override System.Drawing.Bitmap Icon
-        {
-            get
-            {
-                //You can add image files to your project resources and access them like this:
-                // return Resources.IconForThisComponent;
-                return null;
-            }
-        }
 
         /// <summary>
         /// Gets the unique ID for this component. Do not change this ID after release.
