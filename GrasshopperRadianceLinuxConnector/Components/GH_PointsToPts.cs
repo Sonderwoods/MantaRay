@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using Grasshopper.Kernel;
+using Grasshopper.Kernel.Data;
 using Grasshopper.Kernel.Types;
 using Rhino.Geometry;
 
@@ -16,7 +17,7 @@ namespace GrasshopperRadianceLinuxConnector.Components
           : base("Points To .pts", "Points2pts",
               "Export a list of points and vectors to a pts  file. If no vectors are supplied, we assume vect=Z.\n" +
                 "Uploads the pts file to the linux server",
-              "Geo")
+              "2 Radiance")
         {
         }
 
@@ -39,6 +40,7 @@ namespace GrasshopperRadianceLinuxConnector.Components
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
             pManager.AddTextParameter("pts file", "pts file", "pts file", GH_ParamAccess.item);
+            pManager.AddTextParameter("Run", "Run", "Run", GH_ParamAccess.tree);
         }
 
         /// <summary>
@@ -48,11 +50,17 @@ namespace GrasshopperRadianceLinuxConnector.Components
         protected override void SolveInstance(IGH_DataAccess DA)
         {
 
+            //Read and parse the input.
+            var runTree = new GH_Structure<GH_Boolean>();
+            runTree.Append(new GH_Boolean(DA.Fetch<bool>("Run")));
+            Params.Output[Params.Output.Count - 1].ClearData();
+            DA.SetDataTree(Params.Output.Count - 1, runTree);
+
             if (!DA.Fetch<bool>("Run"))
                 return;
 
 
-            string name = DA.Fetch<string>("Name");
+            string name = DA.Fetch<string>("Name").AddGlobals();
 
             List<Point3d> pts = DA.FetchList<Point3d>("Points");
             List<Vector3d> vects = DA.FetchList<Vector3d>("Vectors");
@@ -85,7 +93,7 @@ namespace GrasshopperRadianceLinuxConnector.Components
 
             string workingDir;
 
-            string subfolderOverride = DA.Fetch<string>("Subfolder Override").Replace('\\','/').Trim('/');
+            string subfolderOverride = DA.Fetch<string>("Subfolder Override").AddGlobals().Replace('\\','/').Trim('/');
 
 
             if (string.IsNullOrEmpty(subfolderOverride))

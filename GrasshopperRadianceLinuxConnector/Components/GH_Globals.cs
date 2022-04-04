@@ -1,19 +1,19 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
+
 using Grasshopper.Kernel;
 using Rhino.Geometry;
 
 namespace GrasshopperRadianceLinuxConnector.Components
 {
-    public class GH_TestConnection : GH_Template
+    public class GH_Globals : GH_Template
     {
         /// <summary>
-        /// Initializes a new instance of the GH_TestConnection class.
+        /// Initializes a new instance of the GH_Globals class.
         /// </summary>
-        public GH_TestConnection()
-          : base("TestConnection", "TestConnection",
-              "Test connection",
+        public GH_Globals()
+          : base("Setup Globals", "Globals",
+              "Sets globals that can be replaced in the ssh commands and in paths",
               "0 Setup")
         {
         }
@@ -23,6 +23,8 @@ namespace GrasshopperRadianceLinuxConnector.Components
         /// </summary>
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
+            pManager.AddTextParameter("Keys", "Keys", "Keys", GH_ParamAccess.list);
+            pManager.AddTextParameter("Values", "Values", "Values", GH_ParamAccess.list);
         }
 
         /// <summary>
@@ -30,8 +32,7 @@ namespace GrasshopperRadianceLinuxConnector.Components
         /// </summary>
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
-            pManager.AddTextParameter("status", "status", "status", GH_ParamAccess.item);
-            pManager.AddTextParameter("errors", "errors", "errors", GH_ParamAccess.list);
+            pManager.AddTextParameter("Pairs", "Pairs", "Pairs", GH_ParamAccess.list);
         }
 
         /// <summary>
@@ -40,25 +41,25 @@ namespace GrasshopperRadianceLinuxConnector.Components
         /// <param name="DA">The DA object is used to retrieve from inputs and store in outputs.</param>
         protected override void SolveInstance(IGH_DataAccess DA)
         {
+            List<string> keys = DA.FetchList<string>("Keys");
+            List<string> values = DA.FetchList<string>("Values");
+            List<string> outPairs = new List<string>(keys.Count);
 
-            StringBuilder sb = new StringBuilder();
-
-            List<string> errors = new List<string>();
-            try
+            if (keys.Count != values.Count)
             {
-                SSH_Helper.Execute("cd ~ && ls -lah | head", stdout:sb);
-                SSH_Helper.Execute("pwd", stdout:sb);
+                throw new ArgumentOutOfRangeException("The list lengths does not match");
             }
-            catch (Renci.SshNet.Common.SshConnectionException e)
+
+            GlobalsHelper.Globals.Clear();
+
+            for (int i = 0; i < keys.Count; i++)
             {
-                sb.Append(e.Message);
+                GlobalsHelper.Globals.Add(keys[i], values[i]);
+                outPairs.Add($"<{keys[i]}> --> {values[i]}");
             }
-            
 
-
-            DA.SetData("status", sb.ToString());
+            DA.SetDataList(0, outPairs);
         }
-
 
 
         /// <summary>
@@ -66,7 +67,7 @@ namespace GrasshopperRadianceLinuxConnector.Components
         /// </summary>
         public override Guid ComponentGuid
         {
-            get { return new Guid("76F064E6-AF97-49F4-856B-05521601AEF2"); }
+            get { return new Guid("A79EFEF6-AFDB-4A5F-8955-A3C51BCF7CE0"); }
         }
     }
 }

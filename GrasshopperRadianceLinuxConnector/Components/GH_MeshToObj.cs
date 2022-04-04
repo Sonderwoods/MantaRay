@@ -21,7 +21,7 @@ namespace GrasshopperRadianceLinuxConnector
                 "https://github.com/ladybug-tools/honeybee-legacy/blob/master/userObjects/Honeybee_MSH2RAD.ghuser\n" +
                 "CAUTION: Does not export any UV mapping of materials etc. Just applies the modifer that you input.\n" +
                 "Connect me to the ObjToRad component for rad files.",
-              "Geo")
+              "2 Radiance")
         {
         }
 
@@ -67,7 +67,7 @@ namespace GrasshopperRadianceLinuxConnector
 
             string workingDir;
 
-            string subfolder = DA.Fetch<string>("Subfolder Override").Replace('/', '\\').Trim('\\'); //keep backslash as we're in windows.
+            string subfolder = DA.Fetch<string>("Subfolder Override").AddGlobals().Replace('/', '\\').Trim('\\'); //keep backslash as we're in windows.
 
             Grasshopper.Kernel.Data.GH_Structure<GH_Mesh> inMeshes = DA.FetchTree<GH_Mesh>("Mesh");
 
@@ -117,7 +117,7 @@ namespace GrasshopperRadianceLinuxConnector
 
                 string name = names[i][0].Value.Replace(" ", "_");
 
-                mapping.AppendFormat("\n{0} (Group \"{1}\");", modifierName, name);
+                mapping.AppendFormat("\n{0} (Group \"{1}\");", modifierName.AddGlobals(), name.AddGlobals());
 
                 localFilePaths.Add(workingDir + name + ".obj");
             }

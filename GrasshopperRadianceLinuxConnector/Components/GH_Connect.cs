@@ -19,9 +19,9 @@ namespace GrasshopperRadianceLinuxConnector.Components
         /// Initializes a new instance of the GH_Connect class.
         /// </summary>
         public GH_Connect()
-          : base("Connect SSH", "Connect SSH",
-              "Connect to the SSH",
-              "SSH")
+          : base("Connect SSH/FTP", "Connect",
+              "Connect to the SSH and FTP",
+              "0 Setup")
         {
         }
 

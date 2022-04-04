@@ -143,9 +143,109 @@ namespace GrasshopperRadianceLinuxConnector
         private static SftpClient sftpClient;
 
 
-        public static void Upload(string localFileName, string sshPath = null, StringBuilder sb = null)
+
+        public static void Download(string linuxFileName, string localTargetFolder, StringBuilder status = null)
+        {
+            linuxFileName = linuxFileName.Replace("\\", "/");
+
+            if (SSH_Helper.SftpClient != null && SSH_Helper.SftpClient.IsConnected)
+            {
+                //try
+                //{
+                    
+
+                    if (string.IsNullOrEmpty(localTargetFolder))
+                    {
+                        localTargetFolder = _windowsFullpath;
+                    }
+
+                    localTargetFolder = localTargetFolder.TrimEnd('\\') + "\\";
+
+                    //using (var remoteFileStream = SSH_Helper.SftpClient.OpenRead(linuxFileName))
+                    //{
+                    //    var textReader = new System.IO.StreamReader(remoteFileStream);
+                    //    string s = textReader.ReadToEnd();
+                    //    File.WriteAllText(localTargetFolder +Path.GetFileName(linuxFileName.Replace("/", "\\")), s);
+                    //}
+
+
+
+                    using (var saveFile = File.OpenWrite(localTargetFolder + Path.GetFileName(linuxFileName.Replace("/", "\\"))))
+                    {
+                        SSH_Helper.SftpClient.DownloadFile(linuxFileName, saveFile);
+                    }
+                    
+
+                //}
+                //catch (Renci.SshNet.Common.SftpPathNotFoundException e)
+                //{
+                //    throw new Renci.SshNet.Common.SftpPathNotFoundException($"Linux Path not found\n{e.Message}.\nTry {HomeDirectory}\nThe current working directory is {sftpClient.WorkingDirectory}");
+                //}
+
+                //if (!File.Exists(linuxFileName))
+                //    throw new FileNotFoundException("Local file not found: " + linuxFileName);
+
+
+                //using (var uplfileStream = File.OpenRead(linuxFileName))
+                //{
+                //    try
+                //    {
+                //        SSH_Helper.SftpClient.UploadFile(uplfileStream, Path.GetFileName(linuxFileName), true);
+
+                //    }
+                //    catch (Renci.SshNet.Common.SftpPermissionDeniedException e)
+                //    {
+                //        throw new Renci.SshNet.Common.SftpPermissionDeniedException($"Tried accessing {localTargetFolder}\nLocal file is {linuxFileName}\n{e.Message}", e);
+                //    }
+                //}
+
+                //SSH_Helper.Execute($"cd ~;mv {Path.GetFileName(localFileName)} {SshPath}", sb);
+
+
+            }
+            else if (SSH_Helper.SftpClient != null)
+            {
+                throw new Renci.SshNet.Common.SshConnectionException("Sftp: There is a Sftp client but no connection. Please run the Connect SSH Component");
+            }
+            else
+            {
+                throw new Renci.SshNet.Common.SshConnectionException("Sftp: There is no Sftp client. Please run the Connect SSH Component");
+            }
+
+            if (status != null)
+            {
+                status.Append("[");
+                status.Append(DateTime.Now.ToString("G"));
+                status.Append("] Downloaded ");
+                status.Append(localTargetFolder);
+                status.Append("/");
+                status.Append(Path.GetFileName(linuxFileName));
+                status.Append("\n");
+            }
+
+
+
+        }
+
+
+
+
+        public static void Upload(string localFileName, string sshPath = null, StringBuilder status = null)
         {
             localFileName = localFileName.Replace("/", "\\");
+
+            if (string.IsNullOrEmpty(sshPath))
+            {
+                sshPath = _linuxFullpath;
+            }
+
+            if (String.Compare(Path.GetDirectoryName(localFileName).ToLinuxPath(), sshPath, StringComparison.OrdinalIgnoreCase) == 0)
+            {
+                status?.Append("The paths are the same, so skipping the upload\n");
+                return;
+            }
+
+
 
             if (SSH_Helper.SftpClient != null && SSH_Helper.SftpClient.IsConnected)
             {
@@ -153,10 +253,7 @@ namespace GrasshopperRadianceLinuxConnector
                 {
                     HomeDirectory = HomeDirectory ?? sftpClient.WorkingDirectory;
 
-                    if (string.IsNullOrEmpty(sshPath))
-                    {
-                        sshPath = _linuxFullpath;
-                    }
+                    
 
                     sshPath = sshPath.TrimEnd('/');
 
@@ -201,15 +298,15 @@ namespace GrasshopperRadianceLinuxConnector
                 throw new Renci.SshNet.Common.SshConnectionException("Sftp: There is no Sftp client. Please run the Connect SSH Component");
             }
 
-            if (sb != null)
+            if (status != null)
             {
-                sb.Append("[");
-                sb.Append(DateTime.Now.ToString("G"));
-                sb.Append("] Uploaded ");
-                sb.Append(sshPath);
-                sb.Append("/");
-                sb.Append(Path.GetFileName(localFileName));
-                sb.Append("\n");
+                status.Append("[");
+                status.Append(DateTime.Now.ToString("G"));
+                status.Append("] Uploaded ");
+                status.Append(sshPath);
+                status.Append("/");
+                status.Append(Path.GetFileName(localFileName));
+                status.Append("\n");
             }
 
 

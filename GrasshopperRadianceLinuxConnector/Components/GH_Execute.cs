@@ -16,7 +16,7 @@ namespace GrasshopperRadianceLinuxConnector
         public GH_Execute()
           : base("Execute SSH", "Execute SSH",
               "Use me to execute a SSH Command",
-              "SSH")
+              "1 SSH")
         {
         }
 
@@ -60,7 +60,7 @@ namespace GrasshopperRadianceLinuxConnector
                 StringBuilder stdout = new StringBuilder();
                 StringBuilder errors = new StringBuilder();
                 List<string> commands = DA.FetchList<string>("SSH Commands");
-                string command = String.Join(";", commands);
+                string command = String.Join(";", commands).AddGlobals();
 
                 bool success = SSH_Helper.Execute(command, log, stdout, errors, prependSuffix: true);
 

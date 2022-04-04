@@ -19,7 +19,7 @@ namespace GrasshopperRadianceLinuxConnector.Components
           : base("ObjToRad", "Obj2Rad",
               "1) Copies your local obj files to the linux drive through SSH\n" +
                 "2) Runs the obj2rad command and uses the -m argument for parsing the mapping file",
-              "Geo")
+              "2 Radiance")
         {
         }
 
@@ -42,7 +42,7 @@ namespace GrasshopperRadianceLinuxConnector.Components
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
             pManager.AddTextParameter("Status", "Status", "status", GH_ParamAccess.item);
-            pManager.AddTextParameter("Rad Files", "Rad Files", "Relative path to the rad files", GH_ParamAccess.item);
+            pManager.AddTextParameter("Rad Files", "Rad Files", "Linux path to the rad files", GH_ParamAccess.item);
             pManager.AddTextParameter("Run", "Run", "Run", GH_ParamAccess.tree);
         }
 
@@ -72,7 +72,7 @@ namespace GrasshopperRadianceLinuxConnector.Components
 
             List<string> radFilePaths = new List<string>(allFilePaths.Count);
 
-            string subfolderOverride = DA.Fetch<string>("Subfolder Override").Replace('\\', '/').Trim('/');
+            string subfolderOverride = DA.Fetch<string>("Subfolder Override").AddGlobals().Replace('\\', '/').Trim('/');
 
             StringBuilder sb = new StringBuilder();
 
@@ -94,9 +94,11 @@ namespace GrasshopperRadianceLinuxConnector.Components
 
             for (int i = 0; i < allFilePaths.Count; i++)
             {
+
+                string filePath = allFilePaths[i];
                 try
                 {
-                    SSH_Helper.Upload(allFilePaths[i], linuxPath, sb);
+                    SSH_Helper.Upload(filePath, linuxPath, sb);
 
                 }
                 catch (Renci.SshNet.Common.SftpPathNotFoundException e)
@@ -109,8 +111,8 @@ namespace GrasshopperRadianceLinuxConnector.Components
                 if (i > 0) // skipping a command at the map file
                 {
 
-                    string radFilePath = Path.GetFileNameWithoutExtension(allFilePaths[i]);
-                    SSH_Helper.Execute($"obj2rad -m {linuxPath}/{Path.GetFileName(allFilePaths[0])} -f {linuxPath}/{Path.GetFileName(allFilePaths[i])} >{linuxPath}/{radFilePath}.rad", log: sb, errors: sb);
+                    string radFilePath = Path.GetFileNameWithoutExtension(filePath);
+                    SSH_Helper.Execute($"obj2rad -m {linuxPath}/{Path.GetFileName(allFilePaths[0].AddGlobals())} -f {linuxPath}/{Path.GetFileName(filePath)} >{linuxPath}/{radFilePath}.rad", log: sb, errors: sb);
                     radFilePaths.Add($"{linuxPath}/{radFilePath}.rad");
                 }
             }
