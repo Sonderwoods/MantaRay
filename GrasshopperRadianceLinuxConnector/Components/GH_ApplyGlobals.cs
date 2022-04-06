@@ -48,12 +48,13 @@ namespace GrasshopperRadianceLinuxConnector.Components
             List<string> values = DA.FetchList<string>("Additional Values");
             List<string> outPairs = new List<string>(keys.Count);
             List<string> inputs = DA.FetchList<string>("Input");
-            
+
 
 
             if (keys.Count != values.Count)
             {
-                throw new ArgumentOutOfRangeException("Lists lengths are not matching");
+                AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, "List lengths are not matching");
+                
             }
 
             foreach (KeyValuePair<string, string> item in GlobalsHelper.Globals)
@@ -71,11 +72,15 @@ namespace GrasshopperRadianceLinuxConnector.Components
 
 
             Dictionary<string, string> locals = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-            for (int i = 0; i < keys.Count; i++)
+
+            int valuesCount = values.Count;
+            int keysCount = keys.Count;
+
+            for (int i = 0; i < Math.Max(valuesCount, keysCount); i++)
             {
 
-                locals.Add(keys[i], values[i]);
-                outPairs.Add($"<{keys[i]}> --> {values[i]}");
+                locals.Add(keys[Math.Min(i, keysCount - 1)], values[Math.Min(i, valuesCount - 1)]);
+                outPairs.Add($"<{keys[Math.Min(i, keysCount - 1)]}> --> {values[Math.Min(i, valuesCount - 1)]}");
 
             }
 
