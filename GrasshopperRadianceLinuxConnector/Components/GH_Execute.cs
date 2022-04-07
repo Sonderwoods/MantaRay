@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Text;
 using Grasshopper.Kernel;
+using Grasshopper.Kernel.Data;
+using Grasshopper.Kernel.Types;
 using Rhino.Geometry;
 
 namespace GrasshopperRadianceLinuxConnector
@@ -14,7 +16,7 @@ namespace GrasshopperRadianceLinuxConnector
         public GH_Execute()
           : base("Execute SSH", "Execute SSH",
               "Use me to execute a SSH Command",
-              "SSH")
+              "1 SSH")
         {
         }
 
@@ -32,7 +34,11 @@ namespace GrasshopperRadianceLinuxConnector
         /// </summary>
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
-            pManager.AddTextParameter("stout", "stout", "stout", GH_ParamAccess.item);
+            pManager.AddTextParameter("stdout", "stdout", "stdout", GH_ParamAccess.item);
+            pManager.AddTextParameter("stderr", "stderr", "stderr", GH_ParamAccess.item);
+            //pManager.AddBooleanParameter("success", "success", "success", GH_ParamAccess.item);
+            pManager.AddTextParameter("log", "log", "log", GH_ParamAccess.item);
+            pManager.AddBooleanParameter("Ran", "Ran", "Ran without stderr", GH_ParamAccess.tree);
         }
 
         /// <summary>
@@ -41,13 +47,31 @@ namespace GrasshopperRadianceLinuxConnector
         /// <param name="DA">The DA object is used to retrieve from inputs and store in outputs.</param>
         protected override void SolveInstance(IGH_DataAccess DA)
         {
+            bool success = false;
+
+
             if (DA.Fetch<bool>("Run"))
             {
+                StringBuilder log = new StringBuilder();
+                StringBuilder stdout = new StringBuilder();
+                StringBuilder errors = new StringBuilder();
                 List<string> commands = DA.FetchList<string>("SSH Commands");
-                string command = String.Join(";", commands);
-                DA.SetData("stout", SSH_Helper.Execute(command));
+                string command = String.Join(";", commands).AddGlobals();
+
+                success = SSH_Helper.Execute(command, log, stdout, errors, prependSuffix: true);
+                
+                DA.SetData("stdout", stdout);
+                DA.SetData("stderr", errors);
+                DA.SetData("log", log);
+                //DA.SetData("success", success);
 
             }
+
+            //Read and parse the input.
+            var runTree = new GH_Structure<GH_Boolean>();
+            runTree.Append(new GH_Boolean(DA.Fetch<bool>("Run") && success));
+            Params.Output[Params.Output.Count - 1].ClearData();
+            DA.SetDataTree(Params.Output.Count - 1, runTree);
 
         }
 

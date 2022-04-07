@@ -8,6 +8,8 @@ using System.Text;
 using System.Windows.Forms;
 using System.Drawing;
 using System.Diagnostics;
+using Grasshopper.Kernel.Data;
+using Grasshopper.Kernel.Types;
 
 namespace GrasshopperRadianceLinuxConnector.Components
 {
@@ -17,19 +19,24 @@ namespace GrasshopperRadianceLinuxConnector.Components
         /// Initializes a new instance of the GH_Connect class.
         /// </summary>
         public GH_Connect()
-          : base("Connect SSH", "Connect SSH",
-              "Connect to the SSH",
-              "SSH")
+          : base("Connect SSH/FTP", "Connect",
+              "Connect to the SSH and FTP",
+              "0 Setup")
         {
         }
+
+        private string _pw;
 
         /// <summary>
         /// Registers all the input parameters for this component.
         /// </summary>
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
-            pManager.AddTextParameter("user", "user", "input a string containing the linux user name.\nFor instance:\nmyName", GH_ParamAccess.item);
-            pManager.AddTextParameter("ip", "ip", "input a string containing the SSH ip address.\nFor instance:\n127.0.0.1", GH_ParamAccess.item);
+            pManager[pManager.AddTextParameter("user", "user", "input a string containing the linux user name.\nFor instance:\nmyName", GH_ParamAccess.item, System.Environment.UserName)].Optional = true;
+            pManager[pManager.AddTextParameter("ip", "ip", "input a string containing the SSH ip address.\nFor instance:\n127.0.0.1", GH_ParamAccess.item, "127.0.0.1")].Optional = true;
+            pManager[pManager.AddTextParameter("LinuxDir", "LinuxDir", "LinuxDir", GH_ParamAccess.item, "")].Optional = true;
+            pManager[pManager.AddTextParameter("WindowsDir", "WindowsDir", "WindowsDir", GH_ParamAccess.item, "")].Optional = true;
+            pManager[pManager.AddTextParameter("Subfolder", "Subfolder", "Subfolder", GH_ParamAccess.item, "")].Optional = true;
             pManager[pManager.AddTextParameter("password", "password", "password. Leave empty to prompt.", GH_ParamAccess.item, "_prompt")].Optional = true;
             pManager[pManager.AddIntegerParameter("_port", "_port", "_port", GH_ParamAccess.item, 22)].Optional = true;
             pManager[pManager.AddBooleanParameter("connect", "connect", "connect", GH_ParamAccess.item, false)].Optional = true;
@@ -41,7 +48,10 @@ namespace GrasshopperRadianceLinuxConnector.Components
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
             pManager.AddTextParameter("status", "status", "status", GH_ParamAccess.item);
+            pManager.AddTextParameter("Run", "Run", "Run", GH_ParamAccess.tree);
         }
+
+
 
         /// <summary>
         /// This is the method that actually does the work.
@@ -51,6 +61,9 @@ namespace GrasshopperRadianceLinuxConnector.Components
         {
             string username = DA.Fetch<string>("user");
             string password = DA.Fetch<string>("password");
+            string linDir = DA.Fetch<string>("LinuxDir");
+            string winDir = DA.Fetch<string>("WindowsDir");
+            string subfolder = DA.Fetch<string>("Subfolder");
             string ip = DA.Fetch<string>("ip");
             int port = DA.Fetch<int>("_port");
             bool run = DA.Fetch<bool>("connect");
@@ -60,14 +73,28 @@ namespace GrasshopperRadianceLinuxConnector.Components
             if (run)
             {
 
-                if (password == "_prompt")
+                if (password == "_prompt") //Default saved in the component
                 {
-                    if (GetPassword(username, out string pw))
-                        password = pw;
-                    else
-                        run = false;
+                    if (_pw == null)
+                    {
+                        if (GetPassword(username, out string pw))
+                            _pw = pw;
+                        else
+                            run = false;
+                    }
+
                 }
+                else
+                {
+                    _pw = password;
+                }
+
             }
+            else
+            {
+                _pw = null; //reset
+            }
+
 
             if (run)
             {
@@ -79,7 +106,7 @@ namespace GrasshopperRadianceLinuxConnector.Components
                     {
 
                         // Pasword based Authentication
-                        new PasswordAuthenticationMethod(username, password),
+                        new PasswordAuthenticationMethod(username, _pw),
 
                         //// Key Based Authentication (using keys in OpenSSH Format) Uncomment if you need the fingerprint!
                         //new PrivateKeyAuthenticationMethod(
@@ -96,6 +123,26 @@ namespace GrasshopperRadianceLinuxConnector.Components
                 Stopwatch stopwatch = new Stopwatch();
                 //Connect SSH
                 SSH_Helper.SshClient = new SshClient(ConnNfo);
+
+                if (!string.IsNullOrEmpty(winDir))
+                {
+                    SSH_Helper.WindowsParentPath = System.IO.Path.GetDirectoryName(winDir);
+                }
+
+                if (!string.IsNullOrEmpty(linDir))
+                {
+                    SSH_Helper.LinuxParentPath = System.IO.Path.GetDirectoryName(linDir);
+                }
+
+                if (!string.IsNullOrEmpty(subfolder))
+                {
+                    SSH_Helper.DefaultSubfolder = subfolder;
+                }
+
+                sb.AppendFormat("SSH:  Setup windows folder to {0}\n", SSH_Helper.WindowsFullpath);
+                sb.AppendFormat("SSH:  Setup linux folder to {0}\n", SSH_Helper.LinuxFullpath);
+
+
                 try
                 {
                     SSH_Helper.SshClient.Connect();
@@ -117,7 +164,7 @@ namespace GrasshopperRadianceLinuxConnector.Components
                     sb.AppendFormat("SSH:  {0}\n", e.Message);
                 }
 
-                
+
                 sb.Append("\n");
 
                 stopwatch.Restart();
@@ -144,17 +191,30 @@ namespace GrasshopperRadianceLinuxConnector.Components
                 {
                     sb.AppendFormat("Sftp: {0}\n", e.Message);
                 }
-                
+
                 sb.Append("\n");
             }
             else
             {
+
                 TryDisconnect();
                 sb.Append("Sftp + SSH: Disconnected\n");
             }
 
 
             DA.SetData("status", sb.ToString());
+
+
+            //the run output
+            var runTree = new GH_Structure<GH_Boolean>();
+            runTree.Append(new GH_Boolean(SSH_Helper.CheckConnection() == SSH_Helper.ConnectionDetails.Connected));
+            Params.Output[Params.Output.Count - 1].ClearData();
+            DA.SetDataTree(Params.Output.Count - 1, runTree);
+
+            if (SSH_Helper.CheckConnection() != SSH_Helper.ConnectionDetails.Connected)
+                AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, "Not Connected");
+
+
         }
 
         public void TryDisconnect()
@@ -164,12 +224,35 @@ namespace GrasshopperRadianceLinuxConnector.Components
 
         public override void RemovedFromDocument(GH_Document document)
         {
-            base.RemovedFromDocument(document);
-
             TryDisconnect();
+
+            base.RemovedFromDocument(document);
 
 
         }
+
+        public override void DocumentContextChanged(GH_Document document, GH_DocumentContext context)
+        {
+            TryDisconnect();
+
+            base.DocumentContextChanged(document, context);
+        }
+
+        public override void AddedToDocument(GH_Document document)
+        {
+
+            Grasshopper.Instances.ActiveCanvas.Disposed -= ActiveCanvas_Disposed;
+            Grasshopper.Instances.ActiveCanvas.Disposed += ActiveCanvas_Disposed;
+            //TODO: Other events to subscribe to, to make sure to disconnect???
+
+            base.AddedToDocument(document);
+        }
+
+        private void ActiveCanvas_Disposed(object sender, EventArgs e)
+        {
+            TryDisconnect();
+        }
+
 
 
 
@@ -183,25 +266,43 @@ namespace GrasshopperRadianceLinuxConnector.Components
 
         private bool GetPassword(string username, out string password)
         {
-            Form prompt = new Form()
-            {
-                Width = 600,
-                Height = 270,
-                FormBorderStyle = FormBorderStyle.FixedDialog,
-                Text = "SSH Password",
-                StartPosition = FormStartPosition.CenterScreen
-            };
-            Font font = new Font("Times New Roman", 18.0f,
+
+            Font redFont = new Font("Arial", 18.0f,
                         FontStyle.Bold);
 
-            Label label = new Label() { Left = 50, Top = 35, Height = 15, Text = $"Insert password for {username}:" };
-            TextBox passwordTextBox = new TextBox() { Left = 50, Top = 70, Width = 400, Text = "", ForeColor = System.Drawing.Color.Red };
-            passwordTextBox.PasswordChar = '*';
-
-            Button connectButton = new Button() { Text = "Ok, connect", Left = 50, Width = 100, Top = 120, Height = 40, DialogResult = DialogResult.OK };
+            Font font = new Font("Arial", 10.0f,
+                        FontStyle.Bold);
 
 
-            Button cancel = new Button() { Text = "Cancel", Left = 300, Width = 100, Top = 120, Height = 40, DialogResult = DialogResult.Cancel };
+            Form prompt = new Form()
+            {
+                Width = 400,
+                Height = 270,
+                FormBorderStyle = FormBorderStyle.FixedDialog,
+                Text = "Connect to SSH",
+                StartPosition = FormStartPosition.CenterScreen,
+                BackColor = Color.FromArgb(255, 185, 185, 185),
+                ForeColor = Color.FromArgb(255, 30, 30, 30),
+                Font = font
+                
+            };
+            
+            
+
+            Label label = new Label() { Left = 50, Top = 35, Width=300, Height = 60, Text = $"Connecting to SSH\nInsert password for {username}:" };
+            TextBox passwordTextBox = new TextBox() { Left = 50, Top = 95, Width = 300, Height = 30, Text = "",
+                ForeColor = Color.FromArgb(255, 230, 45, 14),
+                PasswordChar = '*',
+                Font = redFont,
+                BackColor = Color.FromArgb(255, 35, 25, 20),
+                Margin = new Padding(2)
+            };
+            
+
+
+
+            Button connectButton = new Button() { Text = "Connect", Left = 50, Width = 100, Top = 150, Height = 40, DialogResult = DialogResult.OK };
+            Button cancel = new Button() { Text = "Cancel", Left = 250, Width = 100, Top = 150, Height = 40, DialogResult = DialogResult.Cancel };
 
             prompt.Controls.AddRange(new Control[] { label, passwordTextBox, connectButton, cancel });
 

@@ -1,19 +1,19 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
+
 using Grasshopper.Kernel;
 using Rhino.Geometry;
 
 namespace GrasshopperRadianceLinuxConnector.Components
 {
-    public class GH_TestConnection : GH_Template
+    public class GH_ConvertPaths : GH_Template
     {
         /// <summary>
-        /// Initializes a new instance of the GH_TestConnection class.
+        /// Initializes a new instance of the GH_ToLinux class.
         /// </summary>
-        public GH_TestConnection()
-          : base("TestConnection", "TestConnection",
-              "Test connection",
+        public GH_ConvertPaths()
+          : base("ConvertPaths", "ConvertPaths",
+              "converts a windows path to linux path",
               "0 Setup")
         {
         }
@@ -23,6 +23,7 @@ namespace GrasshopperRadianceLinuxConnector.Components
         /// </summary>
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
+            pManager.AddTextParameter("I", "I", "Input linux/windows path", GH_ParamAccess.item);
         }
 
         /// <summary>
@@ -30,8 +31,8 @@ namespace GrasshopperRadianceLinuxConnector.Components
         /// </summary>
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
-            pManager.AddTextParameter("status", "status", "status", GH_ParamAccess.item);
-            pManager.AddTextParameter("errors", "errors", "errors", GH_ParamAccess.list);
+            pManager.AddTextParameter("Linux", "L", "Linux", GH_ParamAccess.item);
+            pManager.AddTextParameter("Windows", "W", "Windows", GH_ParamAccess.item);
         }
 
         /// <summary>
@@ -40,25 +41,12 @@ namespace GrasshopperRadianceLinuxConnector.Components
         /// <param name="DA">The DA object is used to retrieve from inputs and store in outputs.</param>
         protected override void SolveInstance(IGH_DataAccess DA)
         {
+            string path = DA.Fetch<string>(0);
 
-            StringBuilder sb = new StringBuilder();
-
-            List<string> errors = new List<string>();
-            try
-            {
-                SSH_Helper.Execute("cd ~ && ls -lah | head", stdout:sb);
-                SSH_Helper.Execute("pwd", stdout:sb);
-            }
-            catch (Renci.SshNet.Common.SshConnectionException e)
-            {
-                sb.Append(e.Message);
-            }
             
-
-
-            DA.SetData("status", sb.ToString());
+            DA.SetData(0, path.ToLinuxPath());
+            DA.SetData(1, path.ToWindowsPath());
         }
-
 
 
         /// <summary>
@@ -66,7 +54,7 @@ namespace GrasshopperRadianceLinuxConnector.Components
         /// </summary>
         public override Guid ComponentGuid
         {
-            get { return new Guid("76F064E6-AF97-49F4-856B-05521601AEF2"); }
+            get { return new Guid("AF816E54-D307-4E15-9FDD-3DD9A0DC61ED"); }
         }
     }
 }
