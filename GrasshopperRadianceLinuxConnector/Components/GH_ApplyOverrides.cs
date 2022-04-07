@@ -6,14 +6,14 @@ using Rhino.Geometry;
 
 namespace GrasshopperRadianceLinuxConnector.Components
 {
-    public class GH_ApplyGlobals : GH_Template
+    public class GH_ApplyOverrides : GH_Template
     {
         /// <summary>
         /// Initializes a new instance of the GH_ApplyGlobals class.
         /// </summary>
-        public GH_ApplyGlobals()
-          : base("Apply Globals", "ApplyGlobals",
-              "Adds the globals to the text element. This is mainly as a test component as it should be automatically applied to all text inputs in the other components.",
+        public GH_ApplyOverrides()
+          : base("Apply Overrides", "Overrides",
+              "Adds the overrides to the text element. This is mainly as a test component as it should be automatically applied to all text inputs in the other components.",
               "0 Setup")
         {
         }
@@ -23,7 +23,7 @@ namespace GrasshopperRadianceLinuxConnector.Components
         /// </summary>
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
-            pManager.AddTextParameter("Input", "Input", "input", GH_ParamAccess.list);
+            pManager.AddTextParameter("Input", "Input", "Input", GH_ParamAccess.list);
             pManager[pManager.AddTextParameter("Additional Keys", "Keys", "Keys", GH_ParamAccess.list, new List<string>())].Optional = true;
             pManager[pManager.AddTextParameter("Additional Values", "Values", "Values", GH_ParamAccess.list, new List<string>())].Optional = true;
         }
@@ -50,16 +50,25 @@ namespace GrasshopperRadianceLinuxConnector.Components
             List<string> inputs = DA.FetchList<string>("Input");
 
 
-
             if (keys.Count != values.Count)
             {
                 AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, "List lengths are not matching");
-                
+            }
+
+            int keysLength = 5;
+            if (GlobalsHelper.Globals.Keys.Count > 0)
+            {
+                keysLength = GlobalsHelper.Globals.Keys.Select(k => k.Length).Max();
+            }
+            if (keys.Count > 0)
+            {
+                keysLength = Math.Max(keysLength, keys.Select(k => k.Length).Max());
             }
 
             foreach (KeyValuePair<string, string> item in GlobalsHelper.Globals)
             {
                 outPairs.Add($"<{item.Key}> --> {item.Value}");
+                outPairs.Add($"{("<" + item.Key).PadRight(keysLength + 1)}> --> {item.Value}");
             }
 
             if (keys.Count == 0 && values.Count == 0)
@@ -67,7 +76,6 @@ namespace GrasshopperRadianceLinuxConnector.Components
                 DA.SetDataList(0, inputs.Select(s => s.AddGlobals()));
                 DA.SetDataList(1, outPairs);
                 return;
-
             }
 
 
@@ -78,10 +86,8 @@ namespace GrasshopperRadianceLinuxConnector.Components
 
             for (int i = 0; i < Math.Max(valuesCount, keysCount); i++)
             {
-
                 locals.Add(keys[Math.Min(i, keysCount - 1)], values[Math.Min(i, valuesCount - 1)]);
-                outPairs.Add($"<{keys[Math.Min(i, keysCount - 1)]}> --> {values[Math.Min(i, valuesCount - 1)]}");
-
+                outPairs.Add($"{("<" + keys[Math.Min(i, keysCount - 1)]).PadRight(keysLength + 1)}> --> {values[Math.Min(i, valuesCount - 1)]}");
             }
 
             List<string> outputs = new List<string>(inputs.Count);
@@ -90,9 +96,6 @@ namespace GrasshopperRadianceLinuxConnector.Components
 
             DA.SetDataList(0, outputs);
             DA.SetDataList(1, outPairs);
-
-
-
 
 
         }

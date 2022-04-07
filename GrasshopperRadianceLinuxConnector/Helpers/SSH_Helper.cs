@@ -134,6 +134,7 @@ namespace GrasshopperRadianceLinuxConnector
                     sftpClient.Disconnect();
                     sftpClient.Dispose();
                     sftpClient = value;
+                    sftpClient.BufferSize = 4096;
 
                 }
 
@@ -144,9 +145,9 @@ namespace GrasshopperRadianceLinuxConnector
 
         public static bool FileExistsInLinux(string path)
         {
-            StringBuilder dummySb = new StringBuilder(1);
-            Execute($"[ -f {path} ] && echo \"1\" || echo \"0\"", stdout: dummySb);
-            return string.Equals("1", dummySb.ToString());
+            StringBuilder sb = new StringBuilder(1);
+            Execute($"[ -f {path} ] && echo \"1\" || echo \"0\"", stdout: sb);
+            return string.Equals("1", sb.ToString());
         }
 
         public static bool FileExistsInWindows(string path)
@@ -188,30 +189,30 @@ namespace GrasshopperRadianceLinuxConnector
             {
                 //try
                 //{
-                    
-
-                    if (string.IsNullOrEmpty(localTargetFolder))
-                    {
-                        localTargetFolder = _windowsFullpath;
-                    }
-
-                    localTargetFolder = localTargetFolder.TrimEnd('\\') + "\\";
-
-                    //using (var remoteFileStream = SSH_Helper.SftpClient.OpenRead(linuxFileName))
-                    //{
-                    //    var textReader = new System.IO.StreamReader(remoteFileStream);
-                    //    string s = textReader.ReadToEnd();
-                    //    File.WriteAllText(localTargetFolder +Path.GetFileName(linuxFileName.Replace("/", "\\")), s);
-                    //}
 
 
+                if (string.IsNullOrEmpty(localTargetFolder))
+                {
+                    localTargetFolder = _windowsFullpath;
+                }
 
-                    using (var saveFile = File.OpenWrite(localTargetFolder + Path.GetFileName(linuxFileName.Replace("/", "\\"))))
-                    {
-                        SSH_Helper.SftpClient.DownloadFile(linuxFileName, saveFile);
-                    
-                    }
-                    
+                localTargetFolder = localTargetFolder.TrimEnd('\\') + "\\";
+
+                //using (var remoteFileStream = SSH_Helper.SftpClient.OpenRead(linuxFileName))
+                //{
+                //    var textReader = new System.IO.StreamReader(remoteFileStream);
+                //    string s = textReader.ReadToEnd();
+                //    File.WriteAllText(localTargetFolder +Path.GetFileName(linuxFileName.Replace("/", "\\")), s);
+                //}
+
+
+
+                using (var saveFile = File.OpenWrite(localTargetFolder + Path.GetFileName(linuxFileName.Replace("/", "\\"))))
+                {
+                    SSH_Helper.SftpClient.DownloadFile(linuxFileName, saveFile);
+
+                }
+
 
                 //}
                 //catch (Renci.SshNet.Common.SftpPathNotFoundException e)
@@ -290,7 +291,7 @@ namespace GrasshopperRadianceLinuxConnector
                 {
                     HomeDirectory = HomeDirectory ?? sftpClient.WorkingDirectory;
 
-                    
+
 
                     sshPath = sshPath.TrimEnd('/');
 
@@ -313,7 +314,7 @@ namespace GrasshopperRadianceLinuxConnector
                 {
                     try
                     {
-                    SSH_Helper.SftpClient.UploadFile(uplfileStream, Path.GetFileName(localFileName), true);
+                        SSH_Helper.SftpClient.UploadFile(uplfileStream, Path.GetFileName(localFileName), true);
 
                     }
                     catch (Renci.SshNet.Common.SftpPermissionDeniedException e)
@@ -382,41 +383,54 @@ namespace GrasshopperRadianceLinuxConnector
 
         public static bool Execute(string command, StringBuilder log = null, StringBuilder stdout = null, StringBuilder errors = null, bool prependSuffix = true)
         {
-            bool success = true;
+            bool success = false;
 
             if (CheckConnection() == ConnectionDetails.Connected)
             {
-                if (log != null)
-                {
-                    log.Append("[");
-                    log.Append(DateTime.Now.ToString("G"));
+                DateTime startTime = DateTime.Now;
 
-                    log.Append("] $ ");
-                    log.Append(command);
-                    log.Append("\n");
-                }
 
 
                 //if (prependSuffix)
                 //    command = String.Join("\n", Suffixes) + ";" + command;
 
-                var cmd = sshClient.CreateCommand(prependSuffix ? String.Join("\n", Suffixes) + ";" + command : command);
+                var cmd = sshClient.CreateCommand(prependSuffix ? String.Join(";", Suffixes) + ";" + command : command);
                 cmd.Execute();
 
-
-
-                if (!string.IsNullOrEmpty(cmd.Error) && errors != null)
+                if (log != null)
                 {
-                    errors.Append("[");
-                    errors.Append(DateTime.Now.ToString("G"));
-                    errors.Append("] stderrr $ ");
-                    errors.Append(command.Substring(0, Math.Min(500, command.Length)).Replace("\n","\n    ").Replace(";","\n    "));
-                    errors.Append("\n");
+                    log.Append("[");
+                    log.Append(startTime.ToString("G"));
 
-                    errors.Append(cmd.Error);
-                    errors.Append("\n");
+                    log.Append("] (");
+                    log.Append((DateTime.Now - startTime).TotalMilliseconds);
+                    log.Append("ms ) $ ");
+                    log.Append(command.Replace("\n","\n   ").Replace(";", "\n   "));
+                    log.Append("\n");
+                }
 
-                    success = false;
+
+
+                if (string.IsNullOrEmpty(cmd.Error))
+                {
+                    success = true;
+                }
+                else
+                {
+                    if (errors != null)
+                    {
+                        //errors.Append("[");
+                        //errors.Append(DateTime.Now.ToString("G"));
+                        //errors.Append("] stderrr $ ");
+                        //errors.Append(command.Substring(0, Math.Min(500, command.Length)).Replace("\n", "\n    ").Replace(";", "\n    "));
+                        //errors.Append("\n");
+
+                        errors.Append(cmd.Error);
+                        errors.Append("\n");
+
+                    }
+
+
 
 
                 }
@@ -431,7 +445,7 @@ namespace GrasshopperRadianceLinuxConnector
 
 
             }
-            else
+            else // no connection
             {
                 if (log != null)
                 {
@@ -439,7 +453,7 @@ namespace GrasshopperRadianceLinuxConnector
                     log.Append(DateTime.Now.ToString("G"));
 
                     log.Append("] $ ");
-                    log.Append(command);
+                    log.Append(command.Replace("\n", "\n   ").Replace(";", "\n   "));
                     log.Append("\n ERROR: There was no connection. Please run the connect component again");
                 }
 
@@ -449,39 +463,14 @@ namespace GrasshopperRadianceLinuxConnector
                     errors.Append(DateTime.Now.ToString("G"));
 
                     errors.Append("] $ ");
-                    errors.Append(command);
+                    errors.Append(command.Replace("\n", "\n   ").Replace(";", "\n   "));
                     errors.Append("\n ERROR: There was no connection. Please run the connect component again");
                 }
-                return false;
+                
             }
 
             return success;
 
-        }
-
-
-
-        public static string Execute(string command, out string error, bool prependSuffix = true)
-        {
-            if (CheckConnection() == ConnectionDetails.Connected)
-            {
-                if (prependSuffix)
-                    command += ";" + String.Join(";", Suffixes);
-                //string randomFilename = Path.GetRandomFileName();
-                var cmd = sshClient.CreateCommand($"{command}");
-                cmd.Execute();
-
-                error = cmd.Error;
-
-                return cmd.Result.Trim('\n', '\r');
-
-            }
-
-            {
-                error = "Not Connected";
-                return null;
-
-            }
         }
 
 

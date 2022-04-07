@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-
+using System.Linq;
 using Grasshopper.Kernel;
 using Rhino.Geometry;
 
@@ -12,7 +12,7 @@ namespace GrasshopperRadianceLinuxConnector.Components
         /// Initializes a new instance of the GH_Globals class.
         /// </summary>
         public GH_Globals()
-          : base("Setup Globals", "Globals",
+          : base("Global Overrides", "Global Overrides",
               "Sets globals that can be replaced in the ssh commands and in paths",
               "0 Setup")
         {
@@ -45,18 +45,29 @@ namespace GrasshopperRadianceLinuxConnector.Components
             List<string> values = DA.FetchList<string>("Values");
             List<string> outPairs = new List<string>(keys.Count);
 
+            if (Grasshopper.Instances.ActiveCanvas.Document.Objects.OfType<GH_Globals>().Count() > 1)
+                AddRuntimeMessage(GH_RuntimeMessageLevel.Warning,
+                    $"There's more than one {this.NickName} component on the canvas.\n" +
+                    $"One will override the other!\n" +
+                    $"Please only use ONE! Do you get it???\n" +
+                    $"For one to live the other one has to die\n" +
+                    $"It's like Harry Potter and Voldemort.");
+
             if (keys.Count != values.Count)
             {
-                throw new ArgumentOutOfRangeException("The list lengths does not match");
+                throw new ArgumentOutOfRangeException("The list lengths do not match");
             }
 
             GlobalsHelper.Globals.Clear();
 
+            int keysLength = keys.Count > 0 ? keys.Select(k => k.Length).Max() : 5;
+
             for (int i = 0; i < keys.Count; i++)
             {
                 GlobalsHelper.Globals.Add(keys[i], values[i]);
-                outPairs.Add($"<{keys[i]}> --> {values[i]}");
+                outPairs.Add($"{("<" + keys[i]).PadRight(keysLength + 1)}> --> {values[i]}");
             }
+
 
             DA.SetDataList(0, outPairs);
         }

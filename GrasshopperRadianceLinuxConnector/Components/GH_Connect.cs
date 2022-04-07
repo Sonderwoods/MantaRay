@@ -211,6 +211,9 @@ namespace GrasshopperRadianceLinuxConnector.Components
             Params.Output[Params.Output.Count - 1].ClearData();
             DA.SetDataTree(Params.Output.Count - 1, runTree);
 
+            if (SSH_Helper.CheckConnection() != SSH_Helper.ConnectionDetails.Connected)
+                AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, "Not Connected");
+
 
         }
 
@@ -263,25 +266,43 @@ namespace GrasshopperRadianceLinuxConnector.Components
 
         private bool GetPassword(string username, out string password)
         {
-            Form prompt = new Form()
-            {
-                Width = 600,
-                Height = 270,
-                FormBorderStyle = FormBorderStyle.FixedDialog,
-                Text = "SSH Password",
-                StartPosition = FormStartPosition.CenterScreen
-            };
-            Font font = new Font("Times New Roman", 18.0f,
+
+            Font redFont = new Font("Arial", 18.0f,
                         FontStyle.Bold);
 
-            Label label = new Label() { Left = 50, Top = 35, Height = 15, Text = $"Insert password for {username}:" };
-            TextBox passwordTextBox = new TextBox() { Left = 50, Top = 70, Width = 400, Text = "", ForeColor = System.Drawing.Color.Red };
-            passwordTextBox.PasswordChar = '*';
-
-            Button connectButton = new Button() { Text = "Ok, connect", Left = 50, Width = 100, Top = 120, Height = 40, DialogResult = DialogResult.OK };
+            Font font = new Font("Arial", 10.0f,
+                        FontStyle.Bold);
 
 
-            Button cancel = new Button() { Text = "Cancel", Left = 300, Width = 100, Top = 120, Height = 40, DialogResult = DialogResult.Cancel };
+            Form prompt = new Form()
+            {
+                Width = 400,
+                Height = 270,
+                FormBorderStyle = FormBorderStyle.FixedDialog,
+                Text = "Connect to SSH",
+                StartPosition = FormStartPosition.CenterScreen,
+                BackColor = Color.FromArgb(255, 185, 185, 185),
+                ForeColor = Color.FromArgb(255, 30, 30, 30),
+                Font = font
+                
+            };
+            
+            
+
+            Label label = new Label() { Left = 50, Top = 35, Width=300, Height = 60, Text = $"Connecting to SSH\nInsert password for {username}:" };
+            TextBox passwordTextBox = new TextBox() { Left = 50, Top = 95, Width = 300, Height = 30, Text = "",
+                ForeColor = Color.FromArgb(255, 230, 45, 14),
+                PasswordChar = '*',
+                Font = redFont,
+                BackColor = Color.FromArgb(255, 35, 25, 20),
+                Margin = new Padding(2)
+            };
+            
+
+
+
+            Button connectButton = new Button() { Text = "Connect", Left = 50, Width = 100, Top = 150, Height = 40, DialogResult = DialogResult.OK };
+            Button cancel = new Button() { Text = "Cancel", Left = 250, Width = 100, Top = 150, Height = 40, DialogResult = DialogResult.Cancel };
 
             prompt.Controls.AddRange(new Control[] { label, passwordTextBox, connectButton, cancel });
 

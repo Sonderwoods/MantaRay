@@ -90,7 +90,7 @@ namespace GrasshopperRadianceLinuxConnector.Components
 
         public static double TransmittanceToTransmissivity(double t)
         {
-            return (Math.Sqrt(0.8402528435 + 0.0072522239 * (Math.Pow(t,2)) - 0.9166530661) / 0.0036261119 / t);
+            return (Math.Sqrt(.8402528435 + .0072522239 * t * t) - .9166530661) / .0036261119 / t;
         }
 
 
