@@ -142,6 +142,42 @@ namespace GrasshopperRadianceLinuxConnector
 
         private static SftpClient sftpClient;
 
+        public static bool FileExistsInLinux(string path)
+        {
+            StringBuilder dummySb = new StringBuilder(1);
+            Execute($"[ -f {path} ] && echo \"1\" || echo \"0\"", stdout: dummySb);
+            return string.Equals("1", dummySb.ToString());
+        }
+
+        public static bool FileExistsInWindows(string path)
+        {
+            return File.Exists(path);
+        }
+
+        /// <summary>
+        /// Can read a file no matter if you input a linux or a windows path.
+        /// </summary>
+        /// <param name="path"></param>
+        /// <returns></returns>
+        /// <exception cref="FileNotFoundException"></exception>
+        public static string ReadFile(string path)
+        {
+            if (FileExistsInWindows(path))
+            {
+                return File.ReadAllText(path);
+            }
+            else if (FileExistsInLinux(path))
+            {
+                StringBuilder sb = new StringBuilder();
+                Execute($"cat \"path\"", stdout: sb);
+                return sb.ToString();
+            }
+            else
+            {
+                throw new FileNotFoundException("could not find the file on windows or linux", path);
+            }
+        }
+
 
 
         public static void Download(string linuxFileName, string localTargetFolder, StringBuilder status = null)
@@ -173,6 +209,7 @@ namespace GrasshopperRadianceLinuxConnector
                     using (var saveFile = File.OpenWrite(localTargetFolder + Path.GetFileName(linuxFileName.Replace("/", "\\"))))
                     {
                         SSH_Helper.SftpClient.DownloadFile(linuxFileName, saveFile);
+                    
                     }
                     
 

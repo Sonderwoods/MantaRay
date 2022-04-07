@@ -79,7 +79,7 @@ namespace GrasshopperRadianceLinuxConnector.Components
                 var specularity = specularities[i];
 
                 if (reflectance > 1.0)
-                    reflectance /= 255.0;
+                    reflectance /= 100.0;
 
                 if (reflectance >= 0.9)
                     this.AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, "Reflectances above 0.9 are uncommon");
