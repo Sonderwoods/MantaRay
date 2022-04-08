@@ -30,6 +30,8 @@ namespace GrasshopperRadianceLinuxConnector
             }
         }
 
+        private static Random rnd = new Random();
+
         public static string ToLinuxPath(this string s)
         {
             if (s.StartsWith(WindowsParentPath))
@@ -381,9 +383,16 @@ namespace GrasshopperRadianceLinuxConnector
 
 
 
-        public static bool Execute(string command, StringBuilder log = null, StringBuilder stdout = null, StringBuilder errors = null, bool prependSuffix = true)
+        public static int Execute(string command, StringBuilder log = null, StringBuilder stdout = null, StringBuilder errors = null, bool prependSuffix = true)
         {
-            bool success = false;
+            if (string.IsNullOrEmpty(command))
+            {
+                errors?.Append("Command was empty");
+                return -1;
+
+            }
+            //bool success = false;
+            int pid = -1;
 
             if (CheckConnection() == ConnectionDetails.Connected)
             {
@@ -393,9 +402,18 @@ namespace GrasshopperRadianceLinuxConnector
 
                 //if (prependSuffix)
                 //    command = String.Join("\n", Suffixes) + ";" + command;
+                int rand = rnd.Next(10000, 99999);
 
-                var cmd = sshClient.CreateCommand(prependSuffix ? String.Join(";", Suffixes) + ";" + command : command);
+                command = command.Trim('\n');
+
+                
+
+                var cmd = sshClient.CreateCommand((prependSuffix ? String.Join(";", Suffixes) + ";" + command : command) + $" & echo $! >~/temp{rand}.pid");
                 cmd.Execute();
+
+                var pidCommand = sshClient.CreateCommand($"cat  ~/temp{rand}.pid");
+                pidCommand.Execute();
+                
 
                 if (log != null)
                 {
@@ -413,7 +431,8 @@ namespace GrasshopperRadianceLinuxConnector
 
                 if (string.IsNullOrEmpty(cmd.Error))
                 {
-                    success = true;
+                    //success = true;
+                    pid = int.Parse(pidCommand.Result);
                 }
                 else
                 {
@@ -469,7 +488,7 @@ namespace GrasshopperRadianceLinuxConnector
                 
             }
 
-            return success;
+            return pid;
 
         }
 
