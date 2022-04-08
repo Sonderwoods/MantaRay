@@ -84,10 +84,15 @@ namespace GrasshopperRadianceLinuxConnector.Components
             int valuesCount = values.Count;
             int keysCount = keys.Count;
 
-            for (int i = 0; i < Math.Max(valuesCount, keysCount); i++)
+
+            if (valuesCount > 0 && keysCount > 0)
             {
-                locals.Add(keys[Math.Min(i, keysCount - 1)], values[Math.Min(i, valuesCount - 1)]);
-                outPairs.Add($"{("<" + keys[Math.Min(i, keysCount - 1)]).PadRight(keysLength + 1)}> --> {values[Math.Min(i, valuesCount - 1)]}");
+                for (int i = 0; i < Math.Max(valuesCount, keysCount); i++)
+                {
+                    locals.Add(keys[Math.Min(i, keysCount - 1)], values[Math.Min(i, valuesCount - 1)]);
+                    outPairs.Add($"{("<" + keys[Math.Min(i, keysCount - 1)]).PadRight(keysLength + 1)}> --> {values[Math.Min(i, valuesCount - 1)]}");
+                }
+
             }
 
             List<string> outputs = new List<string>(inputs.Count);

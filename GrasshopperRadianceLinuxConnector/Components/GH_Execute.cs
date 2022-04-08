@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using GH_IO.Serialization;
 using Grasshopper.Kernel;
 using Grasshopper.Kernel.Data;
 using Grasshopper.Kernel.Types;
@@ -38,8 +39,21 @@ namespace GrasshopperRadianceLinuxConnector
             pManager.AddTextParameter("stderr", "stderr", "stderr", GH_ParamAccess.item);
             //pManager.AddBooleanParameter("success", "success", "success", GH_ParamAccess.item);
             pManager.AddTextParameter("log", "log", "log", GH_ParamAccess.item);
-            pManager.AddBooleanParameter("Ran", "Ran", "Ran without stderr", GH_ParamAccess.tree);
+            pManager.AddIntegerParameter("Pid", "Pid", "Linux process id. Can be used to kill the task if it takes too long. Simply write in a bash prompt: kill <id>", GH_ParamAccess.item);
+            pManager.AddBooleanParameter("Ran", "Ran", "Ran without stderr", GH_ParamAccess.tree); //always keep ran as the last parameter
         }
+
+        public override void AddedToDocument(GH_Document document)
+        {
+            this.Hidden = true;
+            base.AddedToDocument(document);
+        }
+
+        public override bool IsPreviewCapable => true;
+
+        private string _stdout = string.Empty;
+
+
 
         /// <summary>
         /// This is the method that actually does the work.
@@ -52,18 +66,54 @@ namespace GrasshopperRadianceLinuxConnector
 
             if (DA.Fetch<bool>("Run"))
             {
+                this.Hidden = false;
+
                 StringBuilder log = new StringBuilder();
                 StringBuilder stdout = new StringBuilder();
                 StringBuilder errors = new StringBuilder();
                 List<string> commands = DA.FetchList<string>("SSH Commands");
                 string command = String.Join(";", commands).AddGlobals();
 
-                success = SSH_Helper.Execute(command, log, stdout, errors, prependSuffix: true);
-                
+
+
+                int pid = SSH_Helper.Execute(command, log, stdout, errors, prependSuffix: true);
+
+                bool itsJustAWarning = errors.ToString().Contains("warning");
+
+                success = pid > 0 || itsJustAWarning;
+
+                if (success)
+                {
+                    this.Message = "Success! pid: " + pid.ToString();
+                    _stdout = stdout.ToString();
+                    if (itsJustAWarning)
+                        AddRuntimeMessage(GH_RuntimeMessageLevel.Remark, errors.ToString());
+
+                }
+                else
+                {
+                    this.Message = "Error :-(";
+                    _stdout = string.Empty;
+                    AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, errors.ToString());
+
+                }
+
+
+
                 DA.SetData("stdout", stdout);
                 DA.SetData("stderr", errors);
                 DA.SetData("log", log);
+                DA.SetData("Pid", pid);
                 //DA.SetData("success", success);
+
+            }
+            else //run==false
+            {
+                this.Message = "";
+                this.Hidden = true;
+                DA.SetData("stdout", _stdout);
+                if (!String.IsNullOrEmpty(_stdout))
+                    AddRuntimeMessage(GH_RuntimeMessageLevel.Remark, "Using an old existing stdout\nThis can be convenient for opening old workflows and not running everything again.");
 
             }
 
@@ -74,6 +124,31 @@ namespace GrasshopperRadianceLinuxConnector
             DA.SetDataTree(Params.Output.Count - 1, runTree);
 
         }
+
+        public override bool Write(GH_IWriter writer)
+        {
+            writer.SetString("stdout", _stdout);
+            //GH_IWriter datastore = writer.CreateChunk("datastore");
+            //foreach (string key in store.Keys)
+            //{
+            //    GH_IWriter chunk = datastore.CreateChunk(key);
+            //    store[key].Write(datastore);
+            //}
+            return base.Write(writer);
+        }
+        public override bool Read(GH_IReader reader)
+        {
+            reader.TryGetString("stdout", ref _stdout);
+            //GH_IReader datastore = reader.FindChunk("datastore");
+            //foreach (GH_IReader chunk in datastore.Chunks)
+            //{
+            //    GH_Structure<IGH_Goo> tree = new GH_Structure<IGH_Goo>();
+            //    tree.Read(chunk);
+            //    store[chunk.Name] = tree;
+            //}
+            return base.Read(reader);
+        }
+
 
 
         /// <summary>

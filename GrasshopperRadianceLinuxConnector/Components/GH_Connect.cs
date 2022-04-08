@@ -10,6 +10,7 @@ using System.Drawing;
 using System.Diagnostics;
 using Grasshopper.Kernel.Data;
 using Grasshopper.Kernel.Types;
+using System.Linq;
 
 namespace GrasshopperRadianceLinuxConnector.Components
 {
@@ -59,6 +60,33 @@ namespace GrasshopperRadianceLinuxConnector.Components
         /// <param name="DA">The DA object is used to retrieve from inputs and store in outputs.</param>
         protected override void SolveInstance(IGH_DataAccess DA)
         {
+
+            if (Grasshopper.Instances.ActiveCanvas.Document.Objects.OfType<GH_Connect>().Where(c => !Object.ReferenceEquals(c, this)).Count() > 0)
+            {
+                AddRuntimeMessage(GH_RuntimeMessageLevel.Warning,
+                    $"There's more than one {this.NickName} component on the canvas.\n" +
+                    $"One will override the other!\n" +
+                    $"Please only use ONE! Do you get it???\n" +
+                    $"For one to live the other one has to die\n" +
+                    $"It's like Harry Potter and Voldemort.\n\nDisable the other component and enable this one again. Fool.");
+
+                if (Grasshopper.Instances.ActiveCanvas.Document.Objects.
+                    OfType<GH_Connect>().
+                    Where(c => c.Locked != true).
+                    Where(c => !Object.ReferenceEquals(c, this)).
+                    Count() > 0)
+                {
+                    this.Locked = true;
+                    return;
+
+                }
+
+
+            }
+            Grasshopper.Instances.ActiveCanvas.Document.ArrangeObject(this, GH_Arrange.MoveToBack);
+
+
+
             string username = DA.Fetch<string>("user");
             string password = DA.Fetch<string>("password");
             string linDir = DA.Fetch<string>("LinuxDir");

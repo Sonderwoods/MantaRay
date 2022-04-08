@@ -45,13 +45,30 @@ namespace GrasshopperRadianceLinuxConnector.Components
             List<string> values = DA.FetchList<string>("Values");
             List<string> outPairs = new List<string>(keys.Count);
 
-            if (Grasshopper.Instances.ActiveCanvas.Document.Objects.OfType<GH_Globals>().Count() > 1)
+            if (Grasshopper.Instances.ActiveCanvas.Document.Objects.OfType<GH_Globals>().Where(c => !Object.ReferenceEquals(c, this)).Count() > 0)
+            {
                 AddRuntimeMessage(GH_RuntimeMessageLevel.Warning,
                     $"There's more than one {this.NickName} component on the canvas.\n" +
                     $"One will override the other!\n" +
                     $"Please only use ONE! Do you get it???\n" +
                     $"For one to live the other one has to die\n" +
-                    $"It's like Harry Potter and Voldemort.");
+                    $"It's like Harry Potter and Voldemort.\n\nDisable the other component and enable this one again. Fool.");
+
+                if (Grasshopper.Instances.ActiveCanvas.Document.Objects.
+                    OfType<GH_Globals>().
+                    Where(c => c.Locked != true).
+                    Where(c => !Object.ReferenceEquals(c, this)).
+                    Count() > 0)
+                {
+                    this.Locked = true;
+                    return;
+
+                }
+
+
+            }
+            Grasshopper.Instances.ActiveCanvas.Document.ArrangeObject(this, GH_Arrange.MoveToBack);
+
 
             if (keys.Count != values.Count)
             {
