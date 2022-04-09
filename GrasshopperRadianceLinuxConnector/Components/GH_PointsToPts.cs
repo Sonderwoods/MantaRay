@@ -50,14 +50,7 @@ namespace GrasshopperRadianceLinuxConnector.Components
         protected override void SolveInstance(IGH_DataAccess DA)
         {
 
-            //Read and parse the input.
-            var runTree = new GH_Structure<GH_Boolean>();
-            runTree.Append(new GH_Boolean(DA.Fetch<bool>("Run")));
-            Params.Output[Params.Output.Count - 1].ClearData();
-            DA.SetDataTree(Params.Output.Count - 1, runTree);
-
-            if (!DA.Fetch<bool>("Run"))
-                return;
+            
 
 
             string name = DA.Fetch<string>("Name").AddGlobals();
@@ -107,10 +100,17 @@ namespace GrasshopperRadianceLinuxConnector.Components
 
             workingDir = (workingDir.EndsWith("\\") || workingDir.EndsWith("/")) ? workingDir : workingDir + "\\";
 
-            
+
+            string ptsFilePath = $"{workingDir}{name}.pts";
+
+            // Create windows directories
+            if (!System.IO.Directory.Exists(System.IO.Path.GetDirectoryName(ptsFilePath)))
+                System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(ptsFilePath));
 
 
-            switch(Rhino.RhinoDoc.ActiveDoc.GetUnitSystemName(true, false, true, false))
+
+
+            switch (Rhino.RhinoDoc.ActiveDoc.GetUnitSystemName(true, false, true, false))
                 {
                 case "meter":
                     for (int i = 0; i < pts.Count; i++)
@@ -134,31 +134,48 @@ namespace GrasshopperRadianceLinuxConnector.Components
 
             }
 
-            string ptsFilePath = $"{workingDir}{name}.pts";
 
-            // Create windows directories
-            if (!System.IO.Directory.Exists(System.IO.Path.GetDirectoryName(ptsFilePath)))
-                System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(ptsFilePath));
+            //Read and parse the input.
+            var runTree = new GH_Structure<GH_Boolean>();
+            runTree.Append(new GH_Boolean(DA.Fetch<bool>("Run")));
+            Params.Output[Params.Output.Count - 1].ClearData();
+            DA.SetDataTree(Params.Output.Count - 1, runTree);
+
+            if (DA.Fetch<bool>("Run"))
+            {
+                System.IO.File.WriteAllText(ptsFilePath, ptsFile.ToString());
+
+                string linuxPath = string.IsNullOrEmpty(subfolderOverride) ? SSH_Helper.LinuxFullpath : SSH_Helper.LinuxParentPath + "/" + subfolderOverride;
+
+                try
+                {
+
+                    //SSH_Helper.Upload(ptsFilePath, linuxPath, sb);
+                    SSH_Helper.Upload(ptsFilePath, linuxPath, sb);
+
+                }
+                catch (Renci.SshNet.Common.SftpPathNotFoundException e)
+                {
+                    sb.AppendFormat("Could not upload files - Path not found ({0})! {1}", ptsFilePath, e.Message);
+
+                }
+
+                DA.SetData(0, ptsFilePath.ToLinuxPath());
+            }
+            else
+            {
+                if (SSH_Helper.FileExistsInLinux(ptsFilePath.ToLinuxPath()))
+                {
+                    DA.SetData(0, ptsFilePath.ToLinuxPath());
+                    AddRuntimeMessage(GH_RuntimeMessageLevel.Remark, "Reusing points from existing file");
+                }
+                    
+            }
+
 
             
-            System.IO.File.WriteAllText(ptsFilePath, ptsFile.ToString());
 
-            string linuxPath = string.IsNullOrEmpty(subfolderOverride) ? SSH_Helper.LinuxFullpath : SSH_Helper.LinuxParentPath + "/" + subfolderOverride;
-
-            try
-            {
-                
-                //SSH_Helper.Upload(ptsFilePath, linuxPath, sb);
-                SSH_Helper.Upload(ptsFilePath, linuxPath, sb);
-
-            }
-            catch (Renci.SshNet.Common.SftpPathNotFoundException e)
-            {
-                sb.AppendFormat("Could not upload files - Path not found ({0})! {1}", ptsFilePath, e.Message);
-                
-            }
-
-            DA.SetData(0, ptsFilePath.ToLinuxPath());
+            
 
 
         }

@@ -89,6 +89,10 @@ namespace GrasshopperRadianceLinuxConnector.Components
             {
                 for (int i = 0; i < Math.Max(valuesCount, keysCount); i++)
                 {
+                    if (values[Math.Min(i, valuesCount - 1)] == null)
+                    {
+                        AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, "Null item - missing a value???");
+                    }
                     locals.Add(keys[Math.Min(i, keysCount - 1)], values[Math.Min(i, valuesCount - 1)]);
                     outPairs.Add($"{("<" + keys[Math.Min(i, keysCount - 1)]).PadRight(keysLength + 1)}> --> {values[Math.Min(i, valuesCount - 1)]}");
                 }
