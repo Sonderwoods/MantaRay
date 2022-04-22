@@ -17,6 +17,9 @@ Parallel Meshing and mesh2obj creation (in gh).. And it's ok fast compared to LB
 Access to ImageMagick and the meta functions in Radiance
 ![image](https://user-images.githubusercontent.com/19936679/159573035-72523b98-e2ad-40d1-ae82-ecc9f5068288.png)
 
+## Todo:
+Check out the issues on my todo list [here](https://github.com/Sonderwoods/GrasshopperRadianceLinuxConnector/issues).
+
 
 
 
