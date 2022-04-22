@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -38,8 +39,11 @@ namespace GrasshopperRadianceLinuxConnector
                 "Example: you have 3 objects:  floor/ceiling/wall\n" +
                 "then you should join all your floor meshes into one joined floor mesh, same for the others.\n" +
                 "And input it as a grafted list. This will make the component run 3 meshing engines at the same time.", GH_ParamAccess.tree); //TODO: change to tree and allow parallel runs
+            
             pManager.AddTextParameter("Name", "Name", "Name (will save name.rad)", GH_ParamAccess.tree);
+            pManager[1].DataMapping = GH_DataMapping.Graft;
             pManager.AddTextParameter("ModifierName", "ModifierName", "ModifierName - Name of the radiance material", GH_ParamAccess.tree);
+            pManager[2].DataMapping = GH_DataMapping.Graft;
             pManager[pManager.AddTextParameter("Subfolder Override", "Subfolder", "Optional. Override the subfolder from the connection component.\n" +
                 "Example:\n" +
                 "simulation/objFiles", GH_ParamAccess.item, "")].Optional = true;
@@ -119,6 +123,10 @@ namespace GrasshopperRadianceLinuxConnector
 
             for (int i = 0; i < inMeshes.Branches.Count; i++)
             {
+                if (names[i].Count > 1 || modifierNames[i].Count > 1)
+                {
+                    throw new Exception($"Please only use one modifier and one name per list input.\nThis is wrong in tree branch [{i}]");
+                }
 
                 string modifierName = modifierNames[i][0].Value.Replace(" ", "_");
 
@@ -169,7 +177,7 @@ namespace GrasshopperRadianceLinuxConnector
                     for (int j = 0; j < mesh.Vertices.Count; j++)
                     {
 
-                        geometryFile.AppendFormat("v {0:0.000} {1:0.000} {2:0.000}\r\n", mesh.Vertices[j].X, mesh.Vertices[j].Y, mesh.Vertices[j].Z);
+                        geometryFile.AppendFormat(CultureInfo.InvariantCulture, "v {0:0.000} {1:0.000} {2:0.000}\r\n", mesh.Vertices[j].X, mesh.Vertices[j].Y, mesh.Vertices[j].Z);
                         //TODO: Tolerances/Units?
                     }
 
@@ -177,25 +185,25 @@ namespace GrasshopperRadianceLinuxConnector
                     {
                         if (mesh.Faces[j].IsQuad)
                         {
-                            if (MeshToRadHelper.MeshNormalMatchesVertexOrder(mesh, j))
+                            if (!MeshToRadHelper.InverseVertexOrder(mesh, j))
                             {
-                                geometryFile.AppendFormat("f {0} {1} {2} {3}\r\n", mesh.Faces[j].A + 1, mesh.Faces[j].B + 1, mesh.Faces[j].C + 1, mesh.Faces[j].D + 1);
+                                geometryFile.AppendFormat(CultureInfo.InvariantCulture, "f {0} {1} {2} {3}\r\n", mesh.Faces[j].A + 1, mesh.Faces[j].B + 1, mesh.Faces[j].C + 1, mesh.Faces[j].D + 1);
                             }
                             else
                             {
-                                geometryFile.AppendFormat("f {0} {1} {2} {3}\r\n", mesh.Faces[j].D + 1, mesh.Faces[j].C + 1, mesh.Faces[j].B + 1, mesh.Faces[j].A + 1);
+                                geometryFile.AppendFormat(CultureInfo.InvariantCulture, "f {0} {1} {2} {3}\r\n", mesh.Faces[j].D + 1, mesh.Faces[j].C + 1, mesh.Faces[j].B + 1, mesh.Faces[j].A + 1);
 
                             }
                         }
                         else
                         {
-                            if (MeshToRadHelper.MeshNormalMatchesVertexOrder(mesh, j))
+                            if (!MeshToRadHelper.InverseVertexOrder(mesh, j))
                             {
-                                geometryFile.AppendFormat("f {0} {1} {2}\r\n", mesh.Faces[j].A + 1, mesh.Faces[j].B + 1, mesh.Faces[j].C + 1);
+                                geometryFile.AppendFormat(CultureInfo.InvariantCulture, "f {0} {1} {2}\r\n", mesh.Faces[j].A + 1, mesh.Faces[j].B + 1, mesh.Faces[j].C + 1);
                             }
                             else
                             {
-                                geometryFile.AppendFormat("f {0} {1} {2}\r\n", mesh.Faces[j].C + 1, mesh.Faces[j].B + 1, mesh.Faces[j].A + 1);
+                                geometryFile.AppendFormat(CultureInfo.InvariantCulture, "f {0} {1} {2}\r\n", mesh.Faces[j].C + 1, mesh.Faces[j].B + 1, mesh.Faces[j].A + 1);
                             }
                         }
                     }

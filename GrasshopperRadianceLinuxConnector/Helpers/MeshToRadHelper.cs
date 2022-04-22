@@ -11,7 +11,7 @@ namespace GrasshopperRadianceLinuxConnector
     {
 
         
-        public static bool MeshNormalMatchesVertexOrder(Mesh mesh, in int faceIndex)
+        public static bool InverseVertexOrder(Mesh mesh, in int faceIndex)
         {
             var face = mesh.Faces[faceIndex];
 
