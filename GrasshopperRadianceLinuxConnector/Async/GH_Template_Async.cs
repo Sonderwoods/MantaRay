@@ -20,6 +20,13 @@ namespace GrasshopperRadianceLinuxConnector
     /// </summary>
     public abstract class GH_TemplateAsync : GH_Template
     {
+
+
+        Timer Timer = new Timer();
+
+        public double RunTime { get; set; }
+        public DateTime StartTime { get; set; }
+        
         public override Guid ComponentGuid => throw new Exception("ComponentGuid should be overriden in any descendant of GH_AsyncComponent!");
 
         //List<(string, GH_RuntimeMessageLevel)> Errors;
@@ -84,6 +91,9 @@ namespace GrasshopperRadianceLinuxConnector
                         ExpireSolution(true);
                     });
                 }
+                RunTime = Timer.Interval;
+                Timer = new Timer();
+                //RunTime = DateTime.Now - StartTime;
             };
 
             ProgressReports = new ConcurrentDictionary<string, double>();
@@ -196,6 +206,23 @@ namespace GrasshopperRadianceLinuxConnector
                 // Let the worker collect data.
                 currentWorker.GetData(DA, Params);
 
+                if (currentWorker.SkipRun)
+                {
+                    //try
+                    //{
+                    //    DA.SetData("stdout", ((GH_ExecuteAsync.SSH_Worker)BaseWorker).savedStdout);
+                    //}
+                    //catch { }
+
+                    return;
+                }
+
+                DateTime startTime = DateTime.Now;
+                Timer.Start();
+
+                
+                
+
                 // Create the task
                 var tokenSource = new CancellationTokenSource();
                 currentWorker.CancellationToken = tokenSource.Token;
@@ -213,43 +240,45 @@ namespace GrasshopperRadianceLinuxConnector
 
                 Tasks.Add(currentRun);
 
-                try
-                {
-                    if (this.Params.Output.Count > 0 &&
-                        this.Params.Output[this.Params.Output.Count - 1].Name == "Ran" &&
-                        this.Params.Output[this.Params.Output.Count - 1].Access == GH_ParamAccess.tree)
-                    {
-                        //Read and parse the input.
-                        var runTree = new GH_Structure<GH_Boolean>();
-                        runTree.Append(new GH_Boolean(false));
-                        Params.Output[Params.Output.Count - 1].ClearData();
-                        DA.SetDataTree(Params.Output.Count - 1, runTree);
+                //try
+                //{
+                //    if (this.Params.Output.Count > 0 &&
+                //        this.Params.Output[this.Params.Output.Count - 1].Name == "Ran" &&
+                //        this.Params.Output[this.Params.Output.Count - 1].Access == GH_ParamAccess.tree)
+                //    {
+                //        //Read and parse the input.
+                //        var runTree = new GH_Structure<GH_Boolean>();
+                //        runTree.Append(new GH_Boolean(false));
+                //        Params.Output[Params.Output.Count - 1].ClearData();
+                //        DA.SetDataTree(Params.Output.Count - 1, runTree);
 
-                    }
-                }
-                catch { }
+                //    }
+                //}
+                //catch { }
 
-                try
-                {
-                    var pidParam = this.Params.Output.Where(o => o.Name == "pid").FirstOrDefault();
-                    if (pidParam != null)
-                        DA.SetData(pidParam.Name, pid);
-                    {
+                //try
+                //{
+                //    var pidParam = this.Params.Output.Where(o => o.Name == "pid").FirstOrDefault();
+                //    if (pidParam != null)
+                //        DA.SetData(pidParam.Name, pid);
+                //    {
 
-                    }
-                    if (this.Params.Output.Count > 0 &&
-                        this.Params.Output[this.Params.Output.Count - 1].Name == "Ran" &&
-                        this.Params.Output[this.Params.Output.Count - 1].Access == GH_ParamAccess.tree)
-                    {
-                        //Read and parse the input.
-                        var runTree = new GH_Structure<GH_Boolean>();
-                        runTree.Append(new GH_Boolean(false));
-                        Params.Output[Params.Output.Count - 1].ClearData();
-                        DA.SetDataTree(Params.Output.Count - 1, runTree);
+                //    }
+                //    if (this.Params.Output.Count > 0 &&
+                //        this.Params.Output[this.Params.Output.Count - 1].Name == "Ran" &&
+                //        this.Params.Output[this.Params.Output.Count - 1].Access == GH_ParamAccess.tree)
+                //    {
+                //        //Read and parse the input.
+                //        var runTree = new GH_Structure<GH_Boolean>();
+                //        runTree.Append(new GH_Boolean(false));
+                //        Params.Output[Params.Output.Count - 1].ClearData();
+                //        DA.SetDataTree(Params.Output.Count - 1, runTree);
 
-                    }
-                }
-                catch { }
+                //    }
+                //}
+                //catch { }
+
+                
 
                 return;
             }
@@ -276,8 +305,18 @@ namespace GrasshopperRadianceLinuxConnector
             Tasks.Clear();
 
             Interlocked.Exchange(ref SetData, 0);
+            try
+            {
+            if (DA.Fetch<bool>("Run"))
+                Message = $"Done in {RunTime}ms";
+            else
+                Message = "Deactive";
 
-            Message = "Done";
+            }
+            catch
+            {
+                Message = $"Done in {RunTime}ms";
+            }
             OnDisplayExpired(true);
         }
 

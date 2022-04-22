@@ -16,6 +16,9 @@ namespace GrasshopperRadianceLinuxConnector
     public abstract class WorkerInstance
     {
 
+
+        public bool SkipRun { get; set; } = false;
+
         /// <summary>
         /// The parent component. Useful for passing state back to the host component.
         /// </summary>

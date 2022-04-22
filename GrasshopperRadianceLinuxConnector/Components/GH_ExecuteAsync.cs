@@ -20,8 +20,12 @@ namespace GrasshopperRadianceLinuxConnector
               "Use me to execute a SSH Command",
               "1 SSH")
         {
+            
             BaseWorker = new SSH_Worker(this);
+            Hidden = true;
         }
+
+        public bool FirstRun { get; set; } = true;
 
         /// <summary>
         /// Registers all the input parameters for this component.
@@ -48,17 +52,24 @@ namespace GrasshopperRadianceLinuxConnector
         public override void AppendAdditionalMenuItems(ToolStripDropDown menu)
         {
             base.AppendAdditionalMenuItems(menu);
-            Menu_AppendItem(menu, "Cancel", (s, e) =>
+            Menu_AppendItem(menu, "Cancel and kill linux", (s, e) =>
             {
+                LinuxKill();
                 RequestCancellation();
             });
         }
 
-        public override void AddedToDocument(GH_Document document)
+        public void LinuxKill()
         {
-            this.Hidden = true;
-            base.AddedToDocument(document);
+            if (pid > 0)
+                SSH_Helper.Execute($"kill {pid}", prependSuffix: false);
         }
+
+        //public override void AddedToDocument(GH_Document document)
+        //{
+            
+        //    base.AddedToDocument(document);
+        //}
 
         public override bool IsPreviewCapable => true;
 
@@ -66,10 +77,12 @@ namespace GrasshopperRadianceLinuxConnector
 
 
 
-        private class SSH_Worker : WorkerInstance
+        public class SSH_Worker : WorkerInstance
         {
 
             // Define all the parameters for the component here
+            
+            
 
             public List<string> commands = new List<string>();
             public bool run = false;
@@ -82,11 +95,13 @@ namespace GrasshopperRadianceLinuxConnector
 
             public string savedStdout = string.Empty;
 
-            public SSH_Worker(GH_Component component) : base(component) { }
+            public SSH_Worker(GH_Component component) : base(component) {}
 
             public override void DoWork(Action<string, double> ReportProgress, Action Done)
             {
-
+                //((GH_TemplateAsync)Parent).HasEverRun = true;
+                
+                DateTime start = DateTime.Now;
                 // Checking for cancellation
                 if (CancellationToken.IsCancellationRequested) { return; }
 
@@ -94,6 +109,7 @@ namespace GrasshopperRadianceLinuxConnector
 
                 if (run)
                 {
+                    //((GH_TemplateAsync)Parent).SkipRun = false;
 
                     ReportProgress(Id, 0);
 
@@ -133,6 +149,8 @@ namespace GrasshopperRadianceLinuxConnector
 
                     }
 
+                    
+
 
                 }
                 else //run==false
@@ -161,6 +179,9 @@ namespace GrasshopperRadianceLinuxConnector
                 if (CancellationToken.IsCancellationRequested) return;
                 commands = DA.FetchList<string>(0);
                 run = DA.Fetch<bool>(1);
+
+                SkipRun = ((GH_ExecuteAsync)Parent).FirstRun && !run;
+                ((GH_ExecuteAsync)Parent).FirstRun = false;
 
             }
 
