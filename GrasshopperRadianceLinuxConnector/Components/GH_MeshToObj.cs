@@ -47,7 +47,7 @@ namespace GrasshopperRadianceLinuxConnector
             pManager.AddTextParameter("Obj Files", "Obj Files", "path for exported obj files. Full local windows path. Output me into the obj2rad component.", GH_ParamAccess.list);
             pManager.AddTextParameter("Map File", "Map File", "", GH_ParamAccess.item);
             pManager.AddBooleanParameter("Run", "Run", "Run", GH_ParamAccess.tree);
-            
+
         }
 
         /// <summary>
@@ -83,7 +83,7 @@ namespace GrasshopperRadianceLinuxConnector
                     modifierNames.Branches.Count));
             }
 
-            
+
 
             if (string.IsNullOrEmpty(subfolder))
             {
@@ -98,7 +98,7 @@ namespace GrasshopperRadianceLinuxConnector
 
             string mappingFilePath = $"{workingDir}mapping.map";
 
-            
+
             object myLock = new object();
 
 
@@ -108,7 +108,7 @@ namespace GrasshopperRadianceLinuxConnector
 
             List<string> localFilePaths = new List<string>(inMeshes.Branches.Count);
 
-            
+
 
             for (int i = 0; i < inMeshes.Branches.Count; i++)
             {
@@ -136,6 +136,11 @@ namespace GrasshopperRadianceLinuxConnector
             for (int q = 0; q < inMeshes.Branches.Count; q++)
             {
 
+                if (inMeshes.Branches[q].Count > 500)
+                {
+                    AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, "Long list of meshes.\nAre you sure you're not better off joining the mest first?");
+                }
+
 
                 string name = names[q][0].Value.Replace(" ", "_"); //TODO: more fixes?
 
@@ -147,12 +152,16 @@ namespace GrasshopperRadianceLinuxConnector
 
                 geometryFile.AppendFormat("g {0}\r\n", name);
 
+
+
                 foreach (GH_Mesh gmesh in inMeshes[q])
                 {
                     Mesh mesh = gmesh.Value;
+                    mesh.FaceNormals.ComputeFaceNormals();
 
                     for (int j = 0; j < mesh.Vertices.Count; j++)
                     {
+
                         geometryFile.AppendFormat("v {0:0.000} {1:0.000} {2:0.000}\r\n", mesh.Vertices[j].X, mesh.Vertices[j].Y, mesh.Vertices[j].Z);
                         //TODO: Tolerances/Units?
                     }
@@ -161,11 +170,26 @@ namespace GrasshopperRadianceLinuxConnector
                     {
                         if (mesh.Faces[j].IsQuad)
                         {
-                            geometryFile.AppendFormat("f {0} {1} {2} {3}\r\n", mesh.Faces[j].A+1, mesh.Faces[j].B+1, mesh.Faces[j].C+1, mesh.Faces[j].D+1);
+                            if (MeshToRadHelper.MeshNormalMatchesVertexOrder(mesh, j))
+                            {
+                                geometryFile.AppendFormat("f {0} {1} {2} {3}\r\n", mesh.Faces[j].A + 1, mesh.Faces[j].B + 1, mesh.Faces[j].C + 1, mesh.Faces[j].D + 1);
+                            }
+                            else
+                            {
+                                geometryFile.AppendFormat("f {0} {1} {2} {3}\r\n", mesh.Faces[j].D + 1, mesh.Faces[j].C + 1, mesh.Faces[j].B + 1, mesh.Faces[j].A + 1);
+
+                            }
                         }
                         else
                         {
-                            geometryFile.AppendFormat("f {0} {1} {2}\r\n", mesh.Faces[j].A+1, mesh.Faces[j].B+1, mesh.Faces[j].C+1, mesh.Faces[j].D+1);
+                            if (MeshToRadHelper.MeshNormalMatchesVertexOrder(mesh, j))
+                            {
+                                geometryFile.AppendFormat("f {0} {1} {2}\r\n", mesh.Faces[j].A + 1, mesh.Faces[j].B + 1, mesh.Faces[j].C + 1);
+                            }
+                            else
+                            {
+                                geometryFile.AppendFormat("f {0} {1} {2}\r\n", mesh.Faces[j].C + 1, mesh.Faces[j].B + 1, mesh.Faces[j].A + 1);
+                            }
                         }
                     }
                 }

@@ -7,41 +7,54 @@ using Rhino.Geometry;
 
 namespace GrasshopperRadianceLinuxConnector
 {
-    public class MeshToRadHelper
+    public static class MeshToRadHelper
     {
-        public string WorkingDirectory { get; set; }
-        public string Name { get; set; }
-        public string RadianceMaterial { get; set; }
-        public Mesh Mesh { get; set; }
-        public MeshToRadHelper(Mesh mesh, string fileName, string workingDir, string modifier)
+
+        
+        public static bool MeshNormalMatchesVertexOrder(Mesh mesh, in int faceIndex)
         {
-            Mesh = mesh;
-            WorkingDirectory = workingDir;
-            Name = fileName;
-            RadianceMaterial = modifier;
+            var face = mesh.Faces[faceIndex];
+
+            
+                Vector3f normalFromVertices = face.IsQuad ?
+                    NormalFromVertices(mesh.Vertices[face.A], mesh.Vertices[face.B], mesh.Vertices[face.B], mesh.Vertices[face.C])
+                    : NormalFromVertices(mesh.Vertices[face.A], mesh.Vertices[face.B], mesh.Vertices[face.B]);
+
+                Vector3f normalFromFace = mesh.FaceNormals[faceIndex];
+
+                double angle = Math.Asin(
+
+                    Vector3f.CrossProduct(normalFromFace, normalFromVertices).Length
+                    /
+                    (normalFromFace.Length * normalFromVertices.Length)
+                );
+
+                return angle > 0;
+
+
+           
+        }
+        
+        public static Vector3f NormalFromVertices(in Point3f pt0, in Point3f pt1, in Point3f pt2)
+        {
+            Vector3f normalFromVertices = Vector3f.CrossProduct(pt1 - pt0, pt2 - pt0);
+            normalFromVertices.Unitize();
+            return normalFromVertices;
+        }
+
+        public static Vector3f NormalFromVertices(in Point3f pt0, in Point3f pt1, in Point3f pt2, in Point3f pt3)
+        {
+            Vector3f n1 = Vector3f.CrossProduct(pt1 - pt0, pt2 - pt0);
+            n1.Unitize();
+
+            Vector3f n2 = Vector3f.CrossProduct(pt3 - pt2, pt1 - pt2);
+            n2.Unitize();
+
+            return 0.5f * (n1 + n2);
+
 
         }
 
-        /// <summary>
-        /// Exports the meshes to obj files
-        /// </summary>
-        /// <returns></returns>
-        public List<string> MeshToObj()
-        {
-            List<string> radFiles = new List<string>(2);
 
-            // Using translated TurtlePyMesh
-
-            StringBuilder outfile = new StringBuilder();
-            outfile.AppendLine("# OBJ file written by TurtlePyMesh translated to C# by With the GrasshopperRadianceLinuxConnector\n\n");
-
-            foreach (var item in Mesh.Faces)
-            {
-
-            }
-
-
-            return radFiles;
-        }
     }
 }
