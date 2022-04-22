@@ -20,7 +20,10 @@ namespace GrasshopperRadianceLinuxConnector
               "MeshToRad. Heavily inspired by\n" +
                 "https://github.com/ladybug-tools/honeybee-legacy/blob/master/userObjects/Honeybee_MSH2RAD.ghuser\n" +
                 "CAUTION: Does not export any UV mapping of materials etc. Just applies the modifer that you input.\n" +
-                "Connect me to the ObjToRad component for rad files.",
+                "Connect me to the ObjToRad component for rad files.\n\n" +
+                "It is advised to join large list of meshes into singular joined meshes.\n" +
+                "IE instead of 300 wall meshes, join them into one wall mesh.\n" +
+                "The component runs in parallel if you graft the inputs. So graft a tree with x lists when you have x materials/modifiers.",
               "2 Radiance")
         {
         }
@@ -30,7 +33,11 @@ namespace GrasshopperRadianceLinuxConnector
         /// </summary>
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
-            pManager.AddMeshParameter("Mesh", "Mesh", "Mesh", GH_ParamAccess.tree); //TODO: change to tree and allow parallel runs
+            pManager.AddMeshParameter("Mesh", "Mesh", "Mesh. It's advisable to have same material meshes joined before entering this component.\n" +
+                "And if you graft the input per material then it will run in parallel.\n" +
+                "Example: you have 3 objects:  floor/ceiling/wall\n" +
+                "then you should join all your floor meshes into one joined floor mesh, same for the others.\n" +
+                "And input it as a grafted list. This will make the component run 3 meshing engines at the same time.", GH_ParamAccess.tree); //TODO: change to tree and allow parallel runs
             pManager.AddTextParameter("Name", "Name", "Name (will save name.rad)", GH_ParamAccess.tree);
             pManager.AddTextParameter("ModifierName", "ModifierName", "ModifierName - Name of the radiance material", GH_ParamAccess.tree);
             pManager[pManager.AddTextParameter("Subfolder Override", "Subfolder", "Optional. Override the subfolder from the connection component.\n" +
@@ -131,10 +138,10 @@ namespace GrasshopperRadianceLinuxConnector
 
             // Write an obj file for each branch in the meshes list
 
-            //Parallel.For(0, inMeshes.Branches.Count, q =>
-            //{
-            for (int q = 0; q < inMeshes.Branches.Count; q++)
+            Parallel.For(0, inMeshes.Branches.Count, q =>
             {
+            //for (int q = 0; q < inMeshes.Branches.Count; q++)
+            //{
 
                 if (inMeshes.Branches[q].Count > 500)
                 {
@@ -195,8 +202,8 @@ namespace GrasshopperRadianceLinuxConnector
                 }
 
                 System.IO.File.WriteAllText(geometryFilePath, geometryFile.ToString());
-            }
-            //});
+            //}
+            });
 
 
             DA.SetDataList("Obj Files", localFilePaths);
