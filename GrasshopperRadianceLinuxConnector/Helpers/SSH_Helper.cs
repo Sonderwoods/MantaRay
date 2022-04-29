@@ -521,22 +521,21 @@ namespace GrasshopperRadianceLinuxConnector
             if (!run)
                 return false;
 
-            return true;
+            //return true;
 
             //TODO: Need to figure out way to add auth to xlaunch files. Skipping for now.
 
 
-            string xlauncFile = @"<?xml version='1.0' encoding='UTF-8'?>
-<XLaunch WindowMode='MultiWindow' ClientMode='NoClient' LocalClient='False' Display='-1' LocalProgram='xcalc' RemoteProgram='xterm' RemotePassword='' PrivateKey='' RemoteHost='' RemoteUser='' XDMCPHost='' XDMCPBroadcast='False' XDMCPIndirect='False' Clipboard='True' ClipboardPrimary='True' ExtraParams='' Wgl='True' DisableAC='True' XDMCPTerminate='False'/>
-";
+            string xlauncFile = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+"<XLaunch WindowMode='MultiWindow' ClientMode='NoClient' LocalClient='False' Display='-1' LocalProgram='xcalc' RemoteProgram='xterm' RemotePassword='' PrivateKey='' RemoteHost='' RemoteUser='' XDMCPHost='' XDMCPBroadcast='False' XDMCPIndirect='False' Clipboard='True' ClipboardPrimary='True' ExtraParams='-ac' Wgl='True' DisableAC='False' XDMCPTerminate='False'/>\n".Replace("'", "\"");
 
-            string tempFile = Path.GetTempPath() + Guid.NewGuid().ToString() + ".xlaunch";
+            string tempFile = Path.GetTempPath() + "config.xlaunch";
 
             File.WriteAllText(tempFile, xlauncFile);
 
             System.Diagnostics.Process.Start(tempFile);
 
-            File.Delete(tempFile);
+            //File.Delete(tempFile);
 
             return true;
         }
