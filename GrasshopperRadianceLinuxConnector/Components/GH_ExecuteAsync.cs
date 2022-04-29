@@ -27,7 +27,10 @@ namespace GrasshopperRadianceLinuxConnector
 
             BaseWorker = new SSH_Worker(this);
             Hidden = true;
+
         }
+
+        public RunInfo[] savedResults = new RunInfo[0];
 
         public bool FirstRun { get; set; } = true;
 
@@ -105,7 +108,7 @@ namespace GrasshopperRadianceLinuxConnector
             public bool ran = false;
 
             public RunInfo[] results = new RunInfo[0];
-            public RunInfo[] savedResults = new RunInfo[0];
+
 
 
             //ConcurrentQueue<string> threadLogs = new ConcurrentQueue<string>();
@@ -194,6 +197,8 @@ namespace GrasshopperRadianceLinuxConnector
 
                     });
 
+                    ((GH_ExecuteAsync)Parent).savedResults = results.ToArray();
+
                     //if (results.Any(r => !r.success))
                     //{
                     //    foreach (string msg in results.Where(r => !r.success).Select(r => r.stderr.ToString()))
@@ -213,17 +218,19 @@ namespace GrasshopperRadianceLinuxConnector
                     //this.Message = "";
                     Parent.Hidden = true;
                     //DA.SetData("stdout", _stdout);
-                    if (!savedResults.Any(s => String.IsNullOrEmpty(s.stdout.ToString())))
+                    if (((GH_ExecuteAsync)Parent).savedResults.Any(s => !String.IsNullOrEmpty(s.stdout.ToString())))
                     {
-                        results = savedResults;
+                        results = ((GH_ExecuteAsync)Parent).savedResults;
                         //threadStdouts = new ConcurrentQueue<string>();
                         //stdout.Clear();
                         //threadStdouts.Enqueue(savedStdout);
                         //stdout.Append(savedStdout);
-                        Parent.AddRuntimeMessage(GH_RuntimeMessageLevel.Remark, "Using an old existing stdout\nThis can be convenient for opening old workflows and not running everything again.");
+                        //Parent.AddRuntimeMessage(GH_RuntimeMessageLevel.Remark, "Using an old existing stdout\nThis can be convenient for opening old workflows and not running everything again.");
                     }
 
                 }
+
+                ran = run && results.All(r => r.ran);
 
                 Done();
             }
@@ -237,7 +244,7 @@ namespace GrasshopperRadianceLinuxConnector
                 commands = DA.FetchTree<GH_String>(0);
 
                 List<GH_Boolean> _runs = DA.FetchTree<GH_Boolean>(1).FlattenData();
-                run = _runs.Count > 0 && _runs.All(g => g.Value == true);
+                run = _runs.Count > 0 && _runs.All(g => g?.Value == true);
 
                 SkipRun = ((GH_ExecuteAsync)Parent).FirstRun && !run;
                 ((GH_ExecuteAsync)Parent).FirstRun = false;
@@ -247,6 +254,14 @@ namespace GrasshopperRadianceLinuxConnector
             public override void SetData(IGH_DataAccess DA)
             {
                 if (CancellationToken.IsCancellationRequested) return; //Remove?
+
+
+
+                if (run == false && ((GH_ExecuteAsync)Parent).savedResults.Any(s => !String.IsNullOrEmpty(s.stdout.ToString())))
+                {
+                    //results = savedResults; // already set previously..
+                    Parent.AddRuntimeMessage(GH_RuntimeMessageLevel.Remark, "Using an old existing stdout\nThis can be convenient for opening old workflows and not running everything again.");
+                }
 
                 //DA.SetData(0, stdout.ToString());
                 DA.SetDataList(0, results.Select(r => r.stdout.ToString()));
@@ -258,14 +273,17 @@ namespace GrasshopperRadianceLinuxConnector
                 DA.SetDataList(3, results.Select(r => r.pid));
                 //DA.SetData(4, ran);
                 var runOut = new GH_Structure<GH_Boolean>();
-                runOut.Append(new GH_Boolean(run ? results.All(r => r.ran) : false), new GH_Path(0));
-
+                runOut.Append(new GH_Boolean(ran), new GH_Path(0));
                 DA.SetDataTree(4, runOut);
+
+
 
                 foreach (string msg in results.Where(r => !r.success).Select(r => r.stderr.ToString()))
                 {
                     Parent.AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, msg);
                 }
+
+
 
                 //if (CancellationToken.IsCancellationRequested) return;
                 //DA.SetData(0, $"Hello world. Worker {Id} has spun for {MaxIterations} iterations.");
@@ -285,10 +303,10 @@ namespace GrasshopperRadianceLinuxConnector
             string s = String.Empty;
             reader.TryGetString("stdouts", ref s);
             string[] splitString = s.Split(new[] { ">JOIN<" }, StringSplitOptions.None);
-            ((SSH_Worker)BaseWorker).savedResults = new RunInfo[splitString.Length];
+            savedResults = new RunInfo[splitString.Length];
             for (int i = 0; i < splitString.Length; i++)
             {
-                ((SSH_Worker)BaseWorker).savedResults[i] = new RunInfo() { stdout = new StringBuilder(splitString[i]) };
+                savedResults[i] = new RunInfo() { stdout = new StringBuilder(splitString[i]) };
             }
 
 
