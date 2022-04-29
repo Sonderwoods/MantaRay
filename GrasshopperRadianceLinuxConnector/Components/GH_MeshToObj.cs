@@ -18,8 +18,8 @@ namespace GrasshopperRadianceLinuxConnector
         /// </summary>
         public GH_MeshToObj()
           : base("MeshToObj", "Mesh2Obj",
-              "MeshToRad. Heavily inspired by\n" +
-                "https://github.com/ladybug-tools/honeybee-legacy/blob/master/userObjects/Honeybee_MSH2RAD.ghuser\n" +
+              "MeshToRad.\n\n" +
+                
                 "CAUTION: Does not export any UV mapping of materials etc. Just applies the modifer that you input.\n" +
                 "Connect me to the ObjToRad component for rad files.\n\n" +
                 "It is advised to join large list of meshes into singular joined meshes.\n" +
