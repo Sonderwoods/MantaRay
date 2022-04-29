@@ -240,7 +240,7 @@ namespace GrasshopperRadianceLinuxConnector.Components
             DA.SetDataTree(Params.Output.Count - 1, runTree);
 
             if (SSH_Helper.CheckConnection() != SSH_Helper.ConnectionDetails.Connected)
-                AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, "Not Connected");
+                AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, "Not Connected.\n\nTry restarting SSH in your bash with:\nsudo service ssh start");
 
 
         }

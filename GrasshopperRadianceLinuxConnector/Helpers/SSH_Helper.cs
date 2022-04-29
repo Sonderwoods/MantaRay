@@ -398,7 +398,10 @@ namespace GrasshopperRadianceLinuxConnector
             {
                 DateTime startTime = DateTime.Now;
 
-
+                if (TryRunXlaunchIfNeeded(command) && log != null)
+                {
+                    log.Append("* (attempted) Started XLaunch because you forgot to do so * ");
+                }
 
                 //if (prependSuffix)
                 //    command = String.Join("\n", Suffixes) + ";" + command;
@@ -406,14 +409,14 @@ namespace GrasshopperRadianceLinuxConnector
 
                 command = command.Trim('\n');
 
-                
+
 
                 var cmd = sshClient.CreateCommand((prependSuffix ? String.Join(";", Suffixes) + ";" + command : command) + $" & echo $! >~/temp{rand}.pid");
                 cmd.Execute();
 
                 var pidCommand = sshClient.CreateCommand($"cat  ~/temp{rand}.pid");
                 pidCommand.Execute();
-                
+
 
                 if (log != null)
                 {
@@ -423,7 +426,7 @@ namespace GrasshopperRadianceLinuxConnector
                     log.Append("] (");
                     log.Append((DateTime.Now - startTime).TotalMilliseconds);
                     log.Append("ms ) $ ");
-                    log.Append(command.Replace("\n","\n   ").Replace(";", "\n   "));
+                    log.Append(command.Replace("\n", "\n   ").Replace(";", "\n   "));
                     log.Append("\n");
                 }
 
@@ -485,14 +488,57 @@ namespace GrasshopperRadianceLinuxConnector
                     errors.Append(command.Replace("\n", "\n   ").Replace(";", "\n   "));
                     errors.Append("\n ERROR: There was no connection. Please run the connect component again");
                 }
-                
+
             }
 
             return pid;
 
         }
 
+        private static bool TryRunXlaunchIfNeeded(string command)
+        {
+            var j = System.Diagnostics.Process.GetProcesses().Where(p => p.ProcessName.ToLower() == "vcxsrv");
+            bool hasXlaunchRunnning = System.Diagnostics.Process.GetProcesses().Any(p => p.ProcessName.ToLower() == "vcxsrv");
+            //bool hasXlaunchRunnning = System.Diagnostics.Process.GetProcessesByName("vcxsrv.exe").Any();
 
+            if (hasXlaunchRunnning)
+                return false;
+
+
+            string[] xcommands = { "x11meta", "xglaresrc", "ximage", "xshowtrace", "xclock" };
+
+            bool run = false;
+
+            foreach (var xcom in xcommands)
+            {
+                if (command.Contains(xcom))
+                {
+                    run = true;
+                    continue;
+                }
+            }
+
+            if (!run)
+                return false;
+
+            //return true;
+
+            //TODO: Need to figure out way to add auth to xlaunch files. Skipping for now.
+
+
+            string xlauncFile = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+"<XLaunch WindowMode='MultiWindow' ClientMode='NoClient' LocalClient='False' Display='-1' LocalProgram='xcalc' RemoteProgram='xterm' RemotePassword='' PrivateKey='' RemoteHost='' RemoteUser='' XDMCPHost='' XDMCPBroadcast='False' XDMCPIndirect='False' Clipboard='True' ClipboardPrimary='True' ExtraParams='-ac' Wgl='True' DisableAC='False' XDMCPTerminate='False'/>\n".Replace("'", "\"");
+
+            string tempFile = Path.GetTempPath() + "config.xlaunch";
+
+            File.WriteAllText(tempFile, xlauncFile);
+
+            System.Diagnostics.Process.Start(tempFile);
+
+            //File.Delete(tempFile);
+
+            return true;
+        }
 
         public static void Disconnect()
         {
