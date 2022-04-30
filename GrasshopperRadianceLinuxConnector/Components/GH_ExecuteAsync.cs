@@ -183,7 +183,8 @@ namespace GrasshopperRadianceLinuxConnector
 
                 run = _runs.Count > 0 && _runs.All(g => g?.Value == true);
 
-                SkipRun = ((GH_ExecuteAsync)Parent).FirstRun && !run;
+                //SkipRun = ((GH_ExecuteAsync)Parent).FirstRun || !run;  // was AND
+                SkipRun = !run;
 
                 ((GH_ExecuteAsync)Parent).FirstRun = false;
 
