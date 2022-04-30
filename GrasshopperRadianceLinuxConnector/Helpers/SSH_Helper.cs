@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Renci.SshNet;
 
@@ -11,6 +12,47 @@ namespace GrasshopperRadianceLinuxConnector
 {
     internal static class SSH_Helper
     {
+        /// <summary>
+        /// Path without any ending slash
+        /// </summary>
+        public static string LinuxParentPath { get => linuxParentPath; set { { linuxParentPath = value; UpdatePaths(); } } }
+
+        /// <summary>
+        /// Path without any ending backslash
+        /// </summary>
+        public static string WindowsParentPath { get => windowsParentPath; set { windowsParentPath = value; UpdatePaths(); } }
+
+        /// <summary>
+        /// Linux full path for the default folder WITHOUT ending slash
+        /// </summary>
+        public static string LinuxFullpath => _linuxFullpath;
+
+        /// <summary>
+        /// Windows full path for the default folder WITHOUT ending slash
+        /// </summary>
+        public static string WindowsFullpath => _windowsFullpath;
+
+        /// <summary>
+        /// default subfolder WITHOUT starting slash.
+        /// </summary>
+        public static string DefaultSubfolder { get => defaultSubfolder; set { defaultSubfolder = value; UpdatePaths(); } }
+
+        /// <summary>
+        /// Will be set on connection
+        /// </summary>
+        public static string HomeDirectory { get; set; } = null;
+
+        /// <summary>
+        /// The suffixes to setup before any commands. Temporary fix untill we get .bashrc correctly setup.
+        /// </summary>
+        public static List<string> ExportPrefixes { get; set; } = new List<string>() {
+            "export PATH=$PATH:/usr/local/radiance/bin",
+            "export RAYPATH=./usr/local/radiance/lib",
+            "export DISPLAY=$(ip route list default | awk '{print $3}'):0",
+            "export LIBGL_ALWAYS_INDIRECT=1"
+        };
+
+
         public static SshClient SshClient
         {
             get => sshClient;
@@ -30,7 +72,7 @@ namespace GrasshopperRadianceLinuxConnector
             }
         }
 
-        private static Random rnd = new Random();
+        private static readonly Random rnd = new Random();
 
         public static string ToLinuxPath(this string s)
         {
@@ -72,49 +114,15 @@ namespace GrasshopperRadianceLinuxConnector
                 return _windowsFullpath;
         }
 
-
-        /// <summary>
-        /// Path without any ending slash
-        /// </summary>
-        public static string LinuxParentPath { get => linuxParentPath; set { { linuxParentPath = value; UpdatePaths(); } } }
-        static string linuxParentPath = "~";
-
-
-        /// <summary>
-        /// Path without any ending backslash
-        /// </summary>
-        public static string WindowsParentPath { get => windowsParentPath; set { windowsParentPath = value; UpdatePaths(); } }
-        static string windowsParentPath = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-
-        /// <summary>
-        /// default subfolder WITHOUT starting slash.
-        /// </summary>
-        public static string DefaultSubfolder { get => defaultSubfolder; set { defaultSubfolder = value; UpdatePaths(); } }
         static string defaultSubfolder = "simulation";
 
+        static string linuxParentPath = "~";
+
+        static string windowsParentPath = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+
         static string _linuxFullpath = linuxParentPath + "/" + defaultSubfolder.Replace(@"\", "/");
+
         static string _windowsFullpath = windowsParentPath + @"\" + defaultSubfolder.Replace("/", @"\");
-
-        public static string LinuxFullpath => _linuxFullpath;
-        public static string WindowsFullpath => _windowsFullpath;
-
-
-
-
-        /// <summary>
-        /// Will be set on connection
-        /// </summary>
-        public static string HomeDirectory { get; set; } = null;
-
-        /// <summary>
-        /// The suffixes to setup before any commands. Temporary fix untill we get .bashrc correctly setup.
-        /// </summary>
-        public static List<string> Suffixes { get; set; } = new List<string>() {
-            "export PATH=$PATH:/usr/local/radiance/bin",
-            "export RAYPATH=./usr/local/radiance/lib",
-            "export DISPLAY=$(ip route list default | awk '{print $3}'):0",
-            "export LIBGL_ALWAYS_INDIRECT=1"
-        };
 
         private static SshClient sshClient;
 
@@ -189,9 +197,6 @@ namespace GrasshopperRadianceLinuxConnector
 
             if (SSH_Helper.SftpClient != null && SSH_Helper.SftpClient.IsConnected)
             {
-                //try
-                //{
-
 
                 if (string.IsNullOrEmpty(localTargetFolder))
                 {
@@ -200,46 +205,11 @@ namespace GrasshopperRadianceLinuxConnector
 
                 localTargetFolder = localTargetFolder.TrimEnd('\\') + "\\";
 
-                //using (var remoteFileStream = SSH_Helper.SftpClient.OpenRead(linuxFileName))
-                //{
-                //    var textReader = new System.IO.StreamReader(remoteFileStream);
-                //    string s = textReader.ReadToEnd();
-                //    File.WriteAllText(localTargetFolder +Path.GetFileName(linuxFileName.Replace("/", "\\")), s);
-                //}
-
-
-
                 using (var saveFile = File.OpenWrite(localTargetFolder + Path.GetFileName(linuxFileName.Replace("/", "\\"))))
                 {
                     SSH_Helper.SftpClient.DownloadFile(linuxFileName, saveFile);
 
                 }
-
-
-                //}
-                //catch (Renci.SshNet.Common.SftpPathNotFoundException e)
-                //{
-                //    throw new Renci.SshNet.Common.SftpPathNotFoundException($"Linux Path not found\n{e.Message}.\nTry {HomeDirectory}\nThe current working directory is {sftpClient.WorkingDirectory}");
-                //}
-
-                //if (!File.Exists(linuxFileName))
-                //    throw new FileNotFoundException("Local file not found: " + linuxFileName);
-
-
-                //using (var uplfileStream = File.OpenRead(linuxFileName))
-                //{
-                //    try
-                //    {
-                //        SSH_Helper.SftpClient.UploadFile(uplfileStream, Path.GetFileName(linuxFileName), true);
-
-                //    }
-                //    catch (Renci.SshNet.Common.SftpPermissionDeniedException e)
-                //    {
-                //        throw new Renci.SshNet.Common.SftpPermissionDeniedException($"Tried accessing {localTargetFolder}\nLocal file is {linuxFileName}\n{e.Message}", e);
-                //    }
-                //}
-
-                //SSH_Helper.Execute($"cd ~;mv {Path.GetFileName(localFileName)} {SshPath}", sb);
 
 
             }
@@ -263,14 +233,19 @@ namespace GrasshopperRadianceLinuxConnector
                 status.Append("\n");
             }
 
-
-
         }
 
-
-
-
-        public static void Upload(string localFileName, string sshPath = null, StringBuilder status = null)
+        /// <summary>
+        /// Uploads a file
+        /// </summary>
+        /// <param name="localFileName"></param>
+        /// <param name="sshPath">target linux path. Default is <see cref="defaultSubfolder"/></param>
+        /// <param name="log"></param>
+        /// <exception cref="Renci.SshNet.Common.SftpPathNotFoundException"></exception>
+        /// <exception cref="FileNotFoundException"></exception>
+        /// <exception cref="Renci.SshNet.Common.SftpPermissionDeniedException"></exception>
+        /// <exception cref="Renci.SshNet.Common.SshConnectionException"></exception>
+        public static void Upload(string localFileName, string sshPath = null, StringBuilder log = null)
         {
             localFileName = localFileName.Replace("/", "\\");
 
@@ -279,77 +254,73 @@ namespace GrasshopperRadianceLinuxConnector
                 sshPath = _linuxFullpath;
             }
 
+
             if (String.Compare(Path.GetDirectoryName(localFileName).ToLinuxPath(), sshPath, StringComparison.OrdinalIgnoreCase) == 0)
             {
-                status?.Append("The paths are the same, so skipping the upload\n");
+                log?.Append("The paths are the same, so skipping the upload\n");
                 return;
             }
 
 
-
-            if (SSH_Helper.SftpClient != null && SSH_Helper.SftpClient.IsConnected)
-            {
-                try
-                {
-                    HomeDirectory = HomeDirectory ?? sftpClient.WorkingDirectory;
-
-
-
-                    sshPath = sshPath.TrimEnd('/');
-
-                    sshPath = sshPath.Replace("~", HomeDirectory);
-
-                    SSH_Helper.Execute($"mkdir -p {sshPath}");
-                    //SSH_Helper.SftpClient.ChangeDirectory(SshPath);
-                    SSH_Helper.SftpClient.ChangeDirectory(sshPath);
-                }
-                catch (Renci.SshNet.Common.SftpPathNotFoundException e)
-                {
-                    throw new Renci.SshNet.Common.SftpPathNotFoundException($"Linux Path not found\n{e.Message}.\nTry {HomeDirectory}\nThe current working directory is {sftpClient.WorkingDirectory}");
-                }
-
-                if (!File.Exists(localFileName))
-                    throw new FileNotFoundException("Local file not found: " + localFileName);
-
-
-                using (var uplfileStream = File.OpenRead(localFileName))
-                {
-                    try
-                    {
-                        SSH_Helper.SftpClient.UploadFile(uplfileStream, Path.GetFileName(localFileName), true);
-
-                    }
-                    catch (Renci.SshNet.Common.SftpPermissionDeniedException e)
-                    {
-                        throw new Renci.SshNet.Common.SftpPermissionDeniedException($"Tried accessing {sshPath}\nLocal file is {localFileName}\n{e.Message}", e);
-                    }
-                }
-
-                //SSH_Helper.Execute($"cd ~;mv {Path.GetFileName(localFileName)} {SshPath}", sb);
-
-
-            }
-            else if (SSH_Helper.SftpClient != null)
-            {
-                throw new Renci.SshNet.Common.SshConnectionException("Sftp: There is a Sftp client but no connection. Please run the Connect SSH Component");
-            }
-            else
+            if (SSH_Helper.SftpClient == null)
             {
                 throw new Renci.SshNet.Common.SshConnectionException("Sftp: There is no Sftp client. Please run the Connect SSH Component");
             }
-
-            if (status != null)
+            else if (!SSH_Helper.SftpClient.IsConnected)
             {
-                status.Append("[");
-                status.Append(DateTime.Now.ToString("G"));
-                status.Append("] Uploaded ");
-                status.Append(sshPath);
-                status.Append("/");
-                status.Append(Path.GetFileName(localFileName));
-                status.Append("\n");
+                throw new Renci.SshNet.Common.SshConnectionException("Sftp: There is a Sftp client but no connection. Please run the Connect SSH Component");
             }
 
 
+            try
+            {
+                HomeDirectory = HomeDirectory ?? sftpClient.WorkingDirectory;
+
+                sshPath = sshPath.TrimEnd('/');
+
+                sshPath = sshPath.Replace("~", HomeDirectory);
+
+                SSH_Helper.Execute($"mkdir -p {sshPath}");
+
+                SSH_Helper.SftpClient.ChangeDirectory(sshPath);
+            }
+
+            catch (Renci.SshNet.Common.SftpPathNotFoundException e)
+            {
+                throw new Renci.SshNet.Common.SftpPathNotFoundException($"Linux Path not found\n{e.Message}.\nTry {HomeDirectory}\nThe current working directory is {sftpClient.WorkingDirectory}");
+            }
+
+
+            if (!File.Exists(localFileName))
+            {
+                throw new FileNotFoundException("Local file not found: " + localFileName);
+            }
+
+
+            using (var uplfileStream = File.OpenRead(localFileName))
+            {
+                try
+                {
+                    SSH_Helper.SftpClient.UploadFile(uplfileStream, Path.GetFileName(localFileName), true);
+
+                }
+                catch (Renci.SshNet.Common.SftpPermissionDeniedException e)
+                {
+                    throw new Renci.SshNet.Common.SftpPermissionDeniedException($"Tried accessing {sshPath}\nLocal file is {localFileName}\n{e.Message}", e);
+                }
+            }
+
+
+            if (log != null)
+            {
+                log.Append("[");
+                log.Append(DateTime.Now.ToString("G"));
+                log.Append("] Uploaded ");
+                log.Append(sshPath);
+                log.Append("/");
+                log.Append(Path.GetFileName(localFileName));
+                log.Append("\n");
+            }
 
         }
 
@@ -357,11 +328,7 @@ namespace GrasshopperRadianceLinuxConnector
         {
             if (SSH_Helper.SshClient != null && SSH_Helper.SshClient.IsConnected)
             {
-
-
                 return ConnectionDetails.Connected;
-
-
             }
             else if (SSH_Helper.SshClient != null)
             {
@@ -373,17 +340,19 @@ namespace GrasshopperRadianceLinuxConnector
             }
         }
 
-        public enum ConnectionDetails
-        {
-            Connected,
-            ClientNoConnection,
-            NoClient
-        }
 
 
 
-
-        public static int Execute(string command, StringBuilder log = null, StringBuilder stdout = null, StringBuilder errors = null, bool prependSuffix = true)
+        /// <summary>
+        /// Executes the SSH Command
+        /// </summary>
+        /// <param name="command"></param>
+        /// <param name="log">stringbuilder for logs</param>
+        /// <param name="stdout">stringbuilder for stdout</param>
+        /// <param name="errors">stringbuilder for errors</param>
+        /// <param name="prependPrefix">whether we want to include the radiance "EXPORT" prefixes <see cref="ExportPrefixes"/></param>
+        /// <returns></returns>
+        public static int Execute(string command, StringBuilder log = null, StringBuilder stdout = null, StringBuilder errors = null, bool prependPrefix = true)
         {
             if (string.IsNullOrEmpty(command))
             {
@@ -391,7 +360,7 @@ namespace GrasshopperRadianceLinuxConnector
                 return -1;
 
             }
-            //bool success = false;
+
             int pid = -1;
 
             if (CheckConnection() == ConnectionDetails.Connected)
@@ -403,26 +372,22 @@ namespace GrasshopperRadianceLinuxConnector
                     log.Append("* (attempted) Started XLaunch because you forgot to do so * ");
                 }
 
-                //if (prependSuffix)
-                //    command = String.Join("\n", Suffixes) + ";" + command;
                 int rand = rnd.Next(10000, 99999);
 
                 command = command.Trim('\n');
 
-
-
-                var cmd = sshClient.CreateCommand((prependSuffix ? String.Join(";", Suffixes) + ";" + command : command) + $" & echo $! >~/temp{rand}.pid");
+                //saving the pid to a local file
+                var cmd = sshClient.CreateCommand((prependPrefix ? String.Join(";", ExportPrefixes) + ";" + command : command) + $" & echo $! >~/temp{rand}.pid");
                 cmd.Execute();
 
                 var pidCommand = sshClient.CreateCommand($"cat  ~/temp{rand}.pid");
-                pidCommand.Execute();
 
+                pidCommand.Execute();
 
                 if (log != null)
                 {
                     log.Append("[");
                     log.Append(startTime.ToString("G"));
-
                     log.Append("] (");
                     log.Append((DateTime.Now - startTime).TotalMilliseconds);
                     log.Append("ms ) $ ");
@@ -431,40 +396,19 @@ namespace GrasshopperRadianceLinuxConnector
                 }
 
 
-
                 if (string.IsNullOrEmpty(cmd.Error))
                 {
-                    //success = true;
                     pid = int.Parse(pidCommand.Result);
                 }
                 else
                 {
-                    if (errors != null)
-                    {
-                        //errors.Append("[");
-                        //errors.Append(DateTime.Now.ToString("G"));
-                        //errors.Append("] stderrr $ ");
-                        //errors.Append(command.Substring(0, Math.Min(500, command.Length)).Replace("\n", "\n    ").Replace(";", "\n    "));
-                        //errors.Append("\n");
-
-                        errors.Append(cmd.Error);
-                        errors.Append("\n");
-
-                    }
-
-
-
-
+                    errors?.Append(cmd.Error);
+                    errors?.Append("\n");
                 }
 
+                stdout?.Append(cmd.Result.Trim('\n', '\r'));
 
-                //stdout.Append("\n");
-                if (stdout != null)
-                {
-                    stdout.Append(cmd.Result.Trim('\n', '\r'));
-
-                }
-
+                sshClient.CreateCommand($"rm ~/temp{rand}.pid").Execute();
 
             }
             else // no connection
@@ -473,7 +417,6 @@ namespace GrasshopperRadianceLinuxConnector
                 {
                     log.Append("[");
                     log.Append(DateTime.Now.ToString("G"));
-
                     log.Append("] $ ");
                     log.Append(command.Replace("\n", "\n   ").Replace(";", "\n   "));
                     log.Append("\n ERROR: There was no connection. Please run the connect component again");
@@ -483,7 +426,6 @@ namespace GrasshopperRadianceLinuxConnector
                 {
                     errors.Append("[");
                     errors.Append(DateTime.Now.ToString("G"));
-
                     errors.Append("] $ ");
                     errors.Append(command.Replace("\n", "\n   ").Replace(";", "\n   "));
                     errors.Append("\n ERROR: There was no connection. Please run the connect component again");
@@ -497,13 +439,12 @@ namespace GrasshopperRadianceLinuxConnector
 
         private static bool TryRunXlaunchIfNeeded(string command)
         {
-            var j = System.Diagnostics.Process.GetProcesses().Where(p => p.ProcessName.ToLower() == "vcxsrv");
+
             bool hasXlaunchRunnning = System.Diagnostics.Process.GetProcesses().Any(p => p.ProcessName.ToLower() == "vcxsrv");
             //bool hasXlaunchRunnning = System.Diagnostics.Process.GetProcessesByName("vcxsrv.exe").Any();
 
             if (hasXlaunchRunnning)
                 return false;
-
 
             string[] xcommands = { "x11meta", "xglaresrc", "ximage", "xshowtrace", "xclock" };
 
@@ -521,13 +462,11 @@ namespace GrasshopperRadianceLinuxConnector
             if (!run)
                 return false;
 
-            //return true;
-
-            //TODO: Need to figure out way to add auth to xlaunch files. Skipping for now.
-
-
             string xlauncFile = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
-"<XLaunch WindowMode='MultiWindow' ClientMode='NoClient' LocalClient='False' Display='-1' LocalProgram='xcalc' RemoteProgram='xterm' RemotePassword='' PrivateKey='' RemoteHost='' RemoteUser='' XDMCPHost='' XDMCPBroadcast='False' XDMCPIndirect='False' Clipboard='True' ClipboardPrimary='True' ExtraParams='-ac' Wgl='True' DisableAC='False' XDMCPTerminate='False'/>\n".Replace("'", "\"");
+                    "<XLaunch WindowMode='MultiWindow' ClientMode='NoClient' LocalClient='False' Display='-1' " +
+                    "LocalProgram='xcalc' RemoteProgram='xterm' RemotePassword='' PrivateKey='' RemoteHost='' " +
+                    "RemoteUser='' XDMCPHost='' XDMCPBroadcast='False' XDMCPIndirect='False' Clipboard='True' " +
+                    "ClipboardPrimary='True' ExtraParams='-ac' Wgl='True' DisableAC='False' XDMCPTerminate='False'/>\n".Replace("'", "\"");
 
             string tempFile = Path.GetTempPath() + "config.xlaunch";
 
@@ -535,9 +474,16 @@ namespace GrasshopperRadianceLinuxConnector
 
             System.Diagnostics.Process.Start(tempFile);
 
-            //File.Delete(tempFile);
+            _ = Task.Run(() => DelayedFileDelete(tempFile));
 
             return true;
+        }
+
+        public static void DelayedFileDelete(string tempFile, int delay = 3000)
+        {
+            Thread.Sleep(delay);
+
+            File.Delete(tempFile);
         }
 
         public static void Disconnect()
@@ -573,6 +519,13 @@ namespace GrasshopperRadianceLinuxConnector
             _linuxFullpath = linuxParentPath + "/" + defaultSubfolder.Replace(@"\", "/");
             _windowsFullpath = windowsParentPath + "/" + defaultSubfolder.Replace("/", @"\");
 
+        }
+
+        public enum ConnectionDetails
+        {
+            Connected,
+            ClientNoConnection,
+            NoClient
         }
     }
 }

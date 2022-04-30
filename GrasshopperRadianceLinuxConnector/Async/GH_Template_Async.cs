@@ -13,20 +13,26 @@ using Timer = System.Timers.Timer;
 namespace GrasshopperRadianceLinuxConnector
 {
 
-    
+
     /// <summary>
     /// Inherit your component from this class to make all the async goodness available.
     /// Source: Speckle! https://github.com/specklesystems/GrasshopperAsyncComponent
     /// </summary>
     public abstract class GH_TemplateAsync : GH_Template
     {
+        public enum AestheticPhase
+        {
+            Running,
+            NotRunning
+        }
 
+        public AestheticPhase PhaseForColors = GH_TemplateAsync.AestheticPhase.NotRunning;
 
-        Timer Timer = new Timer();
+        Stopwatch stopwatch = new Stopwatch();
 
+        public bool RunInput { get; set; } = true;
         public double RunTime { get; set; }
-        public DateTime StartTime { get; set; }
-        
+
         public override Guid ComponentGuid => throw new Exception("ComponentGuid should be overriden in any descendant of GH_AsyncComponent!");
 
         //List<(string, GH_RuntimeMessageLevel)> Errors;
@@ -49,7 +55,7 @@ namespace GrasshopperRadianceLinuxConnector
 
         public readonly List<CancellationTokenSource> CancellationSources;
 
-        public int pid = -1; // for linux pids
+        public int pid { get; set; } = -1; // for linux pids
 
         /// <summary>
         /// Set this property inside the constructor of your derived component. 
@@ -91,9 +97,9 @@ namespace GrasshopperRadianceLinuxConnector
                         ExpireSolution(true);
                     });
                 }
-                RunTime = Timer.Interval;
-                Timer = new Timer();
-                //RunTime = DateTime.Now - StartTime;
+                RunTime = stopwatch.ElapsedMilliseconds;
+                stopwatch.Reset();
+
             };
 
             ProgressReports = new ConcurrentDictionary<string, double>();
@@ -115,11 +121,11 @@ namespace GrasshopperRadianceLinuxConnector
                 var progress = ProgressReports.Values.Last();
                 if (progress == 0)
                 {
-                    Message = "Started";
+                    Message = "Running";
                 }
                 else
                 {
-                Message = ProgressReports.Values.Last().ToString("0.00%");
+                    Message = ProgressReports.Values.Last().ToString("0.00%");
 
                 }
             }
@@ -164,11 +170,11 @@ namespace GrasshopperRadianceLinuxConnector
 
         protected override void AfterSolveInstance()
         {
-            System.Diagnostics.Debug.WriteLine("After solve instance was called " + State + " ? " + Workers.Count);
+            Debug.WriteLine("After solve instance was called " + State + " ? " + Workers.Count);
             // We need to start all the tasks as close as possible to each other.
             if (State == 0 && Tasks.Count > 0 && SetData == 0)
             {
-                System.Diagnostics.Debug.WriteLine("After solve INVOKATIONM");
+                Debug.WriteLine("After solve INVOKATIONM");
                 foreach (var task in Tasks)
                 {
                     task.Start();
@@ -183,12 +189,57 @@ namespace GrasshopperRadianceLinuxConnector
             {
                 base.ExpireDownStreamObjects();
             }
+
+            else if (RunInput)
+            {
+                base.ExpireDownStreamObjects();
+            }
+
         }
 
         protected override void SolveInstance(IGH_DataAccess DA)
         {
-            //return;
-            if (State == 0)
+
+            RunInput = true;
+
+            IGH_Param runParam = this.Params.Input.Where(o => o.NickName == "Run" && o.Access == GH_ParamAccess.tree).FirstOrDefault();
+
+            if (runParam != null)
+            {
+                List<GH_Boolean> runInputs = DA.FetchTree<GH_Boolean>("Run").FlattenData();
+
+                if (runInputs.Count == 0 || !runInputs.All(x => x.Value == true))
+                {
+                    RunInput = false;
+                }
+            }
+
+            
+
+            if (!RunInput)
+            {
+
+                IGH_Param ranParam = this.Params.Output.Where(o => o.NickName == "Ran").FirstOrDefault();
+
+                if (ranParam != null)
+                {
+                    DA.SetData("Ran", false);
+
+                }
+
+                if (this as GH_ExecuteAsync != null)
+                {
+                    this.Hidden = true;
+                }
+
+                
+
+                return;
+
+            }
+
+
+            if (State == 0 && RunInput) // Starting up a task
             {
                 if (BaseWorker == null)
                 {
@@ -208,20 +259,13 @@ namespace GrasshopperRadianceLinuxConnector
 
                 if (currentWorker.SkipRun)
                 {
-                    //try
-                    //{
-                    //    DA.SetData("stdout", ((GH_ExecuteAsync.SSH_Worker)BaseWorker).savedStdout);
-                    //}
-                    //catch { }
 
                     return;
                 }
 
-                DateTime startTime = DateTime.Now;
-                Timer.Start();
+                stopwatch.Start();
+                PhaseForColors = AestheticPhase.Running;
 
-                
-                
 
                 // Create the task
                 var tokenSource = new CancellationTokenSource();
@@ -240,46 +284,6 @@ namespace GrasshopperRadianceLinuxConnector
 
                 Tasks.Add(currentRun);
 
-                //try
-                //{
-                //    if (this.Params.Output.Count > 0 &&
-                //        this.Params.Output[this.Params.Output.Count - 1].Name == "Ran" &&
-                //        this.Params.Output[this.Params.Output.Count - 1].Access == GH_ParamAccess.tree)
-                //    {
-                //        //Read and parse the input.
-                //        var runTree = new GH_Structure<GH_Boolean>();
-                //        runTree.Append(new GH_Boolean(false));
-                //        Params.Output[Params.Output.Count - 1].ClearData();
-                //        DA.SetDataTree(Params.Output.Count - 1, runTree);
-
-                //    }
-                //}
-                //catch { }
-
-                //try
-                //{
-                //    var pidParam = this.Params.Output.Where(o => o.Name == "pid").FirstOrDefault();
-                //    if (pidParam != null)
-                //        DA.SetData(pidParam.Name, pid);
-                //    {
-
-                //    }
-                //    if (this.Params.Output.Count > 0 &&
-                //        this.Params.Output[this.Params.Output.Count - 1].Name == "Ran" &&
-                //        this.Params.Output[this.Params.Output.Count - 1].Access == GH_ParamAccess.tree)
-                //    {
-                //        //Read and parse the input.
-                //        var runTree = new GH_Structure<GH_Boolean>();
-                //        runTree.Append(new GH_Boolean(false));
-                //        Params.Output[Params.Output.Count - 1].ClearData();
-                //        DA.SetDataTree(Params.Output.Count - 1, runTree);
-
-                //    }
-                //}
-                //catch { }
-
-                
-
                 return;
             }
 
@@ -291,8 +295,10 @@ namespace GrasshopperRadianceLinuxConnector
             if (Workers.Count > 0)
             {
                 Interlocked.Decrement(ref State);
-                Workers[State].SetData(DA);
+                if (State < Workers.Count)
+                    Workers[State].SetData(DA);
             }
+
 
             if (State != 0)
             {
@@ -307,16 +313,21 @@ namespace GrasshopperRadianceLinuxConnector
             Interlocked.Exchange(ref SetData, 0);
             try
             {
-            if (DA.Fetch<bool>("Run"))
-                Message = $"Done in {RunTime}ms";
-            else
-                Message = "Deactive";
+                if (DA.Fetch<bool>("Run"))
+                    Message = RunTime >= 1000 ? $"Done in {RunTime / 1000:0.0}s" : $"Done in {RunTime}ms";
+                else
+                    Message = "Deactive";
 
             }
             catch
             {
-                Message = $"Done in {RunTime}ms";
+                Message = RunTime >= 1000 ? $"Done in {RunTime / 1000:0.0}s" : $"Done in {RunTime}ms";
             }
+            PhaseForColors = AestheticPhase.NotRunning;
+
+
+
+
             OnDisplayExpired(true);
         }
 
@@ -336,7 +347,17 @@ namespace GrasshopperRadianceLinuxConnector
             Interlocked.Exchange(ref SetData, 0);
             Message = "Cancelled";
             OnDisplayExpired(true);
+            PhaseForColors = AestheticPhase.NotRunning;
+        }
+
+        public override void CreateAttributes()
+        {
+            //base.CreateAttributes();
+            m_attributes = new GH_ColorAttributes_Async(this);
+
         }
 
     }
+
+
 }

@@ -79,7 +79,7 @@ namespace GrasshopperRadianceLinuxConnector
 
 
 
-                int pid = SSH_Helper.Execute(command, log, stdout, errors, prependSuffix: true);
+                int pid = SSH_Helper.Execute(command, log, stdout, errors, prependPrefix: true);
 
                 bool itsJustAWarning = errors.ToString().Contains("warning");
 

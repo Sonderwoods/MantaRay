@@ -82,16 +82,16 @@ namespace GrasshopperRadianceLinuxConnector.Components
                     reflectance /= 100.0;
 
                 if (reflectance >= 0.9)
-                    this.AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, "Reflectances above 0.9 are uncommon");
+                    this.AddRuntimeMessage(GH_RuntimeMessageLevel.Remark, "Reflectances above 0.9 are uncommon");
 
                 if (reflectance < 0.1)
-                    this.AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, "Reflectances below 0.1 are uncommon");
+                    this.AddRuntimeMessage(GH_RuntimeMessageLevel.Remark, "Reflectances below 0.1 are uncommon");
 
                 if (specularity >= 0.1)
-                    this.AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, "Specularity above 0.1 are uncommon");
+                    this.AddRuntimeMessage(GH_RuntimeMessageLevel.Remark, "Specularity above 0.1 are uncommon");
 
                 if (roughness >= 0.2)
-                    this.AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, "Roughness above 0.2 are uncommon");
+                    this.AddRuntimeMessage(GH_RuntimeMessageLevel.Remark, "Roughness above 0.2 are uncommon");
 
 
                 materialList.Add($"void plastic {name}\n" +
