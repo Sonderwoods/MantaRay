@@ -13,7 +13,7 @@ using Timer = System.Timers.Timer;
 namespace GrasshopperRadianceLinuxConnector
 {
 
-    
+
     /// <summary>
     /// Inherit your component from this class to make all the async goodness available.
     /// Source: Speckle! https://github.com/specklesystems/GrasshopperAsyncComponent
@@ -30,8 +30,9 @@ namespace GrasshopperRadianceLinuxConnector
 
         Stopwatch stopwatch = new Stopwatch();
 
+        public bool RunInput { get; set; } = true;
         public double RunTime { get; set; }
-        
+
         public override Guid ComponentGuid => throw new Exception("ComponentGuid should be overriden in any descendant of GH_AsyncComponent!");
 
         //List<(string, GH_RuntimeMessageLevel)> Errors;
@@ -124,7 +125,7 @@ namespace GrasshopperRadianceLinuxConnector
                 }
                 else
                 {
-                Message = ProgressReports.Values.Last().ToString("0.00%");
+                    Message = ProgressReports.Values.Last().ToString("0.00%");
 
                 }
             }
@@ -188,12 +189,57 @@ namespace GrasshopperRadianceLinuxConnector
             {
                 base.ExpireDownStreamObjects();
             }
+
+            else if (RunInput)
+            {
+                base.ExpireDownStreamObjects();
+            }
+
         }
 
         protected override void SolveInstance(IGH_DataAccess DA)
         {
 
-            if (State == 0)
+            RunInput = true;
+
+            IGH_Param runParam = this.Params.Input.Where(o => o.NickName == "Run" && o.Access == GH_ParamAccess.tree).FirstOrDefault();
+
+            if (runParam != null)
+            {
+                List<GH_Boolean> runInputs = DA.FetchTree<GH_Boolean>("Run").FlattenData();
+
+                if (runInputs.Count == 0 || !runInputs.All(x => x.Value == true))
+                {
+                    RunInput = false;
+                }
+            }
+
+            
+
+            if (!RunInput)
+            {
+
+                IGH_Param ranParam = this.Params.Output.Where(o => o.NickName == "Ran").FirstOrDefault();
+
+                if (ranParam != null)
+                {
+                    DA.SetData("Ran", false);
+
+                }
+
+                if (this as GH_ExecuteAsync != null)
+                {
+                    this.Hidden = true;
+                }
+
+                
+
+                return;
+
+            }
+
+
+            if (State == 0 && RunInput) // Starting up a task
             {
                 if (BaseWorker == null)
                 {
@@ -220,7 +266,7 @@ namespace GrasshopperRadianceLinuxConnector
                 stopwatch.Start();
                 PhaseForColors = AestheticPhase.Running;
 
-                
+
                 // Create the task
                 var tokenSource = new CancellationTokenSource();
                 currentWorker.CancellationToken = tokenSource.Token;
@@ -249,8 +295,10 @@ namespace GrasshopperRadianceLinuxConnector
             if (Workers.Count > 0)
             {
                 Interlocked.Decrement(ref State);
-                Workers[State].SetData(DA);
+                if (State < Workers.Count)
+                    Workers[State].SetData(DA);
             }
+
 
             if (State != 0)
             {
@@ -265,10 +313,10 @@ namespace GrasshopperRadianceLinuxConnector
             Interlocked.Exchange(ref SetData, 0);
             try
             {
-            if (DA.Fetch<bool>("Run"))
-                Message = RunTime >= 1000 ? $"Done in {RunTime/1000:0.0}s" : $"Done in {RunTime}ms";
-            else
-                Message = "Deactive";
+                if (DA.Fetch<bool>("Run"))
+                    Message = RunTime >= 1000 ? $"Done in {RunTime / 1000:0.0}s" : $"Done in {RunTime}ms";
+                else
+                    Message = "Deactive";
 
             }
             catch
@@ -276,6 +324,10 @@ namespace GrasshopperRadianceLinuxConnector
                 Message = RunTime >= 1000 ? $"Done in {RunTime / 1000:0.0}s" : $"Done in {RunTime}ms";
             }
             PhaseForColors = AestheticPhase.NotRunning;
+
+
+
+
             OnDisplayExpired(true);
         }
 
