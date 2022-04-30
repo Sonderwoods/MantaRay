@@ -52,7 +52,7 @@ namespace GrasshopperRadianceLinuxConnector.Components
 
             if (keys.Count != values.Count)
             {
-                AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, "List lengths are not matching");
+                AddRuntimeMessage(GH_RuntimeMessageLevel.Remark, "List lengths are not matching");
             }
 
             int keysLength = 5;
