@@ -50,7 +50,6 @@ namespace GrasshopperRadianceLinuxConnector
         {
             pManager.AddTextParameter("stdout", "stdout", "stdout", GH_ParamAccess.list);
             pManager.AddTextParameter("stderr", "stderr", "stderr", GH_ParamAccess.list);
-            //pManager.AddBooleanParameter("success", "success", "success", GH_ParamAccess.item);
             pManager.AddTextParameter("log", "log", "log", GH_ParamAccess.list);
             pManager.AddIntegerParameter("Pid", "Pid", "Linux process id. Can be used to kill the task if it takes too long. Simply write in a bash prompt: kill <id>", GH_ParamAccess.item);
             pManager.AddBooleanParameter("Ran", "Ran", "Ran without stderr", GH_ParamAccess.tree); //always keep ran as the last parameter
@@ -72,11 +71,6 @@ namespace GrasshopperRadianceLinuxConnector
                 SSH_Helper.Execute($"kill {pid}", prependPrefix: false);
         }
 
-        //public override void AddedToDocument(GH_Document document)
-        //{
-
-        //    base.AddedToDocument(document);
-        //}
 
         public override bool IsPreviewCapable => true;
 
@@ -100,9 +94,8 @@ namespace GrasshopperRadianceLinuxConnector
 
             // Define all the parameters for the component here
 
-
-
             public GH_Structure<GH_String> commands = new GH_Structure<GH_String>();
+
             public bool run = false;
 
             public bool ran = false;
@@ -110,30 +103,16 @@ namespace GrasshopperRadianceLinuxConnector
             public RunInfo[] results = new RunInfo[0];
 
 
-
-            //ConcurrentQueue<string> threadLogs = new ConcurrentQueue<string>();
-            //ConcurrentQueue<string> threadStdouts = new ConcurrentQueue<string>();
-            //ConcurrentQueue<string> threadErrors = new ConcurrentQueue<string>();
-            //ConcurrentQueue<bool> threadRan = new ConcurrentQueue<bool>();
-            //ConcurrentQueue<int> pids = new ConcurrentQueue<int>();
-
-            //public List<string> savedStdout = new List<string>();
-
             public SSH_Worker(GH_Component component) : base(component) { }
 
             public override void DoWork(Action<string, double> ReportProgress, Action Done)
             {
-                //((GH_TemplateAsync)Parent).HasEverRun = true;
-
-                DateTime start = DateTime.Now;
-                // Checking for cancellation
+                
                 if (CancellationToken.IsCancellationRequested) { return; }
 
-                //bool success = false;
-
+                
                 if (run)
                 {
-                    //((GH_TemplateAsync)Parent).SkipRun = false;
 
                     ReportProgress(Id, 0);
 
@@ -141,23 +120,13 @@ namespace GrasshopperRadianceLinuxConnector
                     results = new RunInfo[commands.Branches.Count];
 
 
-
-                    //Parent.Hidden = true;
-
-
-
                     Parallel.For(0, commands.Branches.Count, i =>
                     {
 
                         RunInfo result = new RunInfo();
 
-
                         int pid = -1;
-                        //StringBuilder log = new StringBuilder();
-                        //StringBuilder stdout = new StringBuilder();
-                        //StringBuilder errors = new StringBuilder();
 
-                        //List<GH_String> threadCommands = commands.Branches[i];
                         string command = String.Join(";", commands.Branches[i].Select(c => c.Value)).AddGlobals();
 
                         pid = SSH_Helper.Execute(command, result.log, result.stdout, result.stderr, prependPrefix: true);
@@ -204,8 +173,6 @@ namespace GrasshopperRadianceLinuxConnector
                 Done();
             }
 
-            public override WorkerInstance Duplicate() => new SSH_Worker(Parent);
-
 
             public override void GetData(IGH_DataAccess DA, GH_ComponentParamServer Params)
             {
@@ -226,6 +193,11 @@ namespace GrasshopperRadianceLinuxConnector
             {
                 //if (CancellationToken.IsCancellationRequested) return;
 
+                if (run)
+                {
+                    Parent.Hidden = false;
+                }
+
                 if (run == false && ((GH_ExecuteAsync)Parent).savedResults.Any(s => !String.IsNullOrEmpty(s.stdout.ToString())))
                 {
                     Parent.AddRuntimeMessage(GH_RuntimeMessageLevel.Remark, "Using an old existing stdout\nThis can be convenient for opening old workflows and not running everything again.");
@@ -245,13 +217,14 @@ namespace GrasshopperRadianceLinuxConnector
                 DA.SetDataTree(4, runOut);
 
 
-
                 foreach (string msg in results.Where(r => !r.success).Select(r => r.stderr.ToString()))
                 {
                     Parent.AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, msg);
                 }
 
             }
+
+            public override WorkerInstance Duplicate() => new SSH_Worker(Parent);
         }
 
         public override bool Write(GH_IWriter writer)
@@ -280,13 +253,7 @@ namespace GrasshopperRadianceLinuxConnector
             return base.Read(reader);
         }
 
+        public override Guid ComponentGuid => new Guid("257C7A8C-330E-43F5-AC62-19F517A3F528");
 
-        /// <summary>
-        /// Gets the unique ID for this component. Do not change this ID after release.
-        /// </summary>
-        public override Guid ComponentGuid
-        {
-            get { return new Guid("257C7A8C-330E-43F5-AC62-19F517A3F528"); }
-        }
     }
 }

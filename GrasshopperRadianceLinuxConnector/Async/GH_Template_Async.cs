@@ -22,10 +22,9 @@ namespace GrasshopperRadianceLinuxConnector
     {
 
 
-        Timer Timer = new Timer();
+        Stopwatch stopwatch = new Stopwatch();
 
         public double RunTime { get; set; }
-        public DateTime StartTime { get; set; }
         
         public override Guid ComponentGuid => throw new Exception("ComponentGuid should be overriden in any descendant of GH_AsyncComponent!");
 
@@ -49,7 +48,7 @@ namespace GrasshopperRadianceLinuxConnector
 
         public readonly List<CancellationTokenSource> CancellationSources;
 
-        public int pid = -1; // for linux pids
+        public int pid { get; set; } = -1; // for linux pids
 
         /// <summary>
         /// Set this property inside the constructor of your derived component. 
@@ -91,9 +90,9 @@ namespace GrasshopperRadianceLinuxConnector
                         ExpireSolution(true);
                     });
                 }
-                RunTime = Timer.Interval;
-                Timer = new Timer();
-                //RunTime = DateTime.Now - StartTime;
+                RunTime = stopwatch.ElapsedMilliseconds;
+                stopwatch.Reset();
+
             };
 
             ProgressReports = new ConcurrentDictionary<string, double>();
@@ -115,7 +114,7 @@ namespace GrasshopperRadianceLinuxConnector
                 var progress = ProgressReports.Values.Last();
                 if (progress == 0)
                 {
-                    Message = "Started";
+                    Message = "Running";
                 }
                 else
                 {
@@ -164,11 +163,11 @@ namespace GrasshopperRadianceLinuxConnector
 
         protected override void AfterSolveInstance()
         {
-            System.Diagnostics.Debug.WriteLine("After solve instance was called " + State + " ? " + Workers.Count);
+            Debug.WriteLine("After solve instance was called " + State + " ? " + Workers.Count);
             // We need to start all the tasks as close as possible to each other.
             if (State == 0 && Tasks.Count > 0 && SetData == 0)
             {
-                System.Diagnostics.Debug.WriteLine("After solve INVOKATIONM");
+                Debug.WriteLine("After solve INVOKATIONM");
                 foreach (var task in Tasks)
                 {
                     task.Start();
@@ -208,21 +207,13 @@ namespace GrasshopperRadianceLinuxConnector
 
                 if (currentWorker.SkipRun)
                 {
-                    //try
-                    //{
-                    //    DA.SetData("stdout", ((GH_ExecuteAsync.SSH_Worker)BaseWorker).savedStdout);
-                    //}
-                    //catch { }
 
                     return;
                 }
 
-                DateTime startTime = DateTime.Now;
-                Timer.Start();
+                stopwatch.Start();
 
                 
-                
-
                 // Create the task
                 var tokenSource = new CancellationTokenSource();
                 currentWorker.CancellationToken = tokenSource.Token;
@@ -239,46 +230,6 @@ namespace GrasshopperRadianceLinuxConnector
                 Workers.Add(currentWorker);
 
                 Tasks.Add(currentRun);
-
-                //try
-                //{
-                //    if (this.Params.Output.Count > 0 &&
-                //        this.Params.Output[this.Params.Output.Count - 1].Name == "Ran" &&
-                //        this.Params.Output[this.Params.Output.Count - 1].Access == GH_ParamAccess.tree)
-                //    {
-                //        //Read and parse the input.
-                //        var runTree = new GH_Structure<GH_Boolean>();
-                //        runTree.Append(new GH_Boolean(false));
-                //        Params.Output[Params.Output.Count - 1].ClearData();
-                //        DA.SetDataTree(Params.Output.Count - 1, runTree);
-
-                //    }
-                //}
-                //catch { }
-
-                //try
-                //{
-                //    var pidParam = this.Params.Output.Where(o => o.Name == "pid").FirstOrDefault();
-                //    if (pidParam != null)
-                //        DA.SetData(pidParam.Name, pid);
-                //    {
-
-                //    }
-                //    if (this.Params.Output.Count > 0 &&
-                //        this.Params.Output[this.Params.Output.Count - 1].Name == "Ran" &&
-                //        this.Params.Output[this.Params.Output.Count - 1].Access == GH_ParamAccess.tree)
-                //    {
-                //        //Read and parse the input.
-                //        var runTree = new GH_Structure<GH_Boolean>();
-                //        runTree.Append(new GH_Boolean(false));
-                //        Params.Output[Params.Output.Count - 1].ClearData();
-                //        DA.SetDataTree(Params.Output.Count - 1, runTree);
-
-                //    }
-                //}
-                //catch { }
-
-                
 
                 return;
             }
@@ -308,14 +259,14 @@ namespace GrasshopperRadianceLinuxConnector
             try
             {
             if (DA.Fetch<bool>("Run"))
-                Message = $"Done in {RunTime}ms";
+                Message = RunTime >= 1000 ? $"Done in {RunTime/1000:0.0}s" : $"Done in {RunTime}ms";
             else
                 Message = "Deactive";
 
             }
             catch
             {
-                Message = $"Done in {RunTime}ms";
+                Message = RunTime >= 1000 ? $"Done in {RunTime / 1000:0.0}s" : $"Done in {RunTime}ms";
             }
             OnDisplayExpired(true);
         }
