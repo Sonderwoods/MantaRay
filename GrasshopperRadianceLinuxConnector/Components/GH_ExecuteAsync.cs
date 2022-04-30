@@ -40,7 +40,7 @@ namespace GrasshopperRadianceLinuxConnector
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
             pManager.AddTextParameter("SSH Commands", "SSH commands", "SSH commands. Each item in list will be executed", GH_ParamAccess.tree);
-            pManager.AddBooleanParameter("Run", "Run", "Run", GH_ParamAccess.tree);
+            pManager[pManager.AddBooleanParameter("Run", "Run", "Run", GH_ParamAccess.tree, false)].Optional = true;
         }
 
         /// <summary>
