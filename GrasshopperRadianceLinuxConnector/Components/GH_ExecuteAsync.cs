@@ -76,13 +76,13 @@ namespace GrasshopperRadianceLinuxConnector
 
         public class RunInfo
         {
-            public List<string> commands { get; set; } = new List<string>();
-            public bool ran { get; set; } = false;
-            public int pid { get; set; } = -1;
-            public StringBuilder stdout { get; set; } = new StringBuilder();
-            public StringBuilder stderr { get; set; } = new StringBuilder();
-            public StringBuilder log { get; set; } = new StringBuilder();
-            public bool success { get; set; } = false;
+            public List<string> Commands { get; set; } = new List<string>();
+            public bool Ran { get; set; } = false;
+            public int Pid { get; set; } = -1;
+            public StringBuilder Stdout { get; set; } = new StringBuilder();
+            public StringBuilder Stderr { get; set; } = new StringBuilder();
+            public StringBuilder Log { get; set; } = new StringBuilder();
+            public bool Success { get; set; } = false;
 
 
         }
@@ -129,18 +129,18 @@ namespace GrasshopperRadianceLinuxConnector
 
                         string command = String.Join(";", commands.Branches[i].Select(c => c.Value)).AddGlobals();
 
-                        pid = SSH_Helper.Execute(command, result.log, result.stdout, result.stderr, prependPrefix: true);
+                        pid = SSH_Helper.Execute(command, result.Log, result.Stdout, result.Stderr, prependPrefix: true);
 
                         // TODO Need to get pid through "beginexecute" instead of "execute" of SSH.
 
-                        bool itsJustAWarning = result.stderr.ToString().Contains("warning");
+                        bool itsJustAWarning = result.Stderr.ToString().Contains("warning");
 
-                        result.success = pid > 0 || itsJustAWarning;
+                        result.Success = pid > 0 || itsJustAWarning;
 
-                        if (result.success)
+                        if (result.Success)
                         {
-                            result.pid = pid;
-                            result.ran = true;
+                            result.Pid = pid;
+                            result.Ran = true;
 
                         }
 
@@ -161,14 +161,14 @@ namespace GrasshopperRadianceLinuxConnector
 
                     Parent.Hidden = true;
 
-                    if (((GH_ExecuteAsync)Parent).savedResults.Any(s => !String.IsNullOrEmpty(s.stdout.ToString())))
+                    if (((GH_ExecuteAsync)Parent).savedResults.Any(s => !String.IsNullOrEmpty(s.Stdout.ToString())))
                     {
                         results = ((GH_ExecuteAsync)Parent).savedResults;
                     }
 
                 }
 
-                ran = run && results.All(r => r.ran);
+                ran = run && results.All(r => r.Ran);
 
                 Done();
             }
@@ -198,26 +198,26 @@ namespace GrasshopperRadianceLinuxConnector
                     Parent.Hidden = false;
                 }
 
-                if (run == false && ((GH_ExecuteAsync)Parent).savedResults.Any(s => !String.IsNullOrEmpty(s.stdout.ToString())))
+                if (run == false && ((GH_ExecuteAsync)Parent).savedResults.Any(s => !String.IsNullOrEmpty(s.Stdout.ToString())))
                 {
                     Parent.AddRuntimeMessage(GH_RuntimeMessageLevel.Remark, "Using an old existing stdout\nThis can be convenient for opening old workflows and not running everything again.");
                 }
 
 
-                DA.SetDataList(0, results.Select(r => r.stdout.ToString()));
+                DA.SetDataList(0, results.Select(r => r.Stdout.ToString()));
 
-                DA.SetDataList(1, results.Select(r => r.stderr.ToString()));
+                DA.SetDataList(1, results.Select(r => r.Stderr.ToString()));
 
-                DA.SetDataList(2, results.Select(r => r.log.ToString()));
+                DA.SetDataList(2, results.Select(r => r.Log.ToString()));
 
-                DA.SetDataList(3, results.Select(r => r.pid));
+                DA.SetDataList(3, results.Select(r => r.Pid));
 
                 var runOut = new GH_Structure<GH_Boolean>();
                 runOut.Append(new GH_Boolean(ran), new GH_Path(0));
                 DA.SetDataTree(4, runOut);
 
 
-                foreach (string msg in results.Where(r => !r.success).Select(r => r.stderr.ToString()))
+                foreach (string msg in results.Where(r => !r.Success).Select(r => r.Stderr.ToString()))
                 {
                     Parent.AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, msg);
                 }
@@ -229,7 +229,7 @@ namespace GrasshopperRadianceLinuxConnector
 
         public override bool Write(GH_IWriter writer)
         {
-            writer.SetString("stdouts", String.Join(">JOIN<", ((SSH_Worker)BaseWorker).results.Select(r => r.stdout)));
+            writer.SetString("stdouts", String.Join(">JOIN<", ((SSH_Worker)BaseWorker).results.Select(r => r.Stdout)));
 
 
             return base.Write(writer);
@@ -247,7 +247,7 @@ namespace GrasshopperRadianceLinuxConnector
 
             for (int i = 0; i < splitString.Length; i++)
             {
-                savedResults[i] = new RunInfo() { stdout = new StringBuilder(splitString[i]) };
+                savedResults[i] = new RunInfo() { Stdout = new StringBuilder(splitString[i]) };
             }
 
             return base.Read(reader);
