@@ -20,7 +20,13 @@ namespace GrasshopperRadianceLinuxConnector
     /// </summary>
     public abstract class GH_TemplateAsync : GH_Template
     {
+        public enum AestheticPhase
+        {
+            Running,
+            NotRunning
+        }
 
+        public AestheticPhase PhaseForColors = GH_TemplateAsync.AestheticPhase.NotRunning;
 
         Stopwatch stopwatch = new Stopwatch();
 
@@ -186,7 +192,7 @@ namespace GrasshopperRadianceLinuxConnector
 
         protected override void SolveInstance(IGH_DataAccess DA)
         {
-            //return;
+
             if (State == 0)
             {
                 if (BaseWorker == null)
@@ -212,6 +218,7 @@ namespace GrasshopperRadianceLinuxConnector
                 }
 
                 stopwatch.Start();
+                PhaseForColors = AestheticPhase.Running;
 
                 
                 // Create the task
@@ -268,6 +275,7 @@ namespace GrasshopperRadianceLinuxConnector
             {
                 Message = RunTime >= 1000 ? $"Done in {RunTime / 1000:0.0}s" : $"Done in {RunTime}ms";
             }
+            PhaseForColors = AestheticPhase.NotRunning;
             OnDisplayExpired(true);
         }
 
@@ -287,7 +295,17 @@ namespace GrasshopperRadianceLinuxConnector
             Interlocked.Exchange(ref SetData, 0);
             Message = "Cancelled";
             OnDisplayExpired(true);
+            PhaseForColors = AestheticPhase.NotRunning;
+        }
+
+        public override void CreateAttributes()
+        {
+            //base.CreateAttributes();
+            m_attributes = new GH_ColorAttributes_Async(this);
+
         }
 
     }
+
+
 }
