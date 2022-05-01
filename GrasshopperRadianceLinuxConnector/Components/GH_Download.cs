@@ -57,7 +57,14 @@ namespace GrasshopperRadianceLinuxConnector.Components
             if (!DA.Fetch<bool>("Run"))
                 return;
 
-            string localTargetFolder = Path.GetDirectoryName(DA.Fetch<string>("Target local folder"));
+            string targetFolder = DA.Fetch<string>("Target local folder");
+
+            if (targetFolder == null || String.IsNullOrEmpty(targetFolder))
+            {
+                targetFolder = SSH_Helper.WindowsFullpath;
+            }
+
+            string localTargetFolder = targetFolder; // Path.GetDirectoryName(targetFolder);
 
             List<string> allFilePaths = DA.FetchList<string>("Linux File Paths");
             List<string> localFilePaths = new List<string>(allFilePaths.Count);
