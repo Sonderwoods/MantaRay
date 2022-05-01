@@ -65,10 +65,35 @@ namespace GrasshopperRadianceLinuxConnector
             });
         }
 
+        protected override void PerformIfInactive(IGH_DataAccess DA)
+        {
+
+            DA.SetData("Ran", false);
+
+            this.Hidden = true;
+
+            if (RunInput == false && savedResults.Any(s => !String.IsNullOrEmpty(s.Stdout.ToString())))
+            {
+                AddRuntimeMessage(GH_RuntimeMessageLevel.Remark, "Using an old existing stdout\nThis can be convenient for opening old workflows and not running everything again.");
+                DA.SetDataList(0, savedResults.Select(r => r.Stdout.ToString()));
+                Message = "Reusing results";
+                OnDisplayExpired(true);
+            }
+
+            base.PerformIfInactive(DA);
+        }
+
         public void LinuxKill()
         {
-            if (pid > 0)
-                SSH_Helper.Execute($"kill {pid}", prependPrefix: false);
+            if (Pids > 0)
+                SSH_Helper.Execute($"kill {Pids}", prependPrefix: false);
+        }
+
+        public override void RequestCancellation()
+        {
+            PhaseForColors = AestheticPhase.NotRunning;
+            this.Hidden = true;
+            base.RequestCancellation();
         }
 
 
@@ -107,10 +132,10 @@ namespace GrasshopperRadianceLinuxConnector
 
             public override void DoWork(Action<string, double> ReportProgress, Action Done)
             {
-                
+
                 if (CancellationToken.IsCancellationRequested) { return; }
 
-                
+
                 if (run)
                 {
 
@@ -199,10 +224,10 @@ namespace GrasshopperRadianceLinuxConnector
                     Parent.Hidden = false;
                 }
 
-                if (run == false && ((GH_ExecuteAsync)Parent).savedResults.Any(s => !String.IsNullOrEmpty(s.Stdout.ToString())))
-                {
-                    Parent.AddRuntimeMessage(GH_RuntimeMessageLevel.Remark, "Using an old existing stdout\nThis can be convenient for opening old workflows and not running everything again.");
-                }
+                //if (run == false && ((GH_ExecuteAsync)Parent).savedResults.Any(s => !String.IsNullOrEmpty(s.Stdout.ToString())))
+                //{
+                //    Parent.AddRuntimeMessage(GH_RuntimeMessageLevel.Remark, "Using an old existing stdout\nThis can be convenient for opening old workflows and not running everything again.");
+                //}
 
 
                 DA.SetDataList(0, results.Select(r => r.Stdout.ToString()));
@@ -230,7 +255,11 @@ namespace GrasshopperRadianceLinuxConnector
 
         public override bool Write(GH_IWriter writer)
         {
-            writer.SetString("stdouts", String.Join(">JOIN<", ((SSH_Worker)BaseWorker).results.Select(r => r.Stdout)));
+
+            //writer.SetString("stdouts", String.Join(">JOIN<", ((SSH_Worker)BaseWorker).results.Select(r => r.Stdout)));
+            writer.SetString("stdouts", String.Join(">JOIN<", savedResults.Select(r => r.Stdout)));
+
+
 
 
             return base.Write(writer);
@@ -240,16 +269,19 @@ namespace GrasshopperRadianceLinuxConnector
         {
             string s = String.Empty;
 
-            reader.TryGetString("stdouts", ref s);
-
-            string[] splitString = s.Split(new[] { ">JOIN<" }, StringSplitOptions.None);
-
-            savedResults = new RunInfo[splitString.Length];
-
-            for (int i = 0; i < splitString.Length; i++)
+            if (reader.TryGetString("stdouts", ref s))
             {
-                savedResults[i] = new RunInfo() { Stdout = new StringBuilder(splitString[i]) };
+                string[] splitString = s.Split(new[] { ">JOIN<" }, StringSplitOptions.None);
+
+                savedResults = new RunInfo[splitString.Length];
+
+                for (int i = 0; i < splitString.Length; i++)
+                {
+                    savedResults[i] = new RunInfo() { Stdout = new StringBuilder(splitString[i]) };
+                }
             }
+
+
 
             return base.Read(reader);
         }
