@@ -76,9 +76,11 @@ namespace GrasshopperRadianceLinuxConnector
 
         public static string ToLinuxPath(this string s)
         {
+            HomeDirectory = HomeDirectory ?? sftpClient.WorkingDirectory;
+
             if (s.StartsWith(WindowsParentPath))
             {
-                return linuxParentPath + s.Substring(WindowsParentPath.Length).Replace(@"\", "/");
+                return (linuxParentPath + s.Substring(WindowsParentPath.Length)).Replace(@"\", "/").Replace("~", HomeDirectory);
             }
             else
                 return s.Replace(@"\", "/");
@@ -88,7 +90,7 @@ namespace GrasshopperRadianceLinuxConnector
         {
             if (s.StartsWith(LinuxParentPath))
             {
-                return windowsParentPath + s.Substring(0, LinuxParentPath.Length).Replace("/", @"\");
+                return (windowsParentPath + s.Substring(0, LinuxParentPath.Length)).Replace("/", @"\");
             }
             else
                 return s.Replace("/", @"\");
@@ -98,7 +100,7 @@ namespace GrasshopperRadianceLinuxConnector
         {
             if (!string.IsNullOrEmpty(subfolderOverride))
             {
-                return linuxParentPath + "/" + subfolderOverride.Replace(@"\", "/");
+                return (linuxParentPath + "/" + subfolderOverride).Replace(@"\", "/");
             }
             else
                 return _linuxFullpath;
@@ -108,7 +110,7 @@ namespace GrasshopperRadianceLinuxConnector
         {
             if (!string.IsNullOrEmpty(subfolderOverride))
             {
-                return windowsParentPath + @"\" + subfolderOverride.Replace("/", @"\");
+                return (windowsParentPath + @"\" + subfolderOverride).Replace("/", @"\");
             }
             else
                 return _windowsFullpath;
@@ -120,9 +122,9 @@ namespace GrasshopperRadianceLinuxConnector
 
         static string windowsParentPath = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
 
-        static string _linuxFullpath = linuxParentPath + "/" + defaultSubfolder.Replace(@"\", "/");
+        static string _linuxFullpath = (linuxParentPath + "/" + defaultSubfolder).Replace(@"\", "/");
 
-        static string _windowsFullpath = windowsParentPath + @"\" + defaultSubfolder.Replace("/", @"\");
+        static string _windowsFullpath = (windowsParentPath + @"\" + defaultSubfolder).Replace("/", @"\");
 
         private static SshClient sshClient;
 
@@ -191,9 +193,11 @@ namespace GrasshopperRadianceLinuxConnector
 
 
 
-        public static void Download(string linuxFileName, string localTargetFolder, StringBuilder status = null)
+        public static void Download(string linuxFileName, string localTargetFolder, StringBuilder log = null)
         {
             linuxFileName = linuxFileName.Replace("\\", "/");
+
+            
 
             if (SSH_Helper.SftpClient != null && SSH_Helper.SftpClient.IsConnected)
             {
@@ -204,8 +208,18 @@ namespace GrasshopperRadianceLinuxConnector
                 }
 
                 localTargetFolder = localTargetFolder.TrimEnd('\\') + "\\";
+                string targetFileName = localTargetFolder + Path.GetFileName(linuxFileName.Replace("/", "\\"));
 
-                using (var saveFile = File.OpenWrite(localTargetFolder + Path.GetFileName(linuxFileName.Replace("/", "\\"))))
+
+                var x = targetFileName.ToLinuxPath();
+
+                if (String.Compare(targetFileName.ToLinuxPath(), linuxFileName, StringComparison.OrdinalIgnoreCase) == 0)
+                {
+                    log?.Append("The paths are the same, so skipping the download\n");
+                    return;
+                }
+
+                using (var saveFile = File.OpenWrite(targetFileName))
                 {
                     SSH_Helper.SftpClient.DownloadFile(linuxFileName, saveFile);
 
@@ -222,15 +236,14 @@ namespace GrasshopperRadianceLinuxConnector
                 throw new Renci.SshNet.Common.SshConnectionException("Sftp: There is no Sftp client. Please run the Connect SSH Component");
             }
 
-            if (status != null)
+            if (log != null)
             {
-                status.Append("[");
-                status.Append(DateTime.Now.ToString("G"));
-                status.Append("] Downloaded ");
-                status.Append(localTargetFolder);
-                status.Append("/");
-                status.Append(Path.GetFileName(linuxFileName));
-                status.Append("\n");
+                log.Append("[");
+                log.Append(DateTime.Now.ToString("G"));
+                log.Append("] Downloaded ");
+                log.Append(localTargetFolder);
+                log.Append(Path.GetFileName(linuxFileName));
+                log.Append("\n");
             }
 
         }
