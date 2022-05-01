@@ -55,7 +55,7 @@ namespace GrasshopperRadianceLinuxConnector
 
         public readonly List<CancellationTokenSource> CancellationSources;
 
-        public int pid { get; set; } = -1; // for linux pids
+        public int Pids { get; set; } = -1; // for linux pids
 
         /// <summary>
         /// Set this property inside the constructor of your derived component. 
@@ -197,6 +197,15 @@ namespace GrasshopperRadianceLinuxConnector
 
         }
 
+        /// <summary>
+        /// To override in case you want to change messages, colors or anything else whenever the run is set to false
+        /// </summary>
+        /// <param name="DA"></param>
+        protected virtual void PerformIfInactive(IGH_DataAccess DA)
+        {
+
+        }
+
         protected override void SolveInstance(IGH_DataAccess DA)
         {
 
@@ -214,29 +223,15 @@ namespace GrasshopperRadianceLinuxConnector
                 }
             }
 
-            
-
             if (!RunInput)
             {
+                RequestCancellation();
 
-                IGH_Param ranParam = this.Params.Output.Where(o => o.NickName == "Ran").FirstOrDefault();
-
-                if (ranParam != null)
-                {
-                    DA.SetData("Ran", false);
-
-                }
-
-                if (this as GH_ExecuteAsync != null)
-                {
-                    this.Hidden = true;
-                }
-
-                
+                PerformIfInactive(DA);
 
                 return;
-
             }
+
 
 
             if (State == 0 && RunInput) // Starting up a task
@@ -311,27 +306,31 @@ namespace GrasshopperRadianceLinuxConnector
             Tasks.Clear();
 
             Interlocked.Exchange(ref SetData, 0);
-            try
-            {
-                if (DA.Fetch<bool>("Run"))
-                    Message = RunTime >= 1000 ? $"Done in {RunTime / 1000:0.0}s" : $"Done in {RunTime}ms";
-                else
-                    Message = "Deactive";
 
-            }
-            catch
-            {
-                Message = RunTime >= 1000 ? $"Done in {RunTime / 1000:0.0}s" : $"Done in {RunTime}ms";
-            }
+            if (RunInput)
+                Message = RunTimeFormatted();
+            else
+                Message = "Deactive";
+
             PhaseForColors = AestheticPhase.NotRunning;
-
-
 
 
             OnDisplayExpired(true);
         }
 
-        public void RequestCancellation()
+        private string RunTimeFormatted()
+        {
+            if (RunTime > 1000 * 60 * 60)
+                return $"Done in {RunTime / 1000.0 / 60.0 / 60.0:0.0}h";
+            if (RunTime > 1000 * 60)
+                return $"Done in {RunTime / 1000.0 / 60.0:0.0}m";
+            else if (RunTime > 1000.0)
+                return $"Done in {RunTime / 1000.0:0.0}s";
+            else
+                return $"Done in {RunTime}ms";
+        }
+
+        public virtual void RequestCancellation()
         {
             foreach (var source in CancellationSources)
             {
@@ -347,7 +346,7 @@ namespace GrasshopperRadianceLinuxConnector
             Interlocked.Exchange(ref SetData, 0);
             Message = "Cancelled";
             OnDisplayExpired(true);
-            PhaseForColors = AestheticPhase.NotRunning;
+            
         }
 
         public override void CreateAttributes()
