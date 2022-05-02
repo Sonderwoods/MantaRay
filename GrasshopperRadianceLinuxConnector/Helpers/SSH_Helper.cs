@@ -197,7 +197,7 @@ namespace GrasshopperRadianceLinuxConnector
         {
             linuxFileName = linuxFileName.Replace("\\", "/");
 
-            
+
 
             if (SSH_Helper.SftpClient != null && SSH_Helper.SftpClient.IsConnected)
             {
@@ -211,17 +211,30 @@ namespace GrasshopperRadianceLinuxConnector
                 string targetFileName = localTargetFolder + Path.GetFileName(linuxFileName.Replace("/", "\\"));
 
 
-                var x = targetFileName.ToLinuxPath();
 
-                if (String.Compare(targetFileName.ToLinuxPath(), linuxFileName, StringComparison.OrdinalIgnoreCase) == 0)
-                {
-                    log?.Append("The paths are the same, so skipping the download\n");
-                    return;
-                }
+
+
 
                 using (var saveFile = File.OpenWrite(targetFileName))
                 {
-                    SSH_Helper.SftpClient.DownloadFile(linuxFileName, saveFile);
+                    try
+                    {
+                        SSH_Helper.SftpClient.DownloadFile(linuxFileName, saveFile);
+
+                    }
+                    catch (Renci.SshNet.Common.SftpPermissionDeniedException e)
+                    {
+                        if (String.Compare(targetFileName.ToLinuxPath(), linuxFileName, StringComparison.OrdinalIgnoreCase) == 0)
+                        {
+                            log?.Append("The paths are the same, so skipping the download\n");
+                            return;
+                        }
+                        else
+                        {
+                            throw e;
+                        }
+
+                    }
 
                 }
 
@@ -268,11 +281,11 @@ namespace GrasshopperRadianceLinuxConnector
             }
 
 
-            if (String.Compare(Path.GetDirectoryName(localFileName).ToLinuxPath(), sshPath, StringComparison.OrdinalIgnoreCase) == 0)
-            {
-                log?.Append("The paths are the same, so skipping the upload\n");
-                return;
-            }
+            //if (String.Compare(Path.GetDirectoryName(localFileName).ToLinuxPath(), sshPath, StringComparison.OrdinalIgnoreCase) == 0)
+            //{
+            //    log?.Append("The paths are the same, so skipping the upload\n");
+            //    return;
+            //}
 
 
             if (SSH_Helper.SftpClient == null)
@@ -319,7 +332,20 @@ namespace GrasshopperRadianceLinuxConnector
                 }
                 catch (Renci.SshNet.Common.SftpPermissionDeniedException e)
                 {
-                    throw new Renci.SshNet.Common.SftpPermissionDeniedException($"Tried accessing {sshPath}\nLocal file is {localFileName}\n{e.Message}", e);
+
+
+                    if (String.Compare(Path.GetDirectoryName(localFileName).ToLinuxPath(), sshPath, StringComparison.OrdinalIgnoreCase) == 0)
+                    {
+                        log?.Append("The paths are the same, so skipping the download\n");
+                        return;
+                    }
+                    else
+                    {
+                        throw new Renci.SshNet.Common.SftpPermissionDeniedException($"Tried accessing {sshPath}\nLocal file is {localFileName}\n{e.Message}", e);
+                    }
+
+
+                    
                 }
             }
 
