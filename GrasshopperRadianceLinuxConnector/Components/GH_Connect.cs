@@ -63,7 +63,7 @@ namespace GrasshopperRadianceLinuxConnector.Components
 
             if (Grasshopper.Instances.ActiveCanvas.Document.Objects.OfType<GH_Connect>().Where(c => !Object.ReferenceEquals(c, this)).Count() > 0)
             {
-                AddRuntimeMessage(GH_RuntimeMessageLevel.Warning,
+                AddRuntimeMessage(GH_RuntimeMessageLevel.Error,
                     $"There's more than one {this.NickName} component on the canvas.\n" +
                     $"One will override the other!\n" +
                     $"Please only use ONE! Do you get it???\n" +
@@ -181,11 +181,20 @@ namespace GrasshopperRadianceLinuxConnector.Components
                 catch (Renci.SshNet.Common.SshAuthenticationException e)
                 {
                     sb.AppendLine("SSH:  Wrong password??\n" + e.Message);
+                    var mb = MessageBox.Show("Wrong SSH Password? Try again?", "Wrong SSH Password? Try again?", MessageBoxButtons.RetryCancel);
+                    if (mb == DialogResult.Retry)
+                    {
+                        if (GetPassword(username, out string pw))
+                            _pw = pw;
+                        this.ExpireSolution(true);
+                    }
                 }
                 catch (System.Net.Sockets.SocketException e)
                 {
                     sb.AppendFormat("SSH:  Could not find the SSH server\n      {0}\n      Try restarting it locally in " +
                         "your bash with the command:\n    $ sudo service ssh start\n", e.Message);
+                    var mb = MessageBox.Show("No SSH, try opening it with\nsudo service ssh start", "No SSH?", MessageBoxButtons.OK);
+
                 }
                 catch (Exception e)
                 {
@@ -240,7 +249,7 @@ namespace GrasshopperRadianceLinuxConnector.Components
             DA.SetDataTree(Params.Output.Count - 1, runTree);
 
             if (SSH_Helper.CheckConnection() != SSH_Helper.ConnectionDetails.Connected)
-                AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, "Not Connected.\n\nTry restarting SSH in your bash with:\nsudo service ssh start");
+                AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Not Connected.\n\nTry restarting SSH in your bash with:\nsudo service ssh start");
 
 
         }
