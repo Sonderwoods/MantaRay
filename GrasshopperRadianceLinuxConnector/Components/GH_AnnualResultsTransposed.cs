@@ -10,13 +10,14 @@ using Rhino.Geometry;
 
 namespace GrasshopperRadianceLinuxConnector.Components
 {
-    public class GH_AnnualResults : GH_Template
+    [Obsolete]
+    public class GH_AnnualResultsTransposed : GH_Template
     {
         /// <summary>
         /// Initializes a new instance of the GH_AnnualResults class.
         /// </summary>
-        public GH_AnnualResults()
-          : base("AnnualResults", "AnnualResults",
+        public GH_AnnualResultsTransposed()
+          : base("AnnualResults(old)", "AnnualResults(old)",
               "Read Ill files...",
               "2 Radiance")
         {
@@ -97,7 +98,7 @@ namespace GrasshopperRadianceLinuxConnector.Components
                         {
                             //if (schedule[counter++]) //<<-- TO FILTER ROWS BY SCHEDULE
                             inputLines.Add(line);
-                            
+
                         }
 
                     }
@@ -146,7 +147,7 @@ namespace GrasshopperRadianceLinuxConnector.Components
         }
 
 
-        public override Guid ComponentGuid => new Guid("2359E897-EADC-440D-8052-3DEBF31CB972");
+        public override Guid ComponentGuid => new Guid("23592897-EADC-420D-8052-3DEBF31CB972");
 
     }
 }
