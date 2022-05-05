@@ -40,7 +40,7 @@ namespace GrasshopperRadianceLinuxConnector.Components
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
 
         {
-            pManager.AddTextParameter("Headers", "Headers", "Headers", GH_ParamAccess.list);
+            pManager.AddTextParameter("Headers", "Headers", "Headers\ntypically rows = hours and columns = points", GH_ParamAccess.list);
             pManager.AddNumberParameter("Results", "Results", "Results", GH_ParamAccess.list);
             pManager.AddBooleanParameter("Ran", "Ran", "Ran", GH_ParamAccess.item);
 
@@ -53,37 +53,24 @@ namespace GrasshopperRadianceLinuxConnector.Components
         protected override void SolveInstance(IGH_DataAccess DA)
         {
 
-            if (!DA.Fetch<bool>("Run"))
-            {
-                DA.SetData("Ran", false);
-                return;
-            }
-
-
-            double max = DA.Fetch<double>("max");
-            if (max <= 0)
-                max = double.MaxValue;
-
-            double min = DA.Fetch<double>("min");
-
-            bool[] schedule = DA.FetchList<int>("schedule").AsParallel().AsOrdered().Select(s => s >= 1).ToArray();
-
-            int totalHours = schedule.Count(s => s);
 
 
             string illFile = DA.Fetch<string>("illFile");
-
-            var linesPerHour = new BlockingCollection<string>();
-
             List<string> headerLines = new List<string>(8);
-
-            //int pointCount = 0;
+            var linesPerHour = new BlockingCollection<string>();
+            bool[] schedule = DA.FetchList<int>("schedule").AsParallel().AsOrdered().Select(s => s >= 1).ToArray();
+            int headerRows = 0;
+            int headerColumns = 0;
 
 
             var readLines = Task.Factory.StartNew(() =>
             {
                 bool begin = false;
                 int counter = 0;
+
+                if (String.IsNullOrEmpty(illFile) || !File.Exists(illFile))
+                    return;
+
                 foreach (var line in File.ReadLines(illFile))
                 {
                     if (!begin)
@@ -91,12 +78,18 @@ namespace GrasshopperRadianceLinuxConnector.Components
                         if (line.Length == 0)
                             begin = true;
                         else
+                        {
                             headerLines.Add(line);
+                            if (line.StartsWith("NCOLS"))
+                                headerColumns = int.Parse(line.Split('=')[1]);
+                            if (line.StartsWith("NROWS"))
+                                headerRows = int.Parse(line.Split('=')[1]);
+                        }
                     }
                     else
                     {
                         //if (counter == 0)
-                           // pointCount = line.Split('\t').Length + 1;
+                        // pointCount = line.Split('\t').Length + 1;
                         if (schedule[counter++]) //<<-- TO FILTER ROWS BY SCHEDULE
                             linesPerHour.Add(line);
 
@@ -107,62 +100,90 @@ namespace GrasshopperRadianceLinuxConnector.Components
                 linesPerHour.CompleteAdding();
             });
 
+            if (!DA.Fetch<bool>("Run"))
+            {
+
+                DA.SetData("Ran", false);
+                Task.WaitAll(readLines);
+                DA.SetDataList("Headers", headerLines);
+                return;
+            }
+
+
+            double max = DA.Fetch<double>("max");
+            if (max <= 0)
+                max = double.MaxValue;
+
+            double min = DA.Fetch<double>("min");
+
+
+
+            int scheduleHoursCount = schedule.Count(s => s);
+
+
             double[] wellLitHoursPerPoint = new double[0];
 
-            //ConcurrentDictionary<int, double> results = new ConcurrentDictionary<int, double>();
 
-            //int lineNumber = -1;
+            int pointCount = 0;
+            int lineCount = 0;
 
-            //var processLines = Task.Factory.StartNew(() =>
-            //{
-            foreach (var line in linesPerHour.GetConsumingEnumerable())
+            var processLines = Task.Factory.StartNew(() =>
             {
-                //Interlocked.Increment(ref lineNumber);
-
-                //string[] fields = line.Split('\t');
-
-                var resultsPerPointPerHour = line.Split('\t')
-                .AsParallel()
-                .AsOrdered()
-                //.Where((x, index) => schedule[index]) // <-- TO FILTER COLUMN BY SCHEDULE
-                .Where(x => !String.IsNullOrWhiteSpace(x))
-                .Select(x => double.Parse(x.Trim(' ')))
-                .Select(x => x >= min && x <= max ? 1 : 0)
-                .ToArray();
-
-                if (wellLitHoursPerPoint.Length == 0)
-                    wellLitHoursPerPoint = new double[resultsPerPointPerHour.Length];
-
-                for (int i = 0; i < resultsPerPointPerHour.Length; i++)
+                foreach (var line in linesPerHour.GetConsumingEnumerable())
                 {
-                    wellLitHoursPerPoint[i] += resultsPerPointPerHour[i];
+                    Interlocked.Increment(ref lineCount);
+
+                    var resultsPerPointPerHour = line.Split('\t')
+                        .AsParallel()
+                        .AsOrdered()
+                        .Where(x => !String.IsNullOrWhiteSpace(x))
+                        .Select(x => double.Parse(x.Trim(' ')))
+                        .Select(x => x >= min && x <= max ? 1 : 0)
+                        .ToArray();
+
+                    pointCount = resultsPerPointPerHour.Length;
+
+                    if (wellLitHoursPerPoint.Length == 0)
+                        wellLitHoursPerPoint = new double[resultsPerPointPerHour.Length];
+
+                    for (int i = 0; i < resultsPerPointPerHour.Length; i++)
+                    {
+                        wellLitHoursPerPoint[i] += resultsPerPointPerHour[i];
+                    }
+
+
+
                 }
 
+                if (lineCount != scheduleHoursCount)
+                    throw new Exception($"Schedule hours count  ({scheduleHoursCount}) does not match the hours in ill file  ({lineCount})!");
+
+            });
 
 
+            DA.SetData("Ran", true);
+
+            Task.WaitAll(readLines);
+
+            DA.SetDataList("Headers", headerLines);
 
 
+            Task.WaitAll(readLines, processLines);
+
+            if (headerRows != 0 && headerRows != lineCount)
+            {
+                AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, $"NROWS={headerRows}, but the file contained {lineCount} lines.");
+            }
+
+            if (headerColumns != 0 && headerColumns != pointCount)
+            {
+                AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, $"NROWS={headerColumns}, but the file contained {pointCount} columns.");
             }
 
 
 
 
-            //});
-
-            DA.SetDataList("Headers", headerLines);
-            
-            DA.SetData("Ran", true);
-
-            Task.WaitAll(readLines);
-
-            
-
-            //Task.WaitAll(readLines, processLines);
-
-
-
-
-            DA.SetDataList("Results", wellLitHoursPerPoint.Select(r => r / totalHours));
+            DA.SetDataList("Results", wellLitHoursPerPoint.Select(r => r / (double)scheduleHoursCount));
 
 
         }
