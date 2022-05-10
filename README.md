@@ -20,6 +20,10 @@ Parallel Meshing and mesh2obj creation (in gh).. And it's ok fast compared to LB
 Access to ImageMagick and the meta functions in Radiance
 ![image](https://user-images.githubusercontent.com/19936679/159573035-72523b98-e2ad-40d1-ae82-ecc9f5068288.png)
 
+Added a quick preview to visualize rad files within rhino. (TODO is show radiance modifiers and a legend)
+![image](https://user-images.githubusercontent.com/19936679/167710619-1b9736d4-6b8e-4666-bbd4-9c49e1bfe30e.png)
+
+
 ## Todo:
 Check out the issues on my todo list [here](https://github.com/Sonderwoods/GrasshopperRadianceLinuxConnector/issues).
 
