@@ -47,7 +47,8 @@ namespace GrasshopperRadianceLinuxConnector
         /// </summary>
         public static List<string> ExportPrefixes { get; set; } = new List<string>() {
             "export PATH=$PATH:/usr/local/radiance/bin",
-            "export RAYPATH=./usr/local/radiance/lib",
+            //"export RAYPATH=./usr/local/radiance/lib",
+            "export RAYPATH=.:/usr/local/radiance/lib", //including local dir
             "export DISPLAY=$(ip route list default | awk '{print $3}'):0",
             "export LIBGL_ALWAYS_INDIRECT=1"
         };
