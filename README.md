@@ -21,7 +21,7 @@ Access to ImageMagick and the meta functions in Radiance
 ![image](https://user-images.githubusercontent.com/19936679/159573035-72523b98-e2ad-40d1-ae82-ecc9f5068288.png)
 
 Added a quick preview to visualize rad files within rhino. (TODO is show radiance modifiers and a legend)
-![image](https://user-images.githubusercontent.com/19936679/167710619-1b9736d4-6b8e-4666-bbd4-9c49e1bfe30e.png)
+![image](https://user-images.githubusercontent.com/19936679/167927499-33c8a0b9-412a-4a32-b7d0-b426854b2dd1.png)
 
 
 ## Todo:
