@@ -9,6 +9,8 @@ using System.Runtime.Serialization;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using System.Windows.Forms;
+using GH_IO.Serialization;
 using Grasshopper.Kernel;
 using Rhino.Geometry;
 
@@ -28,11 +30,14 @@ namespace GrasshopperRadianceLinuxConnector.Components
 
         }
 
-        Dictionary<string, RadianceObject> objects = new Dictionary<string, RadianceObject>();
+        
+
+        bool TwoSided = false;
+        readonly Dictionary<string, RadianceObject> objects = new Dictionary<string, RadianceObject>();
         BoundingBox bb = new BoundingBox();
-        Random rnd = new Random();
-        List<Mesh> meshes = new List<Mesh>();
-        List<Curve> failedCurves = new List<Curve>();
+        readonly Random rnd = new Random();
+        readonly List<Curve> failedCurves = new List<Curve>();
+        readonly Dictionary<string, System.Drawing.Color> colors = new Dictionary<string, System.Drawing.Color>();
 
         /// <summary>
         /// Registers all the input parameters for this component.
@@ -247,7 +252,19 @@ namespace GrasshopperRadianceLinuxConnector.Components
                     }
                     else
                     {
-                        geo.Material = new Rhino.Display.DisplayMaterial(System.Drawing.Color.FromArgb(rnd.Next(150, 256), rnd.Next(150, 256), rnd.Next(150, 256)));
+                        if (!colors.TryGetValue(obj.ModifierName, out System.Drawing.Color color))
+                        {
+                            color = System.Drawing.Color.FromArgb(rnd.Next(150, 256), rnd.Next(150, 256), rnd.Next(150, 256));
+                            colors.Add(obj.ModifierName, color);
+
+                        }
+                        
+                        geo.Material = new Rhino.Display.DisplayMaterial(color);
+                        geo.Material.Emission = geo.Material.Diffuse;
+                        geo.Material.IsTwoSided = TwoSided;
+                        geo.Material.BackDiffuse = System.Drawing.Color.Red;
+                        geo.Material.BackEmission = System.Drawing.Color.Red;
+                        
 
                         objects.Add(obj.ModifierName, geo);
                     }
@@ -438,6 +455,7 @@ namespace GrasshopperRadianceLinuxConnector.Components
             }
 
             public abstract void DrawObject(IGH_PreviewArgs args);
+            public abstract void DrawWires(IGH_PreviewArgs args);
         }
 
 
@@ -570,6 +588,11 @@ namespace GrasshopperRadianceLinuxConnector.Components
                 args.Display.DrawMeshShaded(Mesh, Material);
             }
 
+            public override void DrawWires(IGH_PreviewArgs args)
+            {
+                args.Display.DrawMeshWires(Mesh, System.Drawing.Color.Black, 1);
+            }
+
 
         }
 
@@ -593,6 +616,11 @@ namespace GrasshopperRadianceLinuxConnector.Components
             }
 
             public override void DrawObject(IGH_PreviewArgs args)
+            {
+                throw new NotImplementedException();
+            }
+
+            public override void DrawWires(IGH_PreviewArgs args)
             {
                 throw new NotImplementedException();
             }
@@ -624,6 +652,54 @@ namespace GrasshopperRadianceLinuxConnector.Components
             //}
 
             base.DrawViewportMeshes(args);
+        }
+
+        public override void DrawViewportWires(IGH_PreviewArgs args)
+        {
+            foreach (RadianceGeometry obj in objects.Where(o => o.Value is RadianceGeometry).Select(o => o.Value))
+            {
+                obj.DrawWires(args);
+            }
+
+            //foreach( Curve crv in failedCurves)
+            //{
+            //    args.Display.DrawCurve(crv, System.Drawing.Color.Red);
+            //}
+
+            base.DrawViewportWires(args);
+        }
+
+        public void ToggleTwoSided()
+        {
+            TwoSided = !TwoSided;
+            
+            foreach (RadianceGeometry obj in objects.Where(o => o.Value is RadianceGeometry).Select(o => o.Value))
+            {
+                obj.Material.IsTwoSided = TwoSided;
+            }
+        }
+
+        public override bool Read(GH_IReader reader)
+        {
+            reader.TryGetBoolean("IsTwoSided", ref TwoSided);
+            return base.Read(reader);
+        }
+
+        public override bool Write(GH_IWriter writer)
+        {
+            writer.SetBoolean("IsTwoSided", TwoSided);
+            return base.Write(writer);
+        }
+
+        
+
+        public override void AppendAdditionalMenuItems(ToolStripDropDown menu)
+        {
+            base.AppendAdditionalMenuItems(menu);
+            Menu_AppendItem(menu, "Toggle Twosided", (s, e) =>
+            {
+                ToggleTwoSided();
+            }, true, TwoSided);
         }
 
 
