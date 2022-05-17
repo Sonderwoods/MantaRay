@@ -193,7 +193,22 @@ namespace GrasshopperRadianceLinuxConnector.Components
                 {
                     sb.AppendFormat("SSH:  Could not find the SSH server\n      {0}\n      Try restarting it locally in " +
                         "your bash with the command:\n    $ sudo service ssh start\n", e.Message);
-                    var mb = MessageBox.Show("No SSH, try opening it with\nsudo service ssh start", "No SSH?", MessageBoxButtons.OK);
+                    var mb = MessageBox.Show("No SSH, try opening it with\nsudo service ssh start\n\nWant me to start it for you??", "No SSH?", MessageBoxButtons.YesNo);
+
+                    if (mb == DialogResult.Yes)
+                    {
+                        Process proc = new System.Diagnostics.Process();
+                        proc.StartInfo.FileName = @"C:\windows\system32\cmd.exe";
+                        proc.StartInfo.Arguments = "/c \"bash -c \"sudo service ssh start\" \"";
+
+                        proc.StartInfo.UseShellExecute = true;
+                        proc.StartInfo.RedirectStandardOutput = false;
+
+                        proc.Start();
+                        proc.WaitForExit();
+
+                        this.ExpireSolution(true);
+                    }
 
                 }
                 catch (Exception e)
