@@ -199,7 +199,7 @@ namespace GrasshopperRadianceLinuxConnector.Components
                     {
                         Process proc = new System.Diagnostics.Process();
                         proc.StartInfo.FileName = @"C:\windows\system32\cmd.exe";
-                        proc.StartInfo.Arguments = "/c \"bash -c \"sudo service ssh start\" \"";
+                        proc.StartInfo.Arguments = $"/c \"bash -c \"echo {_pw} | sudo -S service ssh start\" \"";
 
                         proc.StartInfo.UseShellExecute = true;
                         proc.StartInfo.RedirectStandardOutput = false;
