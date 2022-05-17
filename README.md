@@ -21,13 +21,13 @@ Access to ImageMagick and the meta functions in Radiance
 
 
 ## Components:
-*SSH Connect*
+#### SSH Connect
 ![radianceConnect](https://user-images.githubusercontent.com/19936679/168886070-7af082d4-ba57-417e-a5ff-9d93269a21de.gif)
 - Connects to a SSH. Can embed password in GH script (internalize) or will prompt on execution.
 - Will automatically run _bash sudo service ssh start_ if it's not already running (will ask before so)
 - Will keep password even if you say recompute all. To set up a new selection set it to false and then true.
 
-*RadViewer*
+#### RadViewer
 ![radianceRadViewer](https://user-images.githubusercontent.com/19936679/168884796-fea8f5e5-f919-4222-81e4-dd676ce3794f.gif)
 - Super fast parsing of multiple rad files
 - Preview of random colors (Todo: Match color of radiance material)
