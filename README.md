@@ -16,8 +16,7 @@ Async SSH Components in place (based on the [speckle async](https://github.com/s
 
 
 
-Access to ImageMagick and the meta functions in Radiance
-![image](https://user-images.githubusercontent.com/19936679/159573035-72523b98-e2ad-40d1-ae82-ecc9f5068288.png)
+
 
 
 ## Components:
@@ -34,16 +33,31 @@ Access to ImageMagick and the meta functions in Radiance
 - Todo: Legend for the colors
 - Todo (Optional): Clickable objects to get modifiers
 
-*Mesh2obj (and obj2rad)*
+#### Mesh2obj (and obj2rad)
 ![image](https://user-images.githubusercontent.com/19936679/158892631-188c4ab0-b364-4b0c-820a-eff9101058e2.png)
 - Runs in parallel and is fast
 - Orients normals (vertice order in radiance) to match rhino mesh normals
 
 
+#### Setup Globals (and Apply Globals)
+![image](https://user-images.githubusercontent.com/19936679/168888836-58a91cee-17a5-409a-92de-a700d684b3af.png)
+- A place to set your variables and reuse them, ie project folder etc.
+- Can also be used for local replacements in the ssh command
+- Only one Setup Globals component can be placed at the canvas at the same time (otherwise see screenshot)
+
+#### Execute Async
+![radianceExecuteAsync](https://user-images.githubusercontent.com/19936679/168891590-600b9434-834d-4f06-8166-10fa62cdab09.gif)
+- The component that does the magic.
+- Reuses outputs and saves them on your canvas. This means that when reopening grasshopper, you don't have to run all commands again if the temporary files are still there.
+- Runs asyncronously, which means it does not block the grasshopper UI while it's running.
+- Two components next to each other depending on the same inputs will both run in parallel and first trigger the downstream components when both are finished (use the RAN output as it becomes true when finished).
+- To avoid this behavior, you can graft several inputs into the same component instead.
+- Access to ImageMagick and the meta functions in linux only Radiance
+![image](https://user-images.githubusercontent.com/19936679/159573035-72523b98-e2ad-40d1-ae82-ecc9f5068288.png)
+
+
 ## Todo:
 Check out the issues on my todo list [here](https://github.com/Sonderwoods/GrasshopperRadianceLinuxConnector/issues).
-
-
 
 
 
