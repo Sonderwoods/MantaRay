@@ -14,14 +14,30 @@ SSH Connection in Grasshopper is now established
 Async SSH Components in place (based on the [speckle async](https://github.com/specklesystems/GrasshopperAsyncComponent))
 ![radianceasync](https://user-images.githubusercontent.com/19936679/166122160-9a706a61-eaa1-48cb-a5a4-6f95681a83a0.gif)
 
-Parallel Meshing and mesh2obj creation (in gh).. And it's ok fast compared to LBT (hint, hint)
-![image](https://user-images.githubusercontent.com/19936679/158892631-188c4ab0-b364-4b0c-820a-eff9101058e2.png)
+
 
 Access to ImageMagick and the meta functions in Radiance
 ![image](https://user-images.githubusercontent.com/19936679/159573035-72523b98-e2ad-40d1-ae82-ecc9f5068288.png)
 
-Added a quick preview to visualize rad files within rhino. (TODO is show radiance modifiers and a legend)
-![image](https://user-images.githubusercontent.com/19936679/167927499-33c8a0b9-412a-4a32-b7d0-b426854b2dd1.png)
+
+## Components:
+*SSH Connect*
+![radianceConnect](https://user-images.githubusercontent.com/19936679/168886070-7af082d4-ba57-417e-a5ff-9d93269a21de.gif)
+- Connects to a SSH. Can embed password in GH script (internalize) or will prompt on execution.
+- Will automatically run _bash sudo service ssh start_ if it's not already running (will ask before so)
+- Will keep password even if you say recompute all. To set up a new selection set it to false and then true.
+
+*RadViewer*
+![radianceRadViewer](https://user-images.githubusercontent.com/19936679/168884796-fea8f5e5-f919-4222-81e4-dd676ce3794f.gif)
+- Super fast parsing of multiple rad files
+- Preview of random colors (Todo: Match color of radiance material)
+- Todo: Legend for the colors
+- Todo (Optional): Clickable objects to get modifiers
+
+*Mesh2obj (and obj2rad)*
+![image](https://user-images.githubusercontent.com/19936679/158892631-188c4ab0-b364-4b0c-820a-eff9101058e2.png)
+- Runs in parallel and is fast
+- Orients normals (vertice order in radiance) to match rhino mesh normals
 
 
 ## Todo:
