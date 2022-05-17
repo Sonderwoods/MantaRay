@@ -4,18 +4,8 @@ This allows you to utilize all the linux native Radiance commands including the 
 
 In pure Linux fashion the Grasshopper components will pipe the results to the next component.
 
-## Status:
-
-SSH Connection in Grasshopper is now established
-![image](https://user-images.githubusercontent.com/19936679/158470596-a3eab3e0-bc0a-447b-bd46-eba8a3877785.png)
-
-![image](https://user-images.githubusercontent.com/19936679/158892497-523d0546-15f3-4ed2-8a1c-1a44e2777272.png)
-
 Async SSH Components in place (based on the [speckle async](https://github.com/specklesystems/GrasshopperAsyncComponent))
 ![radianceasync](https://user-images.githubusercontent.com/19936679/166122160-9a706a61-eaa1-48cb-a5a4-6f95681a83a0.gif)
-
-
-
 
 
 
