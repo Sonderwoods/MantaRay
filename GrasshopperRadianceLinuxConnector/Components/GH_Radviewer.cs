@@ -16,12 +16,12 @@ using Rhino.Geometry;
 
 namespace GrasshopperRadianceLinuxConnector.Components
 {
-    public class CS_RadViewer : GH_Template
+    public class GH_Radviewer : GH_Template
     {
         /// <summary>
         /// Initializes a new instance of the CS_RadViewer class.
         /// </summary>
-        public CS_RadViewer()
+        public GH_Radviewer()
           : base("RadViewer", "RadViewer",
               "Radiance viewer. Very inspired by SpiderRad Viewer by Theo Armour\n" +
                 "https://github.com/ladybug-tools/spider-rad-viewer",
