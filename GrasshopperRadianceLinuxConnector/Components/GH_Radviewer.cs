@@ -12,6 +12,7 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using GH_IO.Serialization;
 using Grasshopper.Kernel;
+using Rhino.Display;
 using Rhino.Geometry;
 
 namespace GrasshopperRadianceLinuxConnector.Components
@@ -30,7 +31,7 @@ namespace GrasshopperRadianceLinuxConnector.Components
 
         }
 
-        
+
 
         bool TwoSided = false;
         readonly Dictionary<string, RadianceObject> objects = new Dictionary<string, RadianceObject>();
@@ -38,6 +39,10 @@ namespace GrasshopperRadianceLinuxConnector.Components
         readonly Random rnd = new Random();
         readonly List<Curve> failedCurves = new List<Curve>();
         readonly Dictionary<string, System.Drawing.Color> colors = new Dictionary<string, System.Drawing.Color>();
+
+
+        private HUD hud = new HUD();
+
 
         /// <summary>
         /// Registers all the input parameters for this component.
@@ -182,7 +187,7 @@ namespace GrasshopperRadianceLinuxConnector.Components
             {
                 Debug.WriteLine("starting processing lines");
                 int c2 = 0;
-                
+
                 foreach (var line in linesPerObject.GetConsumingEnumerable())
                 {
                     try
@@ -240,7 +245,7 @@ namespace GrasshopperRadianceLinuxConnector.Components
                     else
                         bb.Union(geo.Mesh.GetBoundingBox(false));
 
-                    if (objects.ContainsKey(obj.ModifierName) )
+                    if (objects.ContainsKey(obj.ModifierName))
                     {
                         if (objects[obj.ModifierName] is RaPolygon poly)
                         {
@@ -258,13 +263,13 @@ namespace GrasshopperRadianceLinuxConnector.Components
                             colors.Add(obj.ModifierName, color);
 
                         }
-                        
+
                         geo.Material = new Rhino.Display.DisplayMaterial(color);
                         geo.Material.Emission = geo.Material.Diffuse;
                         geo.Material.IsTwoSided = TwoSided;
                         geo.Material.BackDiffuse = System.Drawing.Color.Red;
                         geo.Material.BackEmission = System.Drawing.Color.Red;
-                        
+
 
                         objects.Add(obj.ModifierName, geo);
                     }
@@ -309,6 +314,17 @@ namespace GrasshopperRadianceLinuxConnector.Components
             }
 
             Debug.WriteLine("done setting modifiers");
+            hud.Callback.Component = this;
+            hud.Callback.Enabled = true;
+
+            hud.Items.Clear();
+            
+            foreach (RaPolygon poly in objects.Where(o => o.Value is RaPolygon).Select(o => (RaPolygon)o.Value))
+            {
+                string desc = poly.Modifier is RadianceMaterial m ? m.MaterialDefinition : string.Empty;
+                hud.Items.Add(new HUD.HUD_Item() { Name = poly.Name, Description = desc, Mesh = poly.Mesh, Color = System.Drawing.Color.FromArgb(150, 200, 200,200) });
+            }
+            
 
 
             DA.SetDataList(0, objects.Where(o => o.Value is RaPolygon).Select(o => ((RaPolygon)o.Value).Mesh));
@@ -317,6 +333,68 @@ namespace GrasshopperRadianceLinuxConnector.Components
             DA.SetDataList(3, objects.Where(o => o.Value is RaPolygon).Select(o => (o.Value.Modifier)).Select(m => m is RadianceMaterial ? (m as RadianceMaterial).MaterialDefinition : null));
             DA.SetDataList(4, failedCurves);
         }
+
+        public override void RemovedFromDocument(GH_Document document)
+        {
+            base.RemovedFromDocument(document);
+
+
+            hud.Callback.Enabled = false;
+
+            hud = null;
+
+            DisplayPipeline.DrawForeground -= DrawForeground;
+
+
+        }
+
+        private void DrawForeground(object sender, DrawEventArgs e)
+        {
+
+
+            if (hud != null && hud.Enabled && !this.Hidden && !this.Locked)
+            {
+
+                hud.Draw(e);
+                hud.Callback.Enabled = true;
+
+            }
+            else if (hud != null)
+            {
+                hud.Enabled = false;
+
+            }
+
+
+        }
+
+        public override void DocumentContextChanged(GH_Document document, GH_DocumentContext context)
+        {
+            Debug.WriteLine("DocumentContextChanged");
+
+            if (hud != null)
+            {
+
+                hud.Enabled = false;
+
+
+                DisplayPipeline.DrawForeground -= DrawForeground;
+                if (context == GH_DocumentContext.Loaded)
+                {
+                    DisplayPipeline.DrawForeground += DrawForeground;
+
+                    hud.Enabled = true;
+
+                }
+            }
+
+        }
+
+        protected override void BeforeSolveInstance() //Register new event
+        {
+            DisplayPipeline.DrawForeground += DrawForeground;
+        }
+
 
         public Curve[] GetFailedLines(string line)
         {
@@ -641,6 +719,23 @@ namespace GrasshopperRadianceLinuxConnector.Components
 
         public override void DrawViewportMeshes(IGH_PreviewArgs args)
         {
+       
+            //ensures that we turn the dashboard on
+            if (hud != null && !this.Hidden && !this.Locked && hud.Items.Count > 0)
+            {
+                hud.Enabled = true;
+                hud.Callback.Enabled = true;
+
+                if (hud.HighlightedItem != null )
+                {
+                    args.Display.DrawMeshShaded(hud.HighlightedItem.Mesh, new DisplayMaterial(System.Drawing.Color.Red));
+                }
+
+            }
+
+       
+        
+
             foreach (RadianceGeometry obj in objects.Where(o => o.Value is RadianceGeometry).Select(o => o.Value))
             {
                 obj.DrawObject(args);
@@ -672,7 +767,7 @@ namespace GrasshopperRadianceLinuxConnector.Components
         public void ToggleTwoSided()
         {
             TwoSided = !TwoSided;
-            
+
             foreach (RadianceGeometry obj in objects.Where(o => o.Value is RadianceGeometry).Select(o => o.Value))
             {
                 obj.Material.IsTwoSided = TwoSided;
@@ -691,7 +786,7 @@ namespace GrasshopperRadianceLinuxConnector.Components
             return base.Write(writer);
         }
 
-        
+
 
         public override void AppendAdditionalMenuItems(ToolStripDropDown menu)
         {
