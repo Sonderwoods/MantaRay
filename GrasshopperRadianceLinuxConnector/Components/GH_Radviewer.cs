@@ -2,6 +2,7 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.Contracts;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -12,16 +13,17 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using GH_IO.Serialization;
 using Grasshopper.Kernel;
+using Rhino.Display;
 using Rhino.Geometry;
 
 namespace GrasshopperRadianceLinuxConnector.Components
 {
-    public class CS_RadViewer : GH_Template
+    public class GH_Radviewer : GH_Template
     {
         /// <summary>
         /// Initializes a new instance of the CS_RadViewer class.
         /// </summary>
-        public CS_RadViewer()
+        public GH_Radviewer()
           : base("RadViewer", "RadViewer",
               "Radiance viewer. Very inspired by SpiderRad Viewer by Theo Armour\n" +
                 "https://github.com/ladybug-tools/spider-rad-viewer",
@@ -30,7 +32,7 @@ namespace GrasshopperRadianceLinuxConnector.Components
 
         }
 
-        
+
 
         bool TwoSided = false;
         readonly Dictionary<string, RadianceObject> objects = new Dictionary<string, RadianceObject>();
@@ -38,6 +40,10 @@ namespace GrasshopperRadianceLinuxConnector.Components
         readonly Random rnd = new Random();
         readonly List<Curve> failedCurves = new List<Curve>();
         readonly Dictionary<string, System.Drawing.Color> colors = new Dictionary<string, System.Drawing.Color>();
+
+
+        private HUD hud = new HUD();
+
 
         /// <summary>
         /// Registers all the input parameters for this component.
@@ -182,16 +188,16 @@ namespace GrasshopperRadianceLinuxConnector.Components
             {
                 Debug.WriteLine("starting processing lines");
                 int c2 = 0;
-                
+
                 foreach (var line in linesPerObject.GetConsumingEnumerable())
                 {
                     try
                     {
 
-                        radianceObjects.Add(ConvertToObject(line));
+                        radianceObjects.Add(RadianceObject.ConvertToObject(line));
 
                     }
-                    catch (PolygonException ex)
+                    catch (RaPolygon.PolygonException ex)
                     {
                         failedCurves.AddRange(GetFailedLines(line));
                         //radianceObjects.CompleteAdding();
@@ -240,7 +246,7 @@ namespace GrasshopperRadianceLinuxConnector.Components
                     else
                         bb.Union(geo.Mesh.GetBoundingBox(false));
 
-                    if (objects.ContainsKey(obj.ModifierName) )
+                    if (objects.ContainsKey(obj.ModifierName))
                     {
                         if (objects[obj.ModifierName] is RaPolygon poly)
                         {
@@ -258,13 +264,13 @@ namespace GrasshopperRadianceLinuxConnector.Components
                             colors.Add(obj.ModifierName, color);
 
                         }
-                        
+
                         geo.Material = new Rhino.Display.DisplayMaterial(color);
                         geo.Material.Emission = geo.Material.Diffuse;
                         geo.Material.IsTwoSided = TwoSided;
                         geo.Material.BackDiffuse = System.Drawing.Color.Red;
                         geo.Material.BackEmission = System.Drawing.Color.Red;
-                        
+
 
                         objects.Add(obj.ModifierName, geo);
                     }
@@ -309,6 +315,17 @@ namespace GrasshopperRadianceLinuxConnector.Components
             }
 
             Debug.WriteLine("done setting modifiers");
+            hud.Callback.Component = this;
+            hud.Callback.Enabled = true;
+
+            hud.Items.Clear();
+
+            foreach (RaPolygon poly in objects.Where(o => o.Value is RaPolygon).Select(o => (RaPolygon)o.Value))
+            {
+                string desc = poly.Modifier is RadianceMaterial m ? m.MaterialDefinition : string.Empty;
+                hud.Items.Add(new HUD.HUD_Item() { Name = poly.Name, Description = desc, Mesh = poly.Mesh, Color = System.Drawing.Color.FromArgb(150, 200, 200, 200) });
+            }
+
 
 
             DA.SetDataList(0, objects.Where(o => o.Value is RaPolygon).Select(o => ((RaPolygon)o.Value).Mesh));
@@ -318,6 +335,80 @@ namespace GrasshopperRadianceLinuxConnector.Components
             DA.SetDataList(4, failedCurves);
         }
 
+        public override void RemovedFromDocument(GH_Document document)
+        {
+
+            Debug.WriteLine("Removed from document and set to false/null");
+            base.RemovedFromDocument(document);
+
+
+            hud.Callback.Enabled = false;
+
+            hud = null;
+
+            DisplayPipeline.DrawForeground -= DrawForeground;
+
+
+        }
+
+        private void DrawForeground(object sender, DrawEventArgs e)
+        {
+
+
+            if (hud != null && hud.Enabled && !this.Hidden && !this.Locked)
+            {
+
+                hud.Draw(e);
+                hud.Callback.Enabled = true;
+
+            }
+            else if (hud != null)
+            {
+                hud.Enabled = false;
+
+            }
+
+
+        }
+
+        public override void DocumentContextChanged(GH_Document document, GH_DocumentContext context)
+        {
+
+
+            if (hud != null)
+            {
+
+
+
+                DisplayPipeline.DrawForeground -= DrawForeground;
+                if (context == GH_DocumentContext.Loaded)
+                {
+                    Debug.WriteLine("DocumentContext changed, enabled set to true");
+                    DisplayPipeline.DrawForeground += DrawForeground;
+                    hud.Enabled = true;
+
+                }
+                else
+                {
+                    Debug.WriteLine("DocumentContext changed, enabled set to false");
+                    hud.Enabled = false;
+                }
+            }
+
+        }
+
+        protected override void BeforeSolveInstance()
+        {
+            Debug.WriteLine("Beforesolveinstance ran. Setting up events");
+            DisplayPipeline.DrawForeground += DrawForeground;
+        }
+
+
+        /// <summary>
+        /// _Very_ inspired by the Ladybug Tools component
+        /// </summary>
+        /// <param name="line"></param>
+        /// <returns></returns>
         public Curve[] GetFailedLines(string line)
         {
             const string rep_new_line_re = @"/\s\s+/g";
@@ -366,56 +457,105 @@ namespace GrasshopperRadianceLinuxConnector.Components
 
             var segs = new Polyline(ptList2).ToNurbsCurve().DuplicateSegments();
 
-            return Curve.JoinCurves(segs.AsParallel().AsOrdered().Where(s => !IsCurveDup(s, segs)));
+            return Curve.JoinCurves(segs.AsParallel().AsOrdered().Where(s => !RaPolygon.IsCurveDup(s, segs)));
 
 
         }
 
-        public RadianceObject ConvertToObject(string line)
+
+
+
+        public override Guid ComponentGuid => new Guid("1FA443D0-8881-4546-9BA1-259B22CF89B4");
+
+
+
+        public override BoundingBox ClippingBox => bb;
+
+        public override void DrawViewportMeshes(IGH_PreviewArgs args)
         {
-            const string rep_new_line_re = @"/\s\s+/g";
 
-            string[] data = Regex.Replace(line, rep_new_line_re, " ").Trim().Split(' ').Where(d => !String.IsNullOrEmpty(d)).ToArray();
-
-            if (data.Length < 3)
-                return null;
-
-            string type = data[1];
-
-            if (type.Length == 0)
-                return null;
-
-            switch (type)
+            //ensures that we turn the dashboard on
+            if (hud != null && !this.Hidden && !this.Locked && hud.Items.Count > 0)
             {
-                case "polygon":
-                    return new RaPolygon(data);
-                case "sphere":
-                    return new RaSphere(data);
-                case "cone":
-                case "cylinder":
-                case "plastic":
-                case "glass":
-                case "metal":
-                case "trans":
-                case "glow":
-                case "mirror":
-                case "bsdf":
-                default:
-                    return new RadianceMaterial(data);
+                hud.Enabled = true;
+                hud.Callback.Enabled = true;
+
+                if (hud.HighlightedItem != null)
+                {
+                    args.Display.DrawMeshShaded(hud.HighlightedItem.Mesh, new DisplayMaterial(System.Drawing.Color.Red));
+                }
+
             }
 
 
+
+
+            foreach (RadianceGeometry obj in objects.Where(o => o.Value is RadianceGeometry).Select(o => o.Value))
+            {
+                obj.DrawObject(args);
+            }
+
+            //foreach( Curve crv in failedCurves)
+            //{
+            //    args.Display.DrawCurve(crv, System.Drawing.Color.Red);
+            //}
+
+            base.DrawViewportMeshes(args);
         }
 
-
-
-        /// <summary>
-        /// Gets the unique ID for this component. Do not change this ID after release.
-        /// </summary>
-        public override Guid ComponentGuid
+        public override void DrawViewportWires(IGH_PreviewArgs args)
         {
-            get { return new Guid("1FA443D0-8881-4546-9BA1-259B22CF89B4"); }
+            foreach (RadianceGeometry obj in objects.Where(o => o.Value is RadianceGeometry).Select(o => o.Value))
+            {
+                obj.DrawWires(args);
+            }
+
+            //foreach( Curve crv in failedCurves)
+            //{
+            //    args.Display.DrawCurve(crv, System.Drawing.Color.Red);
+            //}
+
+            base.DrawViewportWires(args);
         }
+
+        public void ToggleTwoSided()
+        {
+            TwoSided = !TwoSided;
+
+            foreach (RadianceGeometry obj in objects.Where(o => o.Value is RadianceGeometry).Select(o => o.Value))
+            {
+                obj.Material.IsTwoSided = TwoSided;
+            }
+        }
+
+        public override bool Read(GH_IReader reader)
+        {
+            reader.TryGetBoolean("IsTwoSided", ref TwoSided);
+            return base.Read(reader);
+        }
+
+        public override bool Write(GH_IWriter writer)
+        {
+            writer.SetBoolean("IsTwoSided", TwoSided);
+            return base.Write(writer);
+        }
+
+
+
+        public override void AppendAdditionalMenuItems(ToolStripDropDown menu)
+        {
+            base.AppendAdditionalMenuItems(menu);
+            Menu_AppendItem(menu, "Toggle Twosided", (s, e) =>
+            {
+                ToggleTwoSided();
+            }, true, TwoSided);
+        }
+
+
+        public override bool IsPreviewCapable => true;
+
+
+
 
         public abstract class RadianceObject
         {
@@ -430,6 +570,42 @@ namespace GrasshopperRadianceLinuxConnector.Components
                 ModifierName = data[0];
                 ObjectType = data[1];
                 Name = data[2];
+            }
+
+            [Pure]
+            public static RadianceObject ConvertToObject(string line)
+            {
+                const string rep_new_line_re = @"/\s\s+/g";
+
+                string[] data = Regex.Replace(line, rep_new_line_re, " ").Trim().Split(' ').Where(d => !String.IsNullOrEmpty(d)).ToArray();
+
+                if (data.Length < 3)
+                    return null;
+
+                string type = data[1];
+
+                if (type.Length == 0)
+                    return null;
+
+                switch (type)
+                {
+                    case "polygon":
+                        return new RaPolygon(data);
+                    case "sphere":
+                        return new RaSphere(data);
+                    case "cone":
+                    case "cylinder":
+                    case "plastic":
+                    case "glass":
+                    case "metal":
+                    case "trans":
+                    case "glow":
+                    case "mirror":
+                    case "bsdf":
+                    default:
+                        return new RadianceMaterial(data);
+                }
+
             }
 
         }
@@ -459,8 +635,6 @@ namespace GrasshopperRadianceLinuxConnector.Components
         }
 
 
-
-
         public class RaPolygon : RadianceGeometry
         {
 
@@ -468,23 +642,6 @@ namespace GrasshopperRadianceLinuxConnector.Components
 
 
             readonly List<Mesh> meshes = new List<Mesh>(64);
-
-            public void AddTempMesh(Mesh mesh, bool update = false)
-            {
-                meshes.Add(mesh);
-                if (update)
-                    UpdateMesh();
-            }
-
-            public void UpdateMesh()
-            {
-                if (meshes.Count == 0)
-                    return;
-                if (Mesh == null)
-                    Mesh = new Mesh();
-                Mesh.Append(meshes);
-                meshes.Clear();
-            }
 
             public RaPolygon(string[] data) : base(data)
             {
@@ -581,7 +738,42 @@ namespace GrasshopperRadianceLinuxConnector.Components
                 }
 
 
+
+
             }
+
+
+            public void AddTempMesh(Mesh mesh, bool update = false)
+            {
+                meshes.Add(mesh);
+                if (update)
+                    UpdateMesh();
+            }
+
+            public void UpdateMesh()
+            {
+                if (meshes.Count == 0)
+                    return;
+                if (Mesh == null)
+                    Mesh = new Mesh();
+                Mesh.Append(meshes);
+                meshes.Clear();
+            }
+
+            public static bool IsCurveDup(Curve crv, Curve[] curves)
+            {
+                List<Point3d> pts = new List<Point3d>(4) { crv.PointAtStart, crv.PointAtEnd };
+                int count = 0;
+                foreach (var c in curves)
+                {
+                    if (pts.Contains(c.PointAtStart) && pts.Contains(c.PointAtEnd))
+                        count++;
+                }
+
+                return count > 1;
+            }
+
+
 
             public override void DrawObject(IGH_PreviewArgs args)
             {
@@ -593,20 +785,13 @@ namespace GrasshopperRadianceLinuxConnector.Components
                 args.Display.DrawMeshWires(Mesh, System.Drawing.Color.Black, 1);
             }
 
-
-        }
-
-        public static bool IsCurveDup(Curve crv, Curve[] curves)
-        {
-            List<Point3d> pts = new List<Point3d>(4) { crv.PointAtStart, crv.PointAtEnd };
-            int count = 0;
-            foreach (var c in curves)
+            [Serializable]
+            internal class PolygonException : Exception
             {
-                if (pts.Contains(c.PointAtStart) && pts.Contains(c.PointAtEnd))
-                    count++;
+                public PolygonException(string message) : base(message) { }
             }
 
-            return count > 1;
+
         }
 
         public class RaSphere : RadianceGeometry
@@ -626,106 +811,9 @@ namespace GrasshopperRadianceLinuxConnector.Components
             }
         }
 
-        public class ModifierNotFoundException : Exception
-        {
-            string Msg;
-            public override string Message => Msg;
-
-            public ModifierNotFoundException(string msg)
-            {
-                Msg = msg;
-            }
-        }
-
-        public override BoundingBox ClippingBox => bb;
-
-        public override void DrawViewportMeshes(IGH_PreviewArgs args)
-        {
-            foreach (RadianceGeometry obj in objects.Where(o => o.Value is RadianceGeometry).Select(o => o.Value))
-            {
-                obj.DrawObject(args);
-            }
-
-            //foreach( Curve crv in failedCurves)
-            //{
-            //    args.Display.DrawCurve(crv, System.Drawing.Color.Red);
-            //}
-
-            base.DrawViewportMeshes(args);
-        }
-
-        public override void DrawViewportWires(IGH_PreviewArgs args)
-        {
-            foreach (RadianceGeometry obj in objects.Where(o => o.Value is RadianceGeometry).Select(o => o.Value))
-            {
-                obj.DrawWires(args);
-            }
-
-            //foreach( Curve crv in failedCurves)
-            //{
-            //    args.Display.DrawCurve(crv, System.Drawing.Color.Red);
-            //}
-
-            base.DrawViewportWires(args);
-        }
-
-        public void ToggleTwoSided()
-        {
-            TwoSided = !TwoSided;
-            
-            foreach (RadianceGeometry obj in objects.Where(o => o.Value is RadianceGeometry).Select(o => o.Value))
-            {
-                obj.Material.IsTwoSided = TwoSided;
-            }
-        }
-
-        public override bool Read(GH_IReader reader)
-        {
-            reader.TryGetBoolean("IsTwoSided", ref TwoSided);
-            return base.Read(reader);
-        }
-
-        public override bool Write(GH_IWriter writer)
-        {
-            writer.SetBoolean("IsTwoSided", TwoSided);
-            return base.Write(writer);
-        }
-
-        
-
-        public override void AppendAdditionalMenuItems(ToolStripDropDown menu)
-        {
-            base.AppendAdditionalMenuItems(menu);
-            Menu_AppendItem(menu, "Toggle Twosided", (s, e) =>
-            {
-                ToggleTwoSided();
-            }, true, TwoSided);
-        }
-
-
-        public override bool IsPreviewCapable => true;
-
 
 
     }
 
-    [Serializable]
-    internal class PolygonException : Exception
-    {
-        public PolygonException()
-        {
-        }
 
-        public PolygonException(string message) : base(message)
-        {
-        }
-
-        public PolygonException(string message, Exception innerException) : base(message, innerException)
-        {
-        }
-
-        protected PolygonException(SerializationInfo info, StreamingContext context) : base(info, context)
-        {
-        }
-    }
 }
