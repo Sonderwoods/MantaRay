@@ -45,6 +45,12 @@ Async SSH Components in place (based on the [speckle async](https://github.com/s
 - Access to ImageMagick and the meta functions in linux only Radiance
 ![image](https://user-images.githubusercontent.com/19936679/159573035-72523b98-e2ad-40d1-ae82-ecc9f5068288.png)
 
+#### CreateView
+![image](https://user-images.githubusercontent.com/19936679/169893709-d9d29494-6bf3-48ca-b690-c583e038e1c1.png)
+- Input a perspective named view from Rhino or use the active viewport
+- Outputs the data for a viewfile. Can be echoed into a .vf file.
+- Previews your camera in Rhino viewport in red. Green if the component is selected.
+
 
 ## Todo:
 Check out the issues on my todo list [here](https://github.com/Sonderwoods/GrasshopperRadianceLinuxConnector/issues).
