@@ -140,7 +140,7 @@ namespace GrasshopperRadianceLinuxConnector
             {
                
 
-                if (args.Viewport.Name == HUD.Callback.ActiveViewportName)
+                if (object.ReferenceEquals(args.Viewport, HUD.Callback.ActiveViewport))
                 {
 
                     Point2d topLeftCorner = new Point2d(HUD.Callback.LastMousePoint.X + 15, HUD.Callback.LastMousePoint.Y);
@@ -180,6 +180,8 @@ namespace GrasshopperRadianceLinuxConnector
         {
             public HUD HUD { get; set; }
             public string ActiveViewportName { get; set; }
+
+            public RhinoViewport ActiveViewport { get; set; }
             public IGH_Component Component { get; set; }
             public System.Drawing.Point LastMousePoint { get; set; }
 
