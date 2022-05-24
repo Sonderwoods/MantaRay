@@ -31,6 +31,7 @@ namespace GrasshopperRadianceLinuxConnector.Components
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
             pManager.AddTextParameter("viewfile content", "viewfile content", "View file content.\nEcho me into a viewfile", GH_ParamAccess.item);
+            pManager.AddNumberParameter("ImageRatio", "ImageRatio", "ImageRatio", GH_ParamAccess.item);
         }
 
         protected override void SolveInstance(IGH_DataAccess DA)
@@ -67,7 +68,8 @@ namespace GrasshopperRadianceLinuxConnector.Components
             {
                 PointsTo[i] = vp + (PointsTo[i] - vp) / (PointsTo[i] - vp).Length * length;
             }
-            
+            System.Drawing.Rectangle port = vpInfo.GetScreenPort();
+            DA.SetData(1, port.Width / (double)port.Height);
 
             string output = string.Empty;
 
