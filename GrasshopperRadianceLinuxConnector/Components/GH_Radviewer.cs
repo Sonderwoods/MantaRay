@@ -15,6 +15,7 @@ using GH_IO.Serialization;
 using Grasshopper.Kernel;
 using Rhino.Display;
 using Rhino.Geometry;
+using Grasshopper.Kernel.Special;
 
 namespace GrasshopperRadianceLinuxConnector.Components
 {
@@ -34,7 +35,7 @@ namespace GrasshopperRadianceLinuxConnector.Components
 
 
 
-        bool TwoSided = false;
+        public bool TwoSided = false;
         readonly Dictionary<string, RadianceObject> objects = new Dictionary<string, RadianceObject>();
         BoundingBox bb = new BoundingBox();
         readonly Random rnd = new Random();
@@ -43,6 +44,7 @@ namespace GrasshopperRadianceLinuxConnector.Components
 
 
         private HUD hud = new HUD();
+        
 
 
         /// <summary>
@@ -50,7 +52,7 @@ namespace GrasshopperRadianceLinuxConnector.Components
         /// </summary>
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
-            pManager.AddTextParameter("RadFiles", "RadFiles", "Rad files", GH_ParamAccess.list);
+            pManager[pManager.AddTextParameter("RadFiles", "RadFiles", "Rad files", GH_ParamAccess.list)].Optional = true;
 
         }
 
@@ -65,6 +67,7 @@ namespace GrasshopperRadianceLinuxConnector.Components
             pManager.AddTextParameter("ModifierNames", "ModifierNames", "Modifier names", GH_ParamAccess.list);
             pManager.AddTextParameter("Modifiers", "Modifiers", "Modifiers", GH_ParamAccess.list);
             pManager.AddCurveParameter("FailedWireFrame", "FailedWireFrame", "fail", GH_ParamAccess.list);
+            
         }
 
         /// <summary>
@@ -73,6 +76,10 @@ namespace GrasshopperRadianceLinuxConnector.Components
         /// <param name="DA">The DA object is used to retrieve from inputs and store in outputs.</param>
         protected override void SolveInstance(IGH_DataAccess DA)
         {
+
+            Dictionary<Guid, List<GH_Group>> groupsPerObject = Grasshopper.Instances.ActiveCanvas.Document.Objects
+      .Where(o => o.GetType() != typeof(GH_Group))
+      .ToDictionary(o => o.ComponentGuid, o => new List<GH_Group>());
 
             /*
              * The RAD viewer architecture is a setup im testing. I have not benchmarked it but it runs in several steps asynchronously.
@@ -201,7 +208,7 @@ namespace GrasshopperRadianceLinuxConnector.Components
                     {
                         failedCurves.AddRange(GetFailedLines(line));
                         //radianceObjects.CompleteAdding();
-                        AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, ex.Message.Substring(0, 100) + "\nCheck the FailedWireFrame output");
+                        AddRuntimeMessage(GH_RuntimeMessageLevel.Remark, ex.Message.Substring(0, 100) + "\nCheck the FailedWireFrame output");
                         //throw ex;
                     }
 
@@ -222,6 +229,7 @@ namespace GrasshopperRadianceLinuxConnector.Components
             //
 
             objects.Clear();
+            failedCurves.Clear();
 
             Debug.WriteLine("starting making objects");
 
@@ -315,15 +323,25 @@ namespace GrasshopperRadianceLinuxConnector.Components
             }
 
             Debug.WriteLine("done setting modifiers");
-            hud.Callback.Component = this;
+            hud.Component = this;
             hud.Callback.Enabled = true;
 
             hud.Items.Clear();
+            if (!hud.CloseBtn.ContextMenuItems.ContainsKey("Update Colors"))
+            {
+                hud.CloseBtn.ContextMenuItems.Add("Update Colors", ClearColors);
+            }
+            if (!hud.CloseBtn.ContextMenuItems.ContainsKey("Toggle Twosided"))
+            {
+                hud.CloseBtn.ContextMenuItems.Add("Toggle Twosided", ToggleTwoSided);
+            }
+
+
 
             foreach (RaPolygon poly in objects.Where(o => o.Value is RaPolygon).Select(o => (RaPolygon)o.Value))
             {
                 string desc = poly.Modifier is RadianceMaterial m ? m.MaterialDefinition : string.Empty;
-                hud.Items.Add(new HUD.HUD_Item() { Name = poly.Name, Description = desc, Mesh = poly.Mesh, Color = System.Drawing.Color.FromArgb(150, 200, 200, 200) });
+                hud.Items.Add(new HUD.HUD_Item() { Name = poly.Name, Description = desc, Mesh = poly.Mesh, Color = poly.Material.Diffuse });
             }
 
 
@@ -474,26 +492,43 @@ namespace GrasshopperRadianceLinuxConnector.Components
         public override void DrawViewportMeshes(IGH_PreviewArgs args)
         {
 
-            //ensures that we turn the dashboard on
-            if (hud != null && !this.Hidden && !this.Locked && hud.Items.Count > 0)
+
+            if (this.Locked)
+                return;
+
+            if (hud != null && hud.Items.Count > 0)
             {
+                //ensures that we turn the dashboard on
                 hud.Enabled = true;
                 hud.Callback.Enabled = true;
-
-                if (hud.HighlightedItem != null)
-                {
-                    args.Display.DrawMeshShaded(hud.HighlightedItem.Mesh, new DisplayMaterial(System.Drawing.Color.Red));
-                }
-
             }
-
-
-
-
-            foreach (RadianceGeometry obj in objects.Where(o => o.Value is RadianceGeometry).Select(o => o.Value))
+            //if (hud != null && hud.Items.Count > 0 && !TwoSided)
+            if (hud != null && hud.Items.Count > 0)
             {
-                obj.DrawObject(args);
+
+                if (hud.HighlightedItem != null && !hud.HighlightedItem.GetType().IsSubclassOf(typeof(HUD.HUD_Item)))
+                {
+                    hud.HighlightedItem.DrawMesh(args, 1, TwoSided);
+
+                    foreach (var item in hud.Items.Where(i => !object.ReferenceEquals(i, hud.HighlightedItem)))
+                        item.DrawMesh(args, 0.2);
+
+                }
+                else
+                {
+                    foreach (var item in hud.Items)
+                        item.DrawMesh(args, 0.9);
+                }
             }
+            else
+            {
+                foreach (RadianceGeometry obj in objects.Where(o => o.Value is RadianceGeometry).Select(o => o.Value))
+                {
+                    obj.DrawObject(args, 0.9); //This one works with twosided option.
+                }
+            }
+
+
 
             //foreach( Curve crv in failedCurves)
             //{
@@ -505,9 +540,12 @@ namespace GrasshopperRadianceLinuxConnector.Components
 
         public override void DrawViewportWires(IGH_PreviewArgs args)
         {
-            foreach (RadianceGeometry obj in objects.Where(o => o.Value is RadianceGeometry).Select(o => o.Value))
+            if (!this.Locked)
             {
-                obj.DrawWires(args);
+                foreach (RadianceGeometry obj in objects.Where(o => o.Value is RadianceGeometry).Select(o => o.Value))
+                {
+                    obj.DrawWires(args);
+                }
             }
 
             //foreach( Curve crv in failedCurves)
@@ -518,7 +556,7 @@ namespace GrasshopperRadianceLinuxConnector.Components
             base.DrawViewportWires(args);
         }
 
-        public void ToggleTwoSided()
+        public void ToggleTwoSided(object s, EventArgs e)
         {
             TwoSided = !TwoSided;
 
@@ -526,6 +564,8 @@ namespace GrasshopperRadianceLinuxConnector.Components
             {
                 obj.Material.IsTwoSided = TwoSided;
             }
+
+            
         }
 
         public override bool Read(GH_IReader reader)
@@ -545,10 +585,17 @@ namespace GrasshopperRadianceLinuxConnector.Components
         public override void AppendAdditionalMenuItems(ToolStripDropDown menu)
         {
             base.AppendAdditionalMenuItems(menu);
-            Menu_AppendItem(menu, "Toggle Twosided", (s, e) =>
-            {
-                ToggleTwoSided();
-            }, true, TwoSided);
+            Menu_AppendItem(menu, "Toggle Twosided", ToggleTwoSided, true, TwoSided);
+
+            base.AppendAdditionalMenuItems(menu);
+            Menu_AppendItem(menu, "Clear Colors", ClearColors, true);
+        }
+
+        public void ClearColors(object s, EventArgs e)
+        {
+            colors.Clear();
+            ExpireSolution(true);
+            Rhino.RhinoDoc.ActiveDoc.Views.Redraw();
         }
 
 
@@ -630,7 +677,7 @@ namespace GrasshopperRadianceLinuxConnector.Components
 
             }
 
-            public abstract void DrawObject(IGH_PreviewArgs args);
+            public abstract void DrawObject(IGH_PreviewArgs args, double alpha = 1.0);
             public abstract void DrawWires(IGH_PreviewArgs args);
         }
 
@@ -775,9 +822,12 @@ namespace GrasshopperRadianceLinuxConnector.Components
 
 
 
-            public override void DrawObject(IGH_PreviewArgs args)
+            public override void DrawObject(IGH_PreviewArgs args, double alpha = 1.0)
             {
-                args.Display.DrawMeshShaded(Mesh, Material);
+                double oldTrans = Material.Transparency;
+                Material.Transparency = 1.0 - alpha;
+                args.Display.DrawMeshShaded(Mesh, Material); //works with twosided
+                Material.Transparency = oldTrans;
             }
 
             public override void DrawWires(IGH_PreviewArgs args)
@@ -800,7 +850,7 @@ namespace GrasshopperRadianceLinuxConnector.Components
             {
             }
 
-            public override void DrawObject(IGH_PreviewArgs args)
+            public override void DrawObject(IGH_PreviewArgs args, double alpha = 1.0)
             {
                 throw new NotImplementedException();
             }
