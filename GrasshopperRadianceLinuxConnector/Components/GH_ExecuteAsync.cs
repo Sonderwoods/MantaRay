@@ -132,6 +132,10 @@ namespace GrasshopperRadianceLinuxConnector
 
             public override void DoWork(Action<string, double> ReportProgress, Action Done)
             {
+                bool HasZeroAreaPolygons(string errors)
+                {
+                    return !errors.StartsWith("oconv: warning - zero area");
+                }
 
                 if (CancellationToken.IsCancellationRequested) { return; }
 
@@ -154,7 +158,7 @@ namespace GrasshopperRadianceLinuxConnector
 
                         string command = String.Join(";", commands.Branches[i].Select(c => c.Value)).AddGlobals();
 
-                        pid = SSH_Helper.Execute(command, result.Log, result.Stdout, result.Stderr, prependPrefix: true);
+                        pid = SSH_Helper.Execute(command, result.Log, result.Stdout, result.Stderr, prependPrefix: true, HasZeroAreaPolygons);
 
                         // TODO Need to get pid through "beginexecute" instead of "execute" of SSH.
 
@@ -228,7 +232,8 @@ namespace GrasshopperRadianceLinuxConnector
                 //{
                 //    Parent.AddRuntimeMessage(GH_RuntimeMessageLevel.Remark, "Using an old existing stdout\nThis can be convenient for opening old workflows and not running everything again.");
                 //}
-
+                if (results == null || results.Length == 0 || results.Any(r => r == null))
+                    return;
 
                 DA.SetDataList(0, results.Select(r => r.Stdout.ToString()));
 
@@ -243,7 +248,7 @@ namespace GrasshopperRadianceLinuxConnector
                 DA.SetDataTree(4, runOut);
 
 
-                foreach (string msg in results.Where(r => !r.Success).Select(r => r.Stderr.ToString()))
+                foreach (string msg in results?.Where(r => !r.Success).Select(r => r.Stderr.ToString()))
                 {
                     Parent.AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, msg);
                 }

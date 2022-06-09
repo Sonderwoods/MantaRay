@@ -392,7 +392,7 @@ namespace GrasshopperRadianceLinuxConnector
         /// <param name="errors">stringbuilder for errors</param>
         /// <param name="prependPrefix">whether we want to include the radiance "EXPORT" prefixes <see cref="ExportPrefixes"/></param>
         /// <returns></returns>
-        public static int Execute(string command, StringBuilder log = null, StringBuilder stdout = null, StringBuilder errors = null, bool prependPrefix = true)
+        public static int Execute(string command, StringBuilder log = null, StringBuilder stdout = null, StringBuilder errors = null, bool prependPrefix = true, Func<string, bool> filter = null)
         {
             if (string.IsNullOrEmpty(command))
             {
@@ -440,7 +440,7 @@ namespace GrasshopperRadianceLinuxConnector
                 {
                     pid = int.Parse(pidCommand.Result);
                 }
-                else
+                else if (filter == null || filter(cmd.Error))
                 {
                     errors?.Append(cmd.Error);
                     errors?.Append("\n");
