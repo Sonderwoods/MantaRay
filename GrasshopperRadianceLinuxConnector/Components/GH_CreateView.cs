@@ -17,8 +17,9 @@ namespace GrasshopperRadianceLinuxConnector.Components
 
         Point3d[] PointsTo = null;
         Point3d vp = default(Point3d);
-        BoundingBox clippingBox = default(BoundingBox);
+        BoundingBox clippingBox = default;
         double length = 1.0;
+        
 
 
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
@@ -37,9 +38,9 @@ namespace GrasshopperRadianceLinuxConnector.Components
         protected override void SolveInstance(IGH_DataAccess DA)
         {
             int index = Rhino.RhinoDoc.ActiveDoc.NamedViews.FindByName(DA.Fetch<string>("Viewport"));
-            
-
             Rhino.DocObjects.ViewportInfo vpInfo;
+
+
 
             if (index == -1)
             {
@@ -49,6 +50,7 @@ namespace GrasshopperRadianceLinuxConnector.Components
             }
             else
             {
+                
                 vpInfo = Rhino.RhinoDoc.ActiveDoc.NamedViews[index].Viewport;
                 
                 Message = DA.Fetch<string>("Viewport");
@@ -102,6 +104,9 @@ namespace GrasshopperRadianceLinuxConnector.Components
 
         public override void DrawViewportWires(IGH_PreviewArgs args)
         {
+            if (args.Display.Viewport.Name == Message)
+                return;
+
             System.Drawing.Color color = this.Attributes.Selected ? System.Drawing.Color.DarkGreen : System.Drawing.Color.DarkRed;
             Point3d avgPoint = default(Point3d);
             if (PointsTo != null && PointsTo.Length > 0)
