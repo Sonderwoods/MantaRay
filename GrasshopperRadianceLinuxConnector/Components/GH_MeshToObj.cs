@@ -172,6 +172,7 @@ namespace GrasshopperRadianceLinuxConnector
                 foreach (GH_Mesh gmesh in inMeshes[q])
                 {
                     Mesh mesh = gmesh.Value;
+                    mesh.Faces.ConvertQuadsToTriangles();
                     mesh.FaceNormals.ComputeFaceNormals();
 
                     for (int j = 0; j < mesh.Vertices.Count; j++)
