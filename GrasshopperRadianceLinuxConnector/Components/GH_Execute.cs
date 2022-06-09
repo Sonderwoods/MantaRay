@@ -9,7 +9,7 @@ using Rhino.Geometry;
 
 namespace GrasshopperRadianceLinuxConnector
 {
-    
+    [Obsolete]
     public class GH_Execute : GH_Template
     {
         
@@ -22,6 +22,7 @@ namespace GrasshopperRadianceLinuxConnector
               "Use me to execute a SSH Command",
               "1 SSH")
         {
+            
         }
 
         /// <summary>
