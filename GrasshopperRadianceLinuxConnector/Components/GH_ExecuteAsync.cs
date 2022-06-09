@@ -132,6 +132,10 @@ namespace GrasshopperRadianceLinuxConnector
 
             public override void DoWork(Action<string, double> ReportProgress, Action Done)
             {
+                bool HasZeroAreaPolygons(string errors)
+                {
+                    return !errors.StartsWith("oconv: warning - zero area");
+                }
 
                 if (CancellationToken.IsCancellationRequested) { return; }
 
@@ -154,7 +158,7 @@ namespace GrasshopperRadianceLinuxConnector
 
                         string command = String.Join(";", commands.Branches[i].Select(c => c.Value)).AddGlobals();
 
-                        pid = SSH_Helper.Execute(command, result.Log, result.Stdout, result.Stderr, prependPrefix: true);
+                        pid = SSH_Helper.Execute(command, result.Log, result.Stdout, result.Stderr, prependPrefix: true, HasZeroAreaPolygons);
 
                         // TODO Need to get pid through "beginexecute" instead of "execute" of SSH.
 
