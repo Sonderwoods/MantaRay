@@ -167,17 +167,23 @@ namespace GrasshopperRadianceLinuxConnector
 
                 geometryFile.AppendFormat("g {0}\r\n", name);
 
+                int totalVertexCount = 1; // vertices in obj files start at #1
+                int objectCounter = 0;
 
 
-                foreach (GH_Mesh gmesh in inMeshes[q])
+
+                for (int i = 0; i < inMeshes[q].Count; i++)
                 {
-                    Mesh mesh = gmesh.Value;
-                    mesh.Faces.ConvertQuadsToTriangles();
+                    int currentVertices = 0;
+                    Mesh mesh = inMeshes[q][i].Value;
+                    //mesh.Faces.ConvertQuadsToTriangles();
                     mesh.FaceNormals.ComputeFaceNormals();
+
+                    geometryFile.AppendFormat(CultureInfo.InvariantCulture, "o object_{0:0}\r\n", ++objectCounter);
 
                     for (int j = 0; j < mesh.Vertices.Count; j++)
                     {
-
+                        currentVertices++;
                         geometryFile.AppendFormat(CultureInfo.InvariantCulture, "v {0:0.000} {1:0.000} {2:0.000}\r\n", mesh.Vertices[j].X, mesh.Vertices[j].Y, mesh.Vertices[j].Z);
                         //TODO: Tolerances/Units?
                     }
@@ -188,11 +194,11 @@ namespace GrasshopperRadianceLinuxConnector
                         {
                             if (!MeshToRadHelper.InverseVertexOrder(mesh, j))
                             {
-                                geometryFile.AppendFormat(CultureInfo.InvariantCulture, "f {0} {1} {2} {3}\r\n", mesh.Faces[j].A + 1, mesh.Faces[j].B + 1, mesh.Faces[j].C + 1, mesh.Faces[j].D + 1);
+                                geometryFile.AppendFormat(CultureInfo.InvariantCulture, "f {0} {1} {2} {3}\r\n", mesh.Faces[j].A + totalVertexCount, mesh.Faces[j].B + totalVertexCount, mesh.Faces[j].C + totalVertexCount, mesh.Faces[j].D + totalVertexCount);
                             }
                             else
                             {
-                                geometryFile.AppendFormat(CultureInfo.InvariantCulture, "f {0} {1} {2} {3}\r\n", mesh.Faces[j].D + 1, mesh.Faces[j].C + 1, mesh.Faces[j].B + 1, mesh.Faces[j].A + 1);
+                                geometryFile.AppendFormat(CultureInfo.InvariantCulture, "f {0} {1} {2} {3}\r\n", mesh.Faces[j].D + totalVertexCount, mesh.Faces[j].C + totalVertexCount, mesh.Faces[j].B + totalVertexCount, mesh.Faces[j].A + totalVertexCount);
 
                             }
                         }
@@ -200,14 +206,15 @@ namespace GrasshopperRadianceLinuxConnector
                         {
                             if (!MeshToRadHelper.InverseVertexOrder(mesh, j))
                             {
-                                geometryFile.AppendFormat(CultureInfo.InvariantCulture, "f {0} {1} {2}\r\n", mesh.Faces[j].A + 1, mesh.Faces[j].B + 1, mesh.Faces[j].C + 1);
+                                geometryFile.AppendFormat(CultureInfo.InvariantCulture, "f {0} {1} {2}\r\n", mesh.Faces[j].A + totalVertexCount, mesh.Faces[j].B + totalVertexCount, mesh.Faces[j].C + totalVertexCount);
                             }
                             else
                             {
-                                geometryFile.AppendFormat(CultureInfo.InvariantCulture, "f {0} {1} {2}\r\n", mesh.Faces[j].C + 1, mesh.Faces[j].B + 1, mesh.Faces[j].A + 1);
+                                geometryFile.AppendFormat(CultureInfo.InvariantCulture, "f {0} {1} {2}\r\n", mesh.Faces[j].C + totalVertexCount, mesh.Faces[j].B + totalVertexCount, mesh.Faces[j].A + totalVertexCount);
                             }
                         }
                     }
+                    totalVertexCount += currentVertices;
                 }
 
                 System.IO.File.WriteAllText(geometryFilePath, geometryFile.ToString());
