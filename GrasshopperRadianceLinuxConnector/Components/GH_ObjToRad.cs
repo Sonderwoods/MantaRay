@@ -112,7 +112,15 @@ namespace GrasshopperRadianceLinuxConnector.Components
                 {
 
                     string radFilePath = Path.GetFileNameWithoutExtension(filePath);
+                    if (sb.Length < 10)
+                    {
                     SSH_Helper.Execute($"obj2rad -m {linuxPath}/{Path.GetFileName(allFilePaths[0].AddGlobals())} -f {linuxPath}/{Path.GetFileName(filePath)} >{linuxPath}/{radFilePath}.rad", log: sb, errors: sb);
+
+                    }
+                    else
+                    {
+                        SSH_Helper.Execute($"obj2rad -m {linuxPath}/{Path.GetFileName(allFilePaths[0].AddGlobals())} -f {linuxPath}/{Path.GetFileName(filePath)} >{linuxPath}/{radFilePath}.rad", log: null, errors: null);
+                    }
                     radFilePaths.Add($"{linuxPath}/{radFilePath}.rad");
                 }
             }
