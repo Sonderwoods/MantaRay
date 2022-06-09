@@ -77,9 +77,7 @@ namespace GrasshopperRadianceLinuxConnector.Components
         protected override void SolveInstance(IGH_DataAccess DA)
         {
 
-            Dictionary<Guid, List<GH_Group>> groupsPerObject = Grasshopper.Instances.ActiveCanvas.Document.Objects
-      .Where(o => o.GetType() != typeof(GH_Group))
-      .ToDictionary(o => o.ComponentGuid, o => new List<GH_Group>());
+            
 
             /*
              * The RAD viewer architecture is a setup im testing. I have not benchmarked it but it runs in several steps asynchronously.
