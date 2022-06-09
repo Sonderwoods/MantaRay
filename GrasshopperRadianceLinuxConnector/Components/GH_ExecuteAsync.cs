@@ -234,13 +234,13 @@ namespace GrasshopperRadianceLinuxConnector
                 //}
 
 
-                DA.SetDataList(0, results.Select(r => r.Stdout.ToString()));
+                DA.SetDataList(0, results.Select(r => r?.Stdout.ToString() ?? null));
 
-                DA.SetDataList(1, results.Select(r => r.Stderr.ToString()));
+                DA.SetDataList(1, results.Select(r => r?.Stderr.ToString() ?? null));
 
-                DA.SetDataList(2, results.Select(r => r.Log.ToString()));
+                DA.SetDataList(2, results.Select(r => r?.Log.ToString() ?? null));
 
-                DA.SetDataList(3, results.Select(r => r.Pid));
+                DA.SetDataList(3, results.Select(r => r?.Pid ?? null));
 
                 var runOut = new GH_Structure<GH_Boolean>();
                 runOut.Append(new GH_Boolean(ran), new GH_Path(0));
