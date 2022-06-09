@@ -232,22 +232,23 @@ namespace GrasshopperRadianceLinuxConnector
                 //{
                 //    Parent.AddRuntimeMessage(GH_RuntimeMessageLevel.Remark, "Using an old existing stdout\nThis can be convenient for opening old workflows and not running everything again.");
                 //}
+                if (results == null || results.Length == 0 || results.Any(r => r == null))
+                    return;
 
+                DA.SetDataList(0, results.Select(r => r.Stdout.ToString()));
 
-                DA.SetDataList(0, results.Select(r => r?.Stdout.ToString() ?? null));
+                DA.SetDataList(1, results.Select(r => r.Stderr.ToString()));
 
-                DA.SetDataList(1, results.Select(r => r?.Stderr.ToString() ?? null));
+                DA.SetDataList(2, results.Select(r => r.Log.ToString()));
 
-                DA.SetDataList(2, results.Select(r => r?.Log.ToString() ?? null));
-
-                DA.SetDataList(3, results.Select(r => r?.Pid ?? null));
+                DA.SetDataList(3, results.Select(r => r.Pid));
 
                 var runOut = new GH_Structure<GH_Boolean>();
                 runOut.Append(new GH_Boolean(ran), new GH_Path(0));
                 DA.SetDataTree(4, runOut);
 
 
-                foreach (string msg in results.Where(r => !r.Success).Select(r => r.Stderr.ToString()))
+                foreach (string msg in results?.Where(r => !r.Success).Select(r => r.Stderr.ToString()))
                 {
                     Parent.AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, msg);
                 }
