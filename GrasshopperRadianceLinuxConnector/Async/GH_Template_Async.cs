@@ -99,6 +99,7 @@ namespace GrasshopperRadianceLinuxConnector
                 }
                 RunTime = stopwatch.ElapsedMilliseconds;
                 stopwatch.Reset();
+                
 
             };
 
@@ -308,9 +309,17 @@ namespace GrasshopperRadianceLinuxConnector
             Interlocked.Exchange(ref SetData, 0);
 
             if (RunInput)
+            {
                 Message = RunTimeFormatted();
+                //this.SetPrivateRuntimePropertyValue((int)RunTime);
+
+            }
             else
+            {
                 Message = "Deactive";
+                //this.SetPrivateRuntimePropertyValue(0);
+
+            }
 
             PhaseForColors = AestheticPhase.NotRunning;
 
@@ -355,6 +364,8 @@ namespace GrasshopperRadianceLinuxConnector
             m_attributes = new GH_ColorAttributes_Async(this);
 
         }
+
+        public override TimeSpan ProcessorTime => new TimeSpan(0, 0, 0, 0, (int)RunTime);
 
     }
 
