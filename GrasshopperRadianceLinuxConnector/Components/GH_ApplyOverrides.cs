@@ -68,7 +68,7 @@ namespace GrasshopperRadianceLinuxConnector.Components
             foreach (KeyValuePair<string, string> item in GlobalsHelper.Globals)
             {
                 outPairs.Add($"<{item.Key}> --> {item.Value}");
-                outPairs.Add($"{("<" + item.Key).PadRight(keysLength + 1)}> --> {item.Value}");
+                outPairs.Add($"{("<" + item.Key + ">").PadRight(keysLength + 1)} --> {item.Value}");
             }
 
             if (keys.Count == 0 && values.Count == 0)
