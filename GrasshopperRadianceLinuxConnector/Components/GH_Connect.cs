@@ -226,7 +226,6 @@ namespace GrasshopperRadianceLinuxConnector.Components
                 try
                 {
                     SSH_Helper.SftpClient.Connect();
-                    //SSH_Helper.SetExtendedUserDir();
 
                     sb.AppendFormat("Sftp: Connected in {0} ms\n", stopwatch.ElapsedMilliseconds);
 
