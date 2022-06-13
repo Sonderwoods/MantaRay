@@ -269,6 +269,8 @@ namespace GrasshopperRadianceLinuxConnector.Components
 
         }
 
+        
+
         public void TryDisconnect()
         {
             SSH_Helper.Disconnect();

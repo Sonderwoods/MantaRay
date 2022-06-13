@@ -42,6 +42,7 @@ namespace GrasshopperRadianceLinuxConnector
         /// </summary>
         public static string HomeDirectory { get; set; } = null;
 
+
         /// <summary>
         /// The suffixes to setup before any commands. Temporary fix untill we get .bashrc correctly setup.
         /// </summary>
@@ -91,7 +92,11 @@ namespace GrasshopperRadianceLinuxConnector
         {
             if (s.StartsWith(LinuxParentPath))
             {
-                return (windowsParentPath + s.Substring(0, LinuxParentPath.Length)).Replace("/", @"\");
+                return (windowsParentPath + s.Substring(LinuxParentPath.Length)).Replace("/", @"\");
+            }
+            else if (s.StartsWith(HomeDirectory))
+            {
+                return (windowsParentPath + s.Substring(HomeDirectory.Length)).Replace("/", @"\");
             }
             else
                 return s.Replace("/", @"\");
@@ -346,7 +351,7 @@ namespace GrasshopperRadianceLinuxConnector
                     }
 
 
-                    
+
                 }
             }
 
@@ -477,6 +482,7 @@ namespace GrasshopperRadianceLinuxConnector
 
         }
 
+      
         private static bool TryRunXlaunchIfNeeded(string command)
         {
 
