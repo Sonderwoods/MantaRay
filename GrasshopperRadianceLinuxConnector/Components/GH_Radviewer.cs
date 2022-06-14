@@ -36,6 +36,8 @@ namespace GrasshopperRadianceLinuxConnector.Components
 
 
         public bool TwoSided = false;
+        public bool ShowEdges = true;
+        public bool Transparent = true;
         readonly Dictionary<string, RadianceObject> objects = new Dictionary<string, RadianceObject>();
         BoundingBox bb = new BoundingBox();
         readonly Random rnd = new Random();
@@ -44,7 +46,7 @@ namespace GrasshopperRadianceLinuxConnector.Components
 
 
         private HUD hud = new HUD();
-        
+
 
 
         /// <summary>
@@ -67,7 +69,7 @@ namespace GrasshopperRadianceLinuxConnector.Components
             pManager.AddTextParameter("ModifierNames", "ModifierNames", "Modifier names", GH_ParamAccess.list);
             pManager.AddTextParameter("Modifiers", "Modifiers", "Modifiers", GH_ParamAccess.list);
             pManager.AddCurveParameter("FailedWireFrame", "FailedWireFrame", "fail", GH_ParamAccess.list);
-            
+
         }
 
         /// <summary>
@@ -77,7 +79,7 @@ namespace GrasshopperRadianceLinuxConnector.Components
         protected override void SolveInstance(IGH_DataAccess DA)
         {
 
-            
+
 
             /*
              * The RAD viewer architecture is a setup im testing. I have not benchmarked it but it runs in several steps asynchronously.
@@ -325,13 +327,22 @@ namespace GrasshopperRadianceLinuxConnector.Components
             hud.Callback.Enabled = true;
 
             hud.Items.Clear();
-            if (!hud.CloseBtn.ContextMenuItems.ContainsKey("Update Colors"))
-            {
-                hud.CloseBtn.ContextMenuItems.Add("Update Colors", ClearColors);
-            }
+            
             if (!hud.CloseBtn.ContextMenuItems.ContainsKey("Toggle Twosided"))
             {
                 hud.CloseBtn.ContextMenuItems.Add("Toggle Twosided", ToggleTwoSided);
+            }
+            if (!hud.CloseBtn.ContextMenuItems.ContainsKey("Transparent"))
+            {
+                hud.CloseBtn.ContextMenuItems.Add("Transparent", (s,e) => { Transparent = !Transparent; });
+            }
+            if (!hud.CloseBtn.ContextMenuItems.ContainsKey("Toggle Edges"))
+            {
+                hud.CloseBtn.ContextMenuItems.Add("Toggle Edges", (s, e) => { ShowEdges = !ShowEdges; });
+            }
+            if (!hud.CloseBtn.ContextMenuItems.ContainsKey("Update Colors"))
+            {
+                hud.CloseBtn.ContextMenuItems.Add("Update Colors", ClearColors);
             }
 
 
@@ -501,30 +512,36 @@ namespace GrasshopperRadianceLinuxConnector.Components
                 hud.Callback.Enabled = true;
             }
             //if (hud != null && hud.Items.Count > 0 && !TwoSided)
-            if (hud != null && hud.Items.Count > 0)
-            {
+            //if (hud != null && hud.Items.Count > 0)
+            //if (true)
+            //{
 
                 if (hud.HighlightedItem != null && !hud.HighlightedItem.GetType().IsSubclassOf(typeof(HUD.HUD_Item)))
                 {
                     hud.HighlightedItem.DrawMesh(args, 1, TwoSided);
 
                     foreach (var item in hud.Items.Where(i => !object.ReferenceEquals(i, hud.HighlightedItem)))
-                        item.DrawMesh(args, 0.2);
+                        item.DrawMesh(args, 0.2, grey: true);
 
                 }
                 else
                 {
-                    foreach (var item in hud.Items)
-                        item.DrawMesh(args, 0.9);
+                    //foreach (var item in hud.Items)
+                    //    item.DrawMesh(args, Transparent ? 0.9 : 1.0);
+
+                    foreach (RadianceGeometry obj in objects.Where(o => o.Value is RadianceGeometry).Select(o => o.Value))
+                    {
+                        obj.DrawObject(args, Transparent ? 0.9 : 1.0); //This one works with twosided option.
+                    }
                 }
-            }
-            else
-            {
-                foreach (RadianceGeometry obj in objects.Where(o => o.Value is RadianceGeometry).Select(o => o.Value))
-                {
-                    obj.DrawObject(args, 0.9); //This one works with twosided option.
-                }
-            }
+            //}
+            //else
+            //{
+            //    foreach (RadianceGeometry obj in objects.Where(o => o.Value is RadianceGeometry).Select(o => o.Value))
+            //    {
+            //        obj.DrawObject(args, Transparent ? 0.9 : 1.0); //This one works with twosided option.
+            //    }
+            //}
 
 
 
@@ -540,9 +557,20 @@ namespace GrasshopperRadianceLinuxConnector.Components
         {
             if (!this.Locked)
             {
-                foreach (RadianceGeometry obj in objects.Where(o => o.Value is RadianceGeometry).Select(o => o.Value))
+                if (hud.HighlightedItem != null && !hud.HighlightedItem.GetType().IsSubclassOf(typeof(HUD.HUD_Item)))
                 {
-                    obj.DrawWires(args);
+                    hud.HighlightedItem.DrawEdges(args);
+
+                    //foreach (var item in hud.Items.Where(i => !object.ReferenceEquals(i, hud.HighlightedItem)))
+                    //    item.DrawEdges(args);
+
+                }
+                else if (ShowEdges)
+                {
+                    foreach (RadianceGeometry obj in objects.Where(o => o.Value is RadianceGeometry).Select(o => o.Value))
+                    {
+                        obj.DrawWires(args);
+                    }
                 }
             }
 
@@ -563,18 +591,34 @@ namespace GrasshopperRadianceLinuxConnector.Components
                 obj.Material.IsTwoSided = TwoSided;
             }
 
-            
+
+        }
+
+        public void ToggleTransparent(object s, EventArgs e)
+        {
+            Transparent = !Transparent;
+
+            foreach (RadianceGeometry obj in objects.Where(o => o.Value is RadianceGeometry).Select(o => o.Value))
+            {
+                obj.Material.Transparency = Transparent ? 0.3 : 0.0;
+            }
+
+
         }
 
         public override bool Read(GH_IReader reader)
         {
             reader.TryGetBoolean("IsTwoSided", ref TwoSided);
+            reader.TryGetBoolean("ShowEdges", ref ShowEdges);
+            reader.TryGetBoolean("Transparent", ref Transparent);
             return base.Read(reader);
         }
 
         public override bool Write(GH_IWriter writer)
         {
             writer.SetBoolean("IsTwoSided", TwoSided);
+            writer.SetBoolean("ShowEdges", ShowEdges);
+            writer.SetBoolean("Transparent", Transparent);
             return base.Write(writer);
         }
 
@@ -584,8 +628,11 @@ namespace GrasshopperRadianceLinuxConnector.Components
         {
             base.AppendAdditionalMenuItems(menu);
             Menu_AppendItem(menu, "Toggle Twosided", ToggleTwoSided, true, TwoSided);
+            Menu_AppendItem(menu, "Transparent", ToggleTransparent, true, Transparent);
 
-            base.AppendAdditionalMenuItems(menu);
+            Menu_AppendItem(menu, "Show edges", (s, e) => { ShowEdges = !ShowEdges; }, true, ShowEdges);
+
+
             Menu_AppendItem(menu, "Clear Colors", ClearColors, true);
         }
 
