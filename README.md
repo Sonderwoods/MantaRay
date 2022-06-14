@@ -17,7 +17,8 @@ Async SSH Components in place (based on the [speckle async](https://github.com/s
 - Will keep password even if you say recompute all. To set up a new selection set it to false and then true.
 
 #### RadViewer
-![radviewer2](https://user-images.githubusercontent.com/19936679/173670928-8cb1fe6c-15ba-4d67-bc66-e2dcb029c76f.gif)
+![radviewer2](https://user-images.githubusercontent.com/19936679/173672403-4fa20162-f701-47da-ac44-49b408e8f994.gif)
+
 
 
 ![radianceRadViewer](https://user-images.githubusercontent.com/19936679/168884796-fea8f5e5-f919-4222-81e4-dd676ce3794f.gif)
