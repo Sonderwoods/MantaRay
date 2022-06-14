@@ -30,6 +30,8 @@ namespace GrasshopperRadianceLinuxConnector
 
         }
 
+        public bool addPrefix = true;
+
         public RunInfo[] savedResults = new RunInfo[0];
 
         public bool FirstRun { get; set; } = true;
@@ -62,7 +64,9 @@ namespace GrasshopperRadianceLinuxConnector
             {
                 LinuxKill();
                 RequestCancellation();
-            });
+            }, PhaseForColors == AestheticPhase.Running);
+
+            Menu_AppendItem(menu, "Add prefix", (s, e) =>  { addPrefix = !addPrefix; ExpireSolution(true); },true, addPrefix);
         }
 
         protected override void PerformIfInactive(IGH_DataAccess DA)
@@ -158,7 +162,7 @@ namespace GrasshopperRadianceLinuxConnector
 
                         string command = String.Join(";", commands.Branches[i].Select(c => c.Value)).AddGlobals();
 
-                        pid = SSH_Helper.Execute(command, result.Log, result.Stdout, result.Stderr, prependPrefix: true, HasZeroAreaPolygons);
+                        pid = SSH_Helper.Execute(command, result.Log, result.Stdout, result.Stderr, prependPrefix: ((GH_ExecuteAsync)Parent).addPrefix, HasZeroAreaPolygons);
 
                         // TODO Need to get pid through "beginexecute" instead of "execute" of SSH.
 
@@ -263,12 +267,14 @@ namespace GrasshopperRadianceLinuxConnector
 
             //writer.SetString("stdouts", String.Join(">JOIN<", ((SSH_Worker)BaseWorker).results.Select(r => r.Stdout)));
             writer.SetString("stdouts", String.Join(">JOIN<", savedResults.Select(r => r.Stdout)));
-
+            writer.SetBoolean("addPrefix", addPrefix);
 
 
 
             return base.Write(writer);
         }
+
+
 
         public override bool Read(GH_IReader reader)
         {
@@ -286,7 +292,7 @@ namespace GrasshopperRadianceLinuxConnector
                 }
             }
 
-
+            reader.TryGetBoolean("addPrefix", ref addPrefix);
 
             return base.Read(reader);
         }
