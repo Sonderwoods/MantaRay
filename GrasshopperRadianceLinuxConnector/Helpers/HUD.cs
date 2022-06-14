@@ -234,29 +234,35 @@ namespace GrasshopperRadianceLinuxConnector
                 return Name;
             }
 
-            virtual public void DrawMesh(IGH_PreviewArgs args, double alpha = 0.3, bool twoSided = false)
+            virtual public void DrawEdges(IGH_PreviewArgs args)
             {
-                
-                
+                if (Mesh != null && Mesh.IsValid)
+                    args.Display.DrawMeshWires(Mesh, Color.Black);
+            }
+
+            virtual public void DrawMesh(IGH_PreviewArgs args, double alpha = 0.3, bool twoSided = false, bool grey = false)
+            {
+
+
 
 
                 if (Mesh?.IsValid == true)
                 {
                     if (Mesh.VertexColors.Count == 0)
                     {
-                        
+
                         args.Display.DrawMeshShaded(Mesh,
-                            new DisplayMaterial(Color)
+                            new DisplayMaterial(grey ? Color.Gray : Color)
                             {
-                                Transparency = twoSided? 0.0 : 1-alpha,
-                                Emission = Color,
+                                Transparency = twoSided ? 0.0 : 1 - alpha,
+                                Emission = grey ? Color.Gray : Color,
                                 IsTwoSided = twoSided,
                                 //IsTwoSided = true,
                                 BackDiffuse = Color.Black,
                                 BackEmission = Color.Black,
-                                BackTransparency = twoSided? 0.3 : 1-alpha,
+                                BackTransparency = twoSided ? 0.3 : 1 - alpha,
                             });
-                        
+
 
                     }
                     else
@@ -266,7 +272,7 @@ namespace GrasshopperRadianceLinuxConnector
                 }
             }
 
-            
+
 
             public virtual void Draw(ref System.Drawing.Point anchor, HUD HUD, DrawEventArgs args)
             {
@@ -290,8 +296,8 @@ namespace GrasshopperRadianceLinuxConnector
                     text: Name,
                     color: Color.Black,
                     screenCoordinate: new Point2d(
-                        x:anchor.X + (4 * HUD.Scale),
-                        y:anchor.Y + ((HUD.Height / 2.0 - HUD.TextSize / 2.0 + 1.0) * HUD.Scale)),
+                        x: anchor.X + (4 * HUD.Scale),
+                        y: anchor.Y + ((HUD.Height / 2.0 - HUD.TextSize / 2.0 + 1.0) * HUD.Scale)),
                     middleJustified: false,
                     height: HUD.TextSize,
                     fontface: HUD.FontName

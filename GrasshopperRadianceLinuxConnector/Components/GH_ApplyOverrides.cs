@@ -48,11 +48,12 @@ namespace GrasshopperRadianceLinuxConnector.Components
             List<string> values = DA.FetchList<string>("Additional Values");
             List<string> outPairs = new List<string>(keys.Count);
             List<string> inputs = DA.FetchList<string>("Input");
+            List<string> missingInputs = new List<string>();
 
 
             if (keys.Count != values.Count)
             {
-                AddRuntimeMessage(GH_RuntimeMessageLevel.Remark, "List lengths are not matching");
+                AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, "List lengths are not matching");
             }
 
             int keysLength = 5;
@@ -68,13 +69,19 @@ namespace GrasshopperRadianceLinuxConnector.Components
             foreach (KeyValuePair<string, string> item in GlobalsHelper.Globals)
             {
                 outPairs.Add($"<{item.Key}> --> {item.Value}");
-                outPairs.Add($"{("<" + item.Key).PadRight(keysLength + 1)}> --> {item.Value}");
+                outPairs.Add($"{("<" + item.Key + ">").PadRight(keysLength + 1)} --> {item.Value}");
             }
 
             if (keys.Count == 0 && values.Count == 0)
             {
-                DA.SetDataList(0, inputs.Select(s => s.AddGlobals()));
+                DA.SetDataList(0, inputs.Select(s => s.AddGlobals(missingKeys: missingInputs)));
                 DA.SetDataList(1, outPairs);
+
+                foreach (string item in missingInputs)
+                {
+                    AddRuntimeMessage(GH_RuntimeMessageLevel.Error, $"Missing \"{item}\"");
+                }
+
                 return;
             }
 
@@ -101,7 +108,12 @@ namespace GrasshopperRadianceLinuxConnector.Components
 
             List<string> outputs = new List<string>(inputs.Count);
 
-            inputs.ForEach(i => outputs.Add(i.AddLocals(locals)));
+            inputs.ForEach(i => outputs.Add(i.AddGlobals(locals, missingKeys: missingInputs)));
+
+            foreach (string item in missingInputs)
+            {
+                AddRuntimeMessage(GH_RuntimeMessageLevel.Error, $"Missing \"{item}\"");
+            }
 
             DA.SetDataList(0, outputs);
             DA.SetDataList(1, outPairs);

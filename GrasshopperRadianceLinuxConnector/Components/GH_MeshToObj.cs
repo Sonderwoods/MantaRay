@@ -179,7 +179,7 @@ namespace GrasshopperRadianceLinuxConnector
                     //mesh.Faces.ConvertQuadsToTriangles();
                     mesh.FaceNormals.ComputeFaceNormals();
 
-                    geometryFile.AppendFormat(CultureInfo.InvariantCulture, "o object_{0:0}\r\n", ++objectCounter);
+                    geometryFile.AppendFormat(CultureInfo.InvariantCulture, "o {0}_{1:0}\r\n", name, ++objectCounter);
 
                     for (int j = 0; j < mesh.Vertices.Count; j++)
                     {
