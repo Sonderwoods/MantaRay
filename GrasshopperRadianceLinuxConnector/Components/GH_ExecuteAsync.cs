@@ -160,7 +160,7 @@ namespace GrasshopperRadianceLinuxConnector
 
                         int pid = -1;
 
-                        string command = String.Join(";", commands.Branches[i].Select(c => c.Value)).AddGlobals();
+                        string command = String.Join(";", commands.Branches[i].Select(c => c.Value)).AddGlobals().Replace("\r\n","\n");
 
                         pid = SSH_Helper.Execute(command, result.Log, result.Stdout, result.Stderr, prependPrefix: ((GH_ExecuteAsync)Parent).addPrefix, HasZeroAreaPolygons);
 
