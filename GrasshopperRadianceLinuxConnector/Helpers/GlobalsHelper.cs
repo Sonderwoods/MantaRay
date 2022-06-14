@@ -25,8 +25,7 @@ namespace GrasshopperRadianceLinuxConnector
 
             if (matchResult.Groups[2].Success)
             {
-                bool isNumber = int.TryParse(matchResult.Groups[2].Value, out int delNumbers);
-                if (isNumber)
+                if (int.TryParse(matchResult.Groups[2].Value, out int delNumbers))
                 {
                     return locals[matchResult.Groups[1].Value].Substring(0, Math.Max(0, locals[matchResult.Groups[1].Value].Length - 1 - delNumbers));
                 }
@@ -50,12 +49,11 @@ namespace GrasshopperRadianceLinuxConnector
 
             if (locals != null)
             {
+                Dictionary<string, string> _locals = new Dictionary<string, string>(locals);
                 // Setup the dict only once and not in the Replacers method
-                foreach (KeyValuePair<string, string> item in Globals)
-                {
-                    locals[item.Key] = item.Value;
-                }
-                return regexAdvanced.Replace(s, new MatchEvaluator((v) => Replacers(v, locals, missingKeys)));
+                foreach (KeyValuePair<string, string> item in Globals) _locals[item.Key] = item.Value;
+                
+                return regexAdvanced.Replace(s, new MatchEvaluator((v) => Replacers(v, _locals, missingKeys)));
             }
             else
             {
