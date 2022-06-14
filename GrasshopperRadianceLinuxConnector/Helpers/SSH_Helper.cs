@@ -78,6 +78,8 @@ namespace GrasshopperRadianceLinuxConnector
 
         public static string ToLinuxPath(this string s)
         {
+            if (s == null)
+                return null;
             HomeDirectory = HomeDirectory ?? sftpClient.WorkingDirectory;
 
             if (s.StartsWith(WindowsParentPath))
@@ -90,6 +92,8 @@ namespace GrasshopperRadianceLinuxConnector
 
         public static string ToWindowsPath(this string s)
         {
+            if (s == null)
+                return null;
             if (s.StartsWith(LinuxParentPath))
             {
                 return (windowsParentPath + s.Substring(LinuxParentPath.Length)).Replace("/", @"\");
