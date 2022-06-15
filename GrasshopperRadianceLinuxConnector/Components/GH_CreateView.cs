@@ -85,8 +85,8 @@ namespace GrasshopperRadianceLinuxConnector.Components
                 $"-vp {vp.X} {vp.Y} {vp.Z} " +
                 $"-vd {vd.X} {vd.Y} {vd.Z} " +
                 $"-vu {vu.X} {vu.Y} {vu.Z} " +
-                $"-vh {vh * 2.0} " +
-                $"-vv {vv * 2.0}";
+                $"-vh {vh * 180.0:0.000} " +
+                $"-vv {vv * 2.0 * 180.0:0.000}";
             }
             else if (vpInfo.IsParallelProjection)
             {
