@@ -81,7 +81,7 @@ namespace GrasshopperRadianceLinuxConnector.Components
                 if (PointsTo.Length > 2)
                     clippingBox = new BoundingBox(new Point3d[] { PointsTo[0], PointsTo[1], PointsTo[2], vp });
 
-                output = $"rvu -vtv " +
+                output = $"-vtv " +
                 $"-vp {vp.X} {vp.Y} {vp.Z} " +
                 $"-vd {vd.X} {vd.Y} {vd.Z} " +
                 $"-vu {vu.X} {vu.Y} {vu.Z} " +
