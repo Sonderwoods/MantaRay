@@ -39,11 +39,12 @@ namespace GrasshopperRadianceLinuxConnector
                 "Example: you have 3 objects:  floor/ceiling/wall\n" +
                 "then you should join all your floor meshes into one joined floor mesh, same for the others.\n" +
                 "And input it as a grafted list. This will make the component run 3 meshing engines at the same time.", GH_ParamAccess.tree); //TODO: change to tree and allow parallel runs
+
+            pManager[pManager.AddTextParameter("Name", "Name", "Name (will save name.rad)", GH_ParamAccess.tree)].DataMapping = GH_DataMapping.Graft;
+           
+            pManager[pManager.AddTextParameter("MapFileName", "MapFileName", "name of mapping file name. Default is mapping (.map)", GH_ParamAccess.item, "mapping")].Optional = true;
+            pManager[pManager.AddTextParameter("ModifierName", "ModifierName", "ModifierName - Name of the radiance material", GH_ParamAccess.tree)].DataMapping = GH_DataMapping.Graft;
             
-            pManager.AddTextParameter("Name", "Name", "Name (will save name.rad)", GH_ParamAccess.tree);
-            pManager[1].DataMapping = GH_DataMapping.Graft;
-            pManager.AddTextParameter("ModifierName", "ModifierName", "ModifierName - Name of the radiance material", GH_ParamAccess.tree);
-            pManager[2].DataMapping = GH_DataMapping.Graft;
             pManager[pManager.AddTextParameter("Subfolder Override", "Subfolder", "Optional. Override the subfolder from the connection component.\n" +
                 "Example:\n" +
                 "simulation/objFiles", GH_ParamAccess.item, "")].Optional = true;
@@ -78,6 +79,8 @@ namespace GrasshopperRadianceLinuxConnector
 
             string workingDir;
 
+            string mappingName = DA.Fetch<string>("MapFileName");
+
             string subfolder = DA.Fetch<string>("Subfolder Override").AddGlobals().Replace('/', '\\').Trim('\\'); //keep backslash as we're in windows.
 
             Grasshopper.Kernel.Data.GH_Structure<GH_Mesh> inMeshes = DA.FetchTree<GH_Mesh>("Mesh");
@@ -107,7 +110,7 @@ namespace GrasshopperRadianceLinuxConnector
 
             workingDir = (workingDir.EndsWith(@"\") || workingDir.EndsWith("/")) ? workingDir : workingDir + @"\";
 
-            string mappingFilePath = $"{workingDir}mapping.map";
+            string mappingFilePath = $"{workingDir}{mappingName}.map";
 
 
             object myLock = new object();
