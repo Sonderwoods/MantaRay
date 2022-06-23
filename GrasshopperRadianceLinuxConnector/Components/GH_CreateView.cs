@@ -123,36 +123,47 @@ namespace GrasshopperRadianceLinuxConnector.Components
 
 
 
-            
+
         }
 
         public override void DrawViewportWires(IGH_PreviewArgs args)
         {
+
+            DrawCamera(vp, PointsTo, this.Attributes.Selected ? System.Drawing.Color.DarkGreen : System.Drawing.Color.DarkRed, args);
+
+            base.DrawViewportWires(args);
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="startPt"></param>
+        /// <param name="endPts">the quad end points. TODO: Change to view angle and auto generate...</param>
+        /// <param name="color"></param>
+        /// <param name="args"></param>
+        public void DrawCamera(Point3d startPt, Point3d[] endPts, System.Drawing.Color color, IGH_PreviewArgs args)
+        {
             if (args.Display.Viewport.Name == Message)
                 return;
+            
 
-            System.Drawing.Color color = this.Attributes.Selected ? System.Drawing.Color.DarkGreen : System.Drawing.Color.DarkRed;
-            Point3d avgPoint = default(Point3d);
-            if (PointsTo != null && PointsTo.Length > 0)
+            Point3d avgPoint = default;
+            if (endPts != null && endPts.Length > 0)
             {
                 int[] order = new[] { 0, 1, 3, 2, 0 };
                 for (int i = 0; i < order.Length - 1; i++)
                 {
                     int cur = order[i];
                     int next = order[i + 1];
-                    args.Display.DrawDottedLine(new Line(vp, PointsTo[cur]), color);
-                    args.Display.DrawLine(PointsTo[cur], PointsTo[next], color, 1);
-                    avgPoint += PointsTo[i];
+                    args.Display.DrawDottedLine(new Line(startPt, endPts[cur]), color);
+                    args.Display.DrawLine(endPts[cur], endPts[next], color, 1);
+                    avgPoint += endPts[i];
 
                 }
 
-                args.Display.DrawLine(vp, (avgPoint / PointsTo.Length), color, 3);
-                args.Display.DrawDot(vp, Message, System.Drawing.Color.Black, this.Attributes.Selected ? System.Drawing.Color.Green : System.Drawing.Color.Red);
+                args.Display.DrawLine(startPt, (avgPoint / endPts.Length), color, 3);
+                args.Display.DrawDot(startPt, Message, System.Drawing.Color.Black, this.Attributes.Selected ? System.Drawing.Color.Green : System.Drawing.Color.Red);
             }
-
-
-
-            base.DrawViewportWires(args);
         }
 
         public override BoundingBox ClippingBox => clippingBox;
