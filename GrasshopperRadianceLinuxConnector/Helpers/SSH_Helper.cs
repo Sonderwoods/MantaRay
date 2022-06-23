@@ -401,7 +401,7 @@ namespace GrasshopperRadianceLinuxConnector
         /// <param name="errors">stringbuilder for errors</param>
         /// <param name="prependPrefix">whether we want to include the radiance "EXPORT" prefixes <see cref="ExportPrefixes"/></param>
         /// <returns></returns>
-        public static int Execute(string command, StringBuilder log = null, StringBuilder stdout = null, StringBuilder errors = null, bool prependPrefix = true, Func<string, bool> filter = null)
+        public static int Execute(string command, StringBuilder log = null, StringBuilder stdout = null, StringBuilder errors = null, bool prependPrefix = true, bool appendSuffix = true, Func<string, bool> filter = null)
         {
             if (string.IsNullOrEmpty(command))
             {
@@ -426,12 +426,28 @@ namespace GrasshopperRadianceLinuxConnector
                 command = command.Trim('\n');
 
                 //saving the pid to a local file
-                var cmd = sshClient.CreateCommand((prependPrefix ? String.Join(";", ExportPrefixes) + ";" + command : command) + $" & echo $! >~/temp{rand}.pid");
+                var cmd = sshClient.CreateCommand((prependPrefix ? String.Join(";", ExportPrefixes) + ";" + command : command) + (appendSuffix ? $" & echo $! >~/temp{rand}.pid": ""));
                 cmd.Execute();
 
-                var pidCommand = sshClient.CreateCommand($"cat  ~/temp{rand}.pid");
+                if(appendSuffix)
+                {
+                    var pidCommand = sshClient.CreateCommand($"cat  ~/temp{rand}.pid");
 
-                pidCommand.Execute();
+                    pidCommand.Execute();
+
+                    if (string.IsNullOrEmpty(cmd.Error))
+                    {
+                        pid = int.Parse(pidCommand.Result);
+                    }
+
+                    sshClient.CreateCommand($"rm ~/temp{rand}.pid").Execute();
+                }
+                else
+                {
+                    pid = string.IsNullOrEmpty(cmd.Error) ? 1 : -1;
+                }
+
+                
 
                 if (log != null)
                 {
@@ -443,13 +459,11 @@ namespace GrasshopperRadianceLinuxConnector
                     log.Append(command.Replace("\n", "\n   ").Replace(";", "\n   "));
                     log.Append("\n");
                 }
+                bool ok = filter(cmd.Error);
 
-
-                if (string.IsNullOrEmpty(cmd.Error))
-                {
-                    pid = int.Parse(pidCommand.Result);
-                }
-                else if (filter == null || filter(cmd.Error))
+               
+                
+                if (!string.IsNullOrEmpty(cmd.Error) && (filter == null || filter(cmd.Error)))
                 {
                     errors?.Append(cmd.Error);
                     errors?.Append("\n");
@@ -457,7 +471,7 @@ namespace GrasshopperRadianceLinuxConnector
 
                 stdout?.Append(cmd.Result.Trim('\n', '\r'));
 
-                sshClient.CreateCommand($"rm ~/temp{rand}.pid").Execute();
+                
 
             }
             else // no connection
