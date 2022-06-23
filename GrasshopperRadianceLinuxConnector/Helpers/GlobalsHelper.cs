@@ -10,7 +10,14 @@ namespace GrasshopperRadianceLinuxConnector
     internal static class GlobalsHelper
     {
         public static readonly Dictionary<string, string> Globals = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-        public static readonly Regex regexAdvanced = new Regex(@"<([\w]+?)-??([\d.]*)*?>", RegexOptions.Compiled);
+        //public static readonly Regex regexAdvanced = new Regex(@"<([\w]+?)-??([\d.]*)*?>", RegexOptions.Compiled);
+        public static readonly Regex regexAdvanced = new Regex(@"<([a-zA-Z]+[\d]*)-??((?<=-)([\d]*||.))*?>", RegexOptions.Compiled);
+        /*
+         * This is:
+         * LETTER + optional number> for a key
+         * LETTER + optional number +  "-" + number for a key and an int of how many letters to remove from the value (ie if <hdr> == "path.hdr", then <hdr-3> will == "path."
+         * LETTER + optional number +  "-." will remove any file ending of the value.
+         */
 
 
         private static String Replacers(Match matchResult, Dictionary<string, string> locals = null, List<string> missingKeys = null)
@@ -27,7 +34,7 @@ namespace GrasshopperRadianceLinuxConnector
             {
                 if (int.TryParse(matchResult.Groups[2].Value, out int delNumbers))
                 {
-                    return locals[matchResult.Groups[1].Value].Substring(0, Math.Max(0, locals[matchResult.Groups[1].Value].Length - 1 - delNumbers));
+                    return locals[matchResult.Groups[1].Value].Substring(0, Math.Max(0, locals[matchResult.Groups[1].Value].Length - delNumbers));
                 }
                 else if (String.Equals(matchResult.Groups[2].Value, ".", StringComparison.InvariantCulture))
                 {
