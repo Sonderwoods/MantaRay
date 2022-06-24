@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Windows.Forms;
 using Grasshopper.Kernel;
 using Grasshopper.Kernel.Parameters;
 using Grasshopper.Kernel.Types;
@@ -15,7 +16,12 @@ namespace GrasshopperRadianceLinuxConnector.Components
         /// </summary>
         public GH_ApplyOverrides()
           : base("Apply Overrides", "Overrides",
-              "Adds the overrides to the text element",
+              "Adds the overrides to the text element\n" +
+                "Will replace all <key> in the input with their corrosponding values.\n" +
+                "IE: put '-n <cpus>' in the input, 'cpus' in the keys and '8' in the values. This will output '-n 8'\n\n" +
+                "Use the zoomable UI to add additional key/value pairs. It'll use the input nickname as key and the input as value.\n\n" +
+                "The values can be truncated, then use <filename-X> in the input. if <filename> is 'picture.hdr', then <filename-4> is 'picture'\n" +
+                "The values can also remove any file extensions (anything after a dot), in that case use <filename-.>",
               "0 Setup")
         {
         }
@@ -30,9 +36,11 @@ namespace GrasshopperRadianceLinuxConnector.Components
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
             staticParameterCount = this.Params.Input.Count;
-            pManager.AddTextParameter("Input", "Input", "Input", GH_ParamAccess.list);
-            pManager[pManager.AddTextParameter("Additional Keys", "Keys", "Keys", GH_ParamAccess.list, new List<string>())].Optional = true;
-            pManager[pManager.AddTextParameter("Additional Values", "Values", "Values", GH_ParamAccess.list, new List<string>())].Optional = true;
+
+            pManager.AddTextParameter("Input", "Input_", "Input string", GH_ParamAccess.list);
+            pManager[pManager.AddTextParameter("Additional Keys", "_Keys", "Keys, list must match length of values list. Each key will be replaced ", GH_ParamAccess.list, new List<string>())].Optional = true;
+            pManager[pManager.AddTextParameter("Additional Values", "_Values", "Values, list must match length of keys list.", GH_ParamAccess.list, new List<string>())].Optional = true;
+
             staticParameterCount = this.Params.Input.Count - staticParameterCount;
         }
 
@@ -52,6 +60,7 @@ namespace GrasshopperRadianceLinuxConnector.Components
         protected override void SolveInstance(IGH_DataAccess DA)
         {
 
+            int dynamicParameterCount = Params.Input.Count - staticParameterCount;
             List<string> keys = DA.FetchList<string>("Additional Keys");
             List<string> values = DA.FetchList<string>("Additional Values");
             List<string> outPairs = new List<string>(keys.Count);
@@ -61,9 +70,10 @@ namespace GrasshopperRadianceLinuxConnector.Components
 
             if (keys.Count != values.Count)
             {
-                AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, "List lengths are not matching");
+                AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, "Keys and Value List lengths are not matching");
             }
 
+            // House keeping to set the PadRight distance in the output (only aesthetic)
             int keysLength = 3;
             if (GlobalsHelper.Globals.Keys.Count > 0)
             {
@@ -73,7 +83,7 @@ namespace GrasshopperRadianceLinuxConnector.Components
             {
                 keysLength = Math.Max(keysLength, keys.Select(k => k.Length).Max());
             }
-            if (staticParameterCount > 0)
+            if (dynamicParameterCount > 0)
             {
                 keysLength = Math.Max(keysLength, Params.Input.Skip(staticParameterCount).Select(p => p.NickName.Length).Max());
             }
@@ -81,17 +91,18 @@ namespace GrasshopperRadianceLinuxConnector.Components
 
             foreach (KeyValuePair<string, string> item in GlobalsHelper.Globals)
             {
-                //outPairs.Add($"<{item.Key}> --> {item.Value}");
                 outPairs.Add($"{("<" + item.Key + ">").PadRight(keysLength + 1)} --> {item.Value}");
             }
 
 
-
-            if (keys.Count == 0 && values.Count == 0 && staticParameterCount == 0)
+            // House keeping if list lengths are OK
+            if (keys.Count == 0 && values.Count == 0 && dynamicParameterCount == 0)
             {
 
                 if (missingInputs.Count == 0)
+                {
                     DA.SetDataList(0, inputs.Select(s => s.AddGlobals(missingKeys: missingInputs)));
+                }
 
                 DA.SetDataList(1, outPairs);
 
@@ -106,9 +117,9 @@ namespace GrasshopperRadianceLinuxConnector.Components
 
             Dictionary<string, string> locals = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
+            // Adding keys and values from the Key/Value list
             int valuesCount = values.Count;
             int keysCount = keys.Count;
-
 
             if (valuesCount > 0 && keysCount > 0)
             {
@@ -116,43 +127,57 @@ namespace GrasshopperRadianceLinuxConnector.Components
                 {
                     if (values[Math.Min(i, valuesCount - 1)] == null)
                     {
-                        AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, "Null item - missing a value???");
+                        AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, $"Null item at key {keys[Math.Min(i, keysCount - 1)]} - missing a value???");
 
                     }
-                    locals.Add(keys[Math.Min(i, keysCount - 1)], values[Math.Min(i, valuesCount - 1)]);
-                    outPairs.Add($"{("<" + keys[Math.Min(i, keysCount - 1)]).PadRight(keysLength + 1)}> --> {values[Math.Min(i, valuesCount - 1)]}");
+                    if (locals.ContainsKey(keys[Math.Min(i, keysCount - 1)]))
+                    {
+                        AddRuntimeMessage(GH_RuntimeMessageLevel.Error, $"Key {keys[Math.Min(i, keysCount - 1)]} (in the Keys list) already exists");
+                    }
+                    else
+                    {
+                        locals.Add(keys[Math.Min(i, keysCount - 1)], values[Math.Min(i, valuesCount - 1)]);
+                        outPairs.Add($"{("<" + keys[Math.Min(i, keysCount - 1)]).PadRight(keysLength + 1)}> --> {values[Math.Min(i, valuesCount - 1)]}");
+
+                    }
                 }
 
             }
 
-
-            foreach (Param_String input in this.Params.Input.Skip(staticParameterCount).OfType<Param_String>())
+            // Adding keys and values from the dynamic parameter inputs
+            foreach (Param_String input in this.Params.Input
+                .Skip(staticParameterCount)
+                .OfType<Param_String>()
+                .Where(inp => inp.VolatileDataCount > 0))
             {
-                if (input.VolatileDataCount == 0)
-                    continue;
 
                 System.Collections.IList dataList = input.VolatileData.get_Branch(0);
                 if (dataList.Count > 0 && dataList[0] is GH_String s)
                 {
-                    locals.Add(input.NickName, s.Value);
-                    outPairs.Add($"{("<" + input.NickName + ">").PadRight(keysLength + 1)} --> {s.Value}");
+                    if (locals.ContainsKey(input.NickName))
+                    {
+                        AddRuntimeMessage(GH_RuntimeMessageLevel.Error, $"Key {input.NickName} (in the dynamic parameters) already exists");
+                    }
+                    else
+                    {
+                        locals.Add(input.NickName, s.Value);
+                        outPairs.Add($"{("<" + input.NickName + ">").PadRight(keysLength + 1)} --> {s.Value}");
+
+                    }
 
                 }
 
             }
 
-            List<string> outputs = new List<string>(inputs.Count);
+            //as array instead of IEnumerable, otherwise the misingInputs is not updated before the check below.
+            string[] outputs = inputs.Select(i => i.AddGlobals(locals, missingKeys: missingInputs)).ToArray();
 
-            inputs.ForEach(i => outputs.Add(i.AddGlobals(locals, missingKeys: missingInputs)));
+            missingInputs.ForEach(item => AddRuntimeMessage(GH_RuntimeMessageLevel.Error, $"Missing \"{item}\""));
 
-            foreach (string item in missingInputs)
+            if (RuntimeMessages(GH_RuntimeMessageLevel.Error).Count == 0)
             {
-                AddRuntimeMessage(GH_RuntimeMessageLevel.Error, $"Missing \"{item}\"");
-
-            }
-
-            if (missingInputs.Count == 0)
                 DA.SetDataList(0, outputs);
+            }
 
             DA.SetDataList(1, outPairs);
 
@@ -188,7 +213,35 @@ namespace GrasshopperRadianceLinuxConnector.Components
         //    }
 
         //}
+        public void AddMissingParameters()
+        {
+            foreach (string missingInp in missingInputs
+                .Distinct()
+                .Where(i => !Params.Input.Select(ip => ip.NickName).Contains(i)))
+            {
+                IGH_Param param = new Param_String() { NickName = missingInp, Optional = true, Access = GH_ParamAccess.item };
+                Params.RegisterInputParam(param);
+            }
+            Params.OnParametersChanged();
+            this.ExpireSolution(true);
 
+        }
+
+        public override void AppendAdditionalMenuItems(ToolStripDropDown menu)
+        {
+            base.AppendAdditionalMenuItems(menu);
+            Menu_AppendItem(menu, "Fill missing parameters", (s, e) =>
+            {
+                AddMissingParameters();
+            }, missingInputs.Count > 0 && missingInputs
+                .Distinct()
+                .Where(i => !Params.Input.Select(ip => ip.NickName).Contains(i)).Count() > 0);
+            Menu_AppendItem(menu, "Remove unneeded parameters (TODO)", (s, e) =>
+            {
+                //AddMissingParameters();
+            }, false);
+
+        }
 
 
         bool IGH_VariableParameterComponent.CanInsertParameter(GH_ParameterSide side, int index)
@@ -214,25 +267,23 @@ namespace GrasshopperRadianceLinuxConnector.Components
 
         void IGH_VariableParameterComponent.VariableParameterMaintenance()
         {
+            int added = 0;
             for (var i = staticParameterCount; i < Params.Input.Count; i++)
             {
                 var param = Params.Input[i];
+
                 if (param.NickName == "-")
                 {
-                    param.Name = $"Data {i + 1}";
-                    param.NickName = $"d{i + 1}";
+                    param.NickName = missingInputs.Skip(staticParameterCount + added++).FirstOrDefault() ?? $"d{i + 1}";
+                }
 
-                }
-                else
-                {
-                    param.Name = param.NickName;
-                }
+                param.Name = param.NickName;
+                param.Access = GH_ParamAccess.item;
                 param.Description = $"Input {i + 1}";
                 param.Optional = true;
                 param.MutableNickName = true;
-                param.Access = GH_ParamAccess.item;
-                param.DataMapping = GH_DataMapping.Flatten;
 
+                //param.DataMapping = GH_DataMapping.Flatten;
 
             }
 
@@ -245,7 +296,7 @@ namespace GrasshopperRadianceLinuxConnector.Components
 
             if (e.ParameterSide == GH_ParameterSide.Input)
             {
-                int index = this.Params.Input.FindIndex(a => object.ReferenceEquals(a, e.Parameter));
+                int index = this.Params.Input.FindIndex(a => ReferenceEquals(a, e.Parameter));
 
                 if (index >= staticParameterCount)
                 {
@@ -262,6 +313,7 @@ namespace GrasshopperRadianceLinuxConnector.Components
         public override Guid ComponentGuid
         {
             get { return new Guid("9B21A68A-179E-4BDB-8232-0729E8CF5EA4"); }
+
         }
     }
 }
