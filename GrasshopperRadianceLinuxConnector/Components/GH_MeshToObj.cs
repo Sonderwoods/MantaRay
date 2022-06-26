@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Globalization;
 using System.Linq;
 using System.Text;
@@ -234,6 +235,8 @@ namespace GrasshopperRadianceLinuxConnector
 
 
         }
+
+        protected override Bitmap Icon => Resources.Resources.Ra_Obj_Icon;
 
 
         /// <summary>

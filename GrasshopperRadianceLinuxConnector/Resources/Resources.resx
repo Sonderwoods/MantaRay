@@ -118,10 +118,49 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <assembly alias="System.Windows.Forms" name="System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
+  <data name="Ra_Connect_Icon" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Ra_Connect_Icon.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="Ra_Download_Icon" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Ra_Download_Icon.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="Ra_Globals_Cam_Icon" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Ra_Globals_Cam_Icon.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="Ra_Globals_Icon" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Ra_Globals_Icon.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="Ra_Globals_Icon2" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Ra_Globals_Icon2.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
   <data name="Ra_Icon" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>Ra_Icon.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
   <data name="Ra_IconDark" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>Ra_IconDark.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="Ra_Mat_Icon" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Ra_Mat_Icon.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="Ra_Obj_Icon" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Ra_Obj_Icon.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="Ra_Paths_Icon" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Ra_Paths_Icon.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="Ra_Pt_Icon" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Ra_Pt_Icon.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="Ra_Radviewer_Icon" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Ra_Radviewer_Icon.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="Ra_Rad_Icon" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Ra_Rad_Icon.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="Ra_Ra_Icon" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Ra_Ra_Icon.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="Ra_Upload_Icon" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Ra_Upload_Icon.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
 </root>

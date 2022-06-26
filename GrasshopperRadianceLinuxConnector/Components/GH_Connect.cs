@@ -308,6 +308,7 @@ namespace GrasshopperRadianceLinuxConnector.Components
         }
 
 
+        protected override Bitmap Icon => Resources.Resources.Ra_Connect_Icon;
 
 
         /// <summary>

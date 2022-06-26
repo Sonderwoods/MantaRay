@@ -306,6 +306,8 @@ namespace GrasshopperRadianceLinuxConnector.Components
             }
         }
 
+        protected override Bitmap Icon => Resources.Resources.Ra_Globals_Icon;
+
 
         /// <summary>
         /// Gets the unique ID for this component. Do not change this ID after release.

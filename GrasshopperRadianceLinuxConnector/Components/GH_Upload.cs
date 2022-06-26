@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.IO;
 using System.Text;
 using Grasshopper.Kernel;
@@ -91,6 +92,7 @@ namespace GrasshopperRadianceLinuxConnector.Components
 
         }
 
+        protected override Bitmap Icon => Resources.Resources.Ra_Upload_Icon;
 
         /// <summary>
         /// Gets the unique ID for this component. Do not change this ID after release.

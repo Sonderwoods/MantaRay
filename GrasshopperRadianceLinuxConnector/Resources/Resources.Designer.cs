@@ -63,6 +63,56 @@ namespace GrasshopperRadianceLinuxConnector.Resources {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
+        internal static System.Drawing.Bitmap Ra_Connect_Icon {
+            get {
+                object obj = ResourceManager.GetObject("Ra_Connect_Icon", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap Ra_Download_Icon {
+            get {
+                object obj = ResourceManager.GetObject("Ra_Download_Icon", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap Ra_Globals_Cam_Icon {
+            get {
+                object obj = ResourceManager.GetObject("Ra_Globals_Cam_Icon", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap Ra_Globals_Icon {
+            get {
+                object obj = ResourceManager.GetObject("Ra_Globals_Icon", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap Ra_Globals_Icon2 {
+            get {
+                object obj = ResourceManager.GetObject("Ra_Globals_Icon2", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
         internal static System.Drawing.Bitmap Ra_Icon {
             get {
                 object obj = ResourceManager.GetObject("Ra_Icon", resourceCulture);
@@ -76,6 +126,86 @@ namespace GrasshopperRadianceLinuxConnector.Resources {
         internal static System.Drawing.Bitmap Ra_IconDark {
             get {
                 object obj = ResourceManager.GetObject("Ra_IconDark", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap Ra_Mat_Icon {
+            get {
+                object obj = ResourceManager.GetObject("Ra_Mat_Icon", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap Ra_Obj_Icon {
+            get {
+                object obj = ResourceManager.GetObject("Ra_Obj_Icon", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap Ra_Paths_Icon {
+            get {
+                object obj = ResourceManager.GetObject("Ra_Paths_Icon", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap Ra_Pt_Icon {
+            get {
+                object obj = ResourceManager.GetObject("Ra_Pt_Icon", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap Ra_Ra_Icon {
+            get {
+                object obj = ResourceManager.GetObject("Ra_Ra_Icon", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap Ra_Rad_Icon {
+            get {
+                object obj = ResourceManager.GetObject("Ra_Rad_Icon", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap Ra_Radviewer_Icon {
+            get {
+                object obj = ResourceManager.GetObject("Ra_Radviewer_Icon", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap Ra_Upload_Icon {
+            get {
+                object obj = ResourceManager.GetObject("Ra_Upload_Icon", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }

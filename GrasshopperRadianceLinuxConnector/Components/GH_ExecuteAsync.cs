@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -301,6 +302,7 @@ namespace GrasshopperRadianceLinuxConnector
             return base.Read(reader);
         }
 
+        protected override Bitmap Icon => Resources.Resources.Ra_Ra_Icon;
         public override Guid ComponentGuid => new Guid("257C7A8C-330E-43F5-AC62-19F517A3F528");
 
     }

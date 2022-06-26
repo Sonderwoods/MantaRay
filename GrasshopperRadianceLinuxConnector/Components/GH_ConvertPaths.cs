@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
+using System.Drawing;
 using Grasshopper.Kernel;
 using Rhino.Geometry;
 
@@ -48,6 +49,7 @@ namespace GrasshopperRadianceLinuxConnector.Components
             DA.SetData(1, path.ToWindowsPath());
         }
 
+        protected override Bitmap Icon => Resources.Resources.Ra_Paths_Icon;
 
         /// <summary>
         /// Gets the unique ID for this component. Do not change this ID after release.

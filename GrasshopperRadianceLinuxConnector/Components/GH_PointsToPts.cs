@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Text;
 using Grasshopper.Kernel;
 using Grasshopper.Kernel.Data;
@@ -179,6 +180,8 @@ namespace GrasshopperRadianceLinuxConnector.Components
 
 
         }
+
+        protected override Bitmap Icon => Resources.Resources.Ra_Pt_Icon;
 
 
         /// <summary>
