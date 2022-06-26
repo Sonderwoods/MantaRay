@@ -426,10 +426,10 @@ namespace GrasshopperRadianceLinuxConnector
                 command = command.Trim('\n');
 
                 //saving the pid to a local file
-                var cmd = sshClient.CreateCommand((prependPrefix ? String.Join(";", ExportPrefixes) + ";" + command : command) + (appendSuffix ? $" & echo $! >~/temp{rand}.pid": ""));
+                var cmd = sshClient.CreateCommand((prependPrefix ? String.Join(";", ExportPrefixes) + ";" + command : command) + (appendSuffix ? $" & echo $! >~/temp{rand}.pid" : ""));
                 cmd.Execute();
 
-                if(appendSuffix)
+                if (appendSuffix)
                 {
                     var pidCommand = sshClient.CreateCommand($"cat  ~/temp{rand}.pid");
 
@@ -447,7 +447,7 @@ namespace GrasshopperRadianceLinuxConnector
                     pid = string.IsNullOrEmpty(cmd.Error) ? 1 : -1;
                 }
 
-                
+
 
                 if (log != null)
                 {
@@ -459,10 +459,9 @@ namespace GrasshopperRadianceLinuxConnector
                     log.Append(command.Replace("\n", "\n   ").Replace(";", "\n   "));
                     log.Append("\n");
                 }
-                bool ok = filter(cmd.Error);
 
-               
-                
+                bool ok = filter != null ? filter(cmd.Error) : true;
+
                 if (!string.IsNullOrEmpty(cmd.Error) && (filter == null || filter(cmd.Error)))
                 {
                     errors?.Append(cmd.Error);
@@ -471,7 +470,7 @@ namespace GrasshopperRadianceLinuxConnector
 
                 stdout?.Append(cmd.Result.Trim('\n', '\r'));
 
-                
+
 
             }
             else // no connection
@@ -500,7 +499,7 @@ namespace GrasshopperRadianceLinuxConnector
 
         }
 
-      
+
         private static bool TryRunXlaunchIfNeeded(string command)
         {
 
