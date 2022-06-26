@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-
 using Grasshopper.Kernel;
-using Rhino.Geometry;
 using Renci.SshNet;
 using System.Text;
 using System.Windows.Forms;
@@ -60,6 +58,8 @@ namespace GrasshopperRadianceLinuxConnector.Components
         /// <param name="DA">The DA object is used to retrieve from inputs and store in outputs.</param>
         protected override void SolveInstance(IGH_DataAccess DA)
         {
+            // Moving to back will make sure this expires/runs before other objects when you load the file
+            Grasshopper.Instances.ActiveCanvas.Document.ArrangeObject(this, GH_Arrange.MoveToBack);
 
             if (Grasshopper.Instances.ActiveCanvas.Document.Objects.OfType<GH_Connect>().Where(c => !Object.ReferenceEquals(c, this)).Count() > 0)
             {
@@ -81,12 +81,8 @@ namespace GrasshopperRadianceLinuxConnector.Components
 
                 }
 
-
             }
-            Grasshopper.Instances.ActiveCanvas.Document.ArrangeObject(this, GH_Arrange.MoveToBack);
-
-
-
+            
             string username = DA.Fetch<string>("user");
             string password = DA.Fetch<string>("password");
             string linDir = DA.Fetch<string>("LinuxDir");
@@ -167,8 +163,8 @@ namespace GrasshopperRadianceLinuxConnector.Components
                     SSH_Helper.DefaultSubfolder = subfolder;
                 }
 
-                sb.AppendFormat("SSH:  Setup windows folder to {0}\n", SSH_Helper.WindowsFullpath);
-                sb.AppendFormat("SSH:  Setup linux folder to {0}\n", SSH_Helper.LinuxFullpath);
+                sb.AppendFormat("SSH:  Setup <WinHome> to {0}\n", SSH_Helper.WindowsFullpath);
+                sb.AppendFormat("SSH:  Setup <LinuxHome> to {0}\n", SSH_Helper.LinuxFullpath);
 
 
                 try
@@ -256,7 +252,6 @@ namespace GrasshopperRadianceLinuxConnector.Components
 
             DA.SetData("status", sb.ToString());
 
-
             //the run output
             var runTree = new GH_Structure<GH_Boolean>();
             runTree.Append(new GH_Boolean(SSH_Helper.CheckConnection() == SSH_Helper.ConnectionDetails.Connected));
@@ -265,7 +260,6 @@ namespace GrasshopperRadianceLinuxConnector.Components
 
             if (SSH_Helper.CheckConnection() != SSH_Helper.ConnectionDetails.Connected)
                 AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Not Connected.\n\nTry restarting SSH in your bash with:\nsudo service ssh start");
-
 
         }
 
@@ -281,7 +275,6 @@ namespace GrasshopperRadianceLinuxConnector.Components
             TryDisconnect();
 
             base.RemovedFromDocument(document);
-
 
         }
 
@@ -328,7 +321,6 @@ namespace GrasshopperRadianceLinuxConnector.Components
             Font font = new Font("Arial", 10.0f,
                         FontStyle.Bold);
 
-
             Form prompt = new Form()
             {
                 Width = 400,
@@ -343,7 +335,6 @@ namespace GrasshopperRadianceLinuxConnector.Components
             };
             
             
-
             Label label = new Label() { Left = 50, Top = 35, Width=300, Height = 60, Text = $"Connecting to SSH\nInsert password for {username}:" };
             TextBox passwordTextBox = new TextBox() { Left = 50, Top = 95, Width = 300, Height = 30, Text = "",
                 ForeColor = Color.FromArgb(255, 230, 45, 14),
@@ -353,8 +344,6 @@ namespace GrasshopperRadianceLinuxConnector.Components
                 Margin = new Padding(2)
             };
             
-
-
 
             Button connectButton = new Button() { Text = "Connect", Left = 50, Width = 100, Top = 150, Height = 40, DialogResult = DialogResult.OK };
             Button cancel = new Button() { Text = "Cancel", Left = 250, Width = 100, Top = 150, Height = 40, DialogResult = DialogResult.Cancel };
