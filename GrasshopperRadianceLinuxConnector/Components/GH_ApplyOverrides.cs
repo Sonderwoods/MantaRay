@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Linq;
 using System.Windows.Forms;
 using Grasshopper.Kernel;
@@ -150,8 +151,9 @@ namespace GrasshopperRadianceLinuxConnector.Components
                 .OfType<Param_String>()
                 .Where(inp => inp.VolatileDataCount > 0))
             {
+                
 
-                System.Collections.IList dataList = input.VolatileData.get_Branch(0);
+                System.Collections.IList dataList = input.VolatileData.get_Branch(this.RunCount - 1);
                 if (dataList.Count > 0 && dataList[0] is GH_String s)
                 {
                     if (locals.ContainsKey(input.NickName))
