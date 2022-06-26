@@ -16,6 +16,7 @@ using Grasshopper.Kernel;
 using Rhino.Display;
 using Rhino.Geometry;
 using Grasshopper.Kernel.Special;
+using System.Drawing;
 
 namespace GrasshopperRadianceLinuxConnector.Components
 {
@@ -645,6 +646,8 @@ namespace GrasshopperRadianceLinuxConnector.Components
 
 
         public override bool IsPreviewCapable => true;
+
+        protected override Bitmap Icon => Resources.Resources.Ra_Radviewer_Icon;
 
 
 

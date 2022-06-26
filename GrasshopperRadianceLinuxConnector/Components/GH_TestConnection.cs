@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Text;
 using Grasshopper.Kernel;
 using Rhino.Geometry;
@@ -59,6 +60,7 @@ namespace GrasshopperRadianceLinuxConnector.Components
             DA.SetData("status", sb.ToString());
         }
 
+        protected override Bitmap Icon => Resources.Resources.Ra_Connect_Icon;
 
 
         /// <summary>

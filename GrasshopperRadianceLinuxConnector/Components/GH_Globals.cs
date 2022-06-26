@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Linq;
 using Grasshopper.Kernel;
-using Rhino.Geometry;
 
 namespace GrasshopperRadianceLinuxConnector.Components
 {
@@ -41,9 +41,8 @@ namespace GrasshopperRadianceLinuxConnector.Components
         /// <param name="DA">The DA object is used to retrieve from inputs and store in outputs.</param>
         protected override void SolveInstance(IGH_DataAccess DA)
         {
-            List<string> keys = DA.FetchList<string>("Keys");
-            List<string> values = DA.FetchList<string>("Values");
-            List<string> outPairs = new List<string>(keys.Count);
+            // Moving to back will make sure this expires/runs before other objects when you load the file
+            Grasshopper.Instances.ActiveCanvas.Document.ArrangeObject(this, GH_Arrange.MoveToBack);
 
             if (Grasshopper.Instances.ActiveCanvas.Document.Objects.OfType<GH_Globals>().Where(c => !Object.ReferenceEquals(c, this)).Count() > 0)
             {
@@ -65,29 +64,35 @@ namespace GrasshopperRadianceLinuxConnector.Components
 
                 }
 
-
             }
-            Grasshopper.Instances.ActiveCanvas.Document.ArrangeObject(this, GH_Arrange.MoveToBack);
 
+            List<string> keys = DA.FetchList<string>("Keys");
+            List<string> values = DA.FetchList<string>("Values");
+            List<string> outPairs = new List<string>(keys.Count);
 
-            if (keys.Count != values.Count)
-            {
-                throw new ArgumentOutOfRangeException("The list lengths do not match");
-            }
+            if (keys.Count != values.Count) throw new ArgumentOutOfRangeException("The list lengths do not match");
 
             GlobalsHelper.Globals.Clear();
+            GlobalsHelper.Globals.Add("WinHome", SSH_Helper.WindowsFullpath);
+            GlobalsHelper.Globals.Add("LinuxHome", SSH_Helper.LinuxFullpath);
 
             int keysLength = keys.Count > 0 ? keys.Select(k => k.Length).Max() : 5;
 
             for (int i = 0; i < keys.Count; i++)
             {
                 GlobalsHelper.Globals.Add(keys[i], values[i]);
-                outPairs.Add($"{("<" + keys[i]).PadRight(keysLength + 1)}> --> {values[i]}");
             }
 
+            foreach (KeyValuePair<string, string> item in GlobalsHelper.Globals)
+            {
+                outPairs.Add($"{("<" + item.Key + ">").PadRight(keysLength + 2)} --> {item.Value}");
+            }
 
             DA.SetDataList(0, outPairs);
+
         }
+
+        protected override Bitmap Icon => Resources.Resources.Ra_Globals_Icon2;
 
 
         /// <summary>

@@ -7,6 +7,7 @@ using Renci.SshNet;
 using System.IO;
 using Grasshopper.Kernel.Data;
 using Grasshopper.Kernel.Types;
+using System.Drawing;
 
 namespace GrasshopperRadianceLinuxConnector.Components
 {
@@ -136,6 +137,8 @@ namespace GrasshopperRadianceLinuxConnector.Components
 
         }
 
+
+        protected override Bitmap Icon => Resources.Resources.Ra_Rad_Icon;
 
 
         /// <summary>

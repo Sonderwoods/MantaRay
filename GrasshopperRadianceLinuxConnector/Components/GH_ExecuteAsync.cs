@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -32,6 +33,7 @@ namespace GrasshopperRadianceLinuxConnector
 
         public bool addPrefix = true;
         public bool addSuffix = true;
+        public bool suppressWarnings = false;
 
         public RunInfo[] savedResults = new RunInfo[0];
 
@@ -69,6 +71,7 @@ namespace GrasshopperRadianceLinuxConnector
 
             Menu_AppendItem(menu, "Add prefix", (s, e) =>  { addPrefix = !addPrefix; ExpireSolution(true); },true, addPrefix);
             Menu_AppendItem(menu, "Add suffix", (s, e) =>  { addSuffix = !addSuffix; ExpireSolution(true); },true, addSuffix);
+            Menu_AppendItem(menu, "Suppress warnings", (s, e) => { suppressWarnings = !suppressWarnings; ExpireSolution(true); }, true, suppressWarnings);
         }
 
         protected override void PerformIfInactive(IGH_DataAccess DA)
@@ -102,8 +105,8 @@ namespace GrasshopperRadianceLinuxConnector
             base.RequestCancellation();
         }
 
-
-        public override bool IsPreviewCapable => true;
+        
+        
 
         public class RunInfo
         {
@@ -170,7 +173,7 @@ namespace GrasshopperRadianceLinuxConnector
 
                         bool itsJustAWarning = result.Stderr.ToString().Contains("warning");
 
-                        result.Success = pid > 0 || itsJustAWarning;
+                        result.Success = pid > 0 || itsJustAWarning || ((GH_ExecuteAsync)Parent).suppressWarnings;
 
                         if (result.Success)
                         {
@@ -271,6 +274,7 @@ namespace GrasshopperRadianceLinuxConnector
             writer.SetString("stdouts", String.Join(">JOIN<", savedResults.Select(r => r.Stdout)));
             writer.SetBoolean("addPrefix", addPrefix);
             writer.SetBoolean("addSuffix", addSuffix);
+            writer.SetBoolean("suppressWarnings", suppressWarnings);
 
 
 
@@ -297,10 +301,13 @@ namespace GrasshopperRadianceLinuxConnector
 
             reader.TryGetBoolean("addPrefix", ref addPrefix);
             reader.TryGetBoolean("addSuffix", ref addSuffix);
+            reader.TryGetBoolean("suppressWarnings", ref suppressWarnings);
 
             return base.Read(reader);
         }
 
+        public override bool IsPreviewCapable => true;
+        protected override Bitmap Icon => Resources.Resources.Ra_Ra_Icon;
         public override Guid ComponentGuid => new Guid("257C7A8C-330E-43F5-AC62-19F517A3F528");
 
     }

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Linq;
 using Grasshopper.Kernel;
 using Rhino.Geometry;
@@ -167,6 +168,8 @@ namespace GrasshopperRadianceLinuxConnector.Components
         }
 
         public override BoundingBox ClippingBox => clippingBox;
+
+        protected override Bitmap Icon => Resources.Resources.Ra_Globals_Cam_Icon;
 
         public override Guid ComponentGuid => new Guid("9E123876-5AFD-42D0-A173-D7875BE25F45");
 
