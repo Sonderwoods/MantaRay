@@ -174,11 +174,6 @@ namespace GrasshopperRadianceLinuxConnector.Components
             }
 
 
-            
-
-            
-
-
         }
 
         protected override Bitmap Icon => Resources.Resources.Ra_Pt_Icon;
