@@ -337,10 +337,10 @@ namespace GrasshopperRadianceLinuxConnector.Components
             
             Label label = new Label() { Left = 50, Top = 35, Width=300, Height = 60, Text = $"Connecting to SSH\nInsert password for {username}:" };
             TextBox passwordTextBox = new TextBox() { Left = 50, Top = 95, Width = 300, Height = 30, Text = "",
-                ForeColor = Color.FromArgb(255, 230, 45, 14),
+                ForeColor = Color.FromArgb(88, 100, 84),
                 PasswordChar = '*',
                 Font = redFont,
-                BackColor = Color.FromArgb(255, 35, 25, 20),
+                BackColor = Color.FromArgb(148, 180, 140),
                 Margin = new Padding(2)
             };
             
