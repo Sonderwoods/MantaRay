@@ -42,13 +42,13 @@ namespace GrasshopperRadianceLinuxConnector
             {
                 if (!Object.ReferenceEquals(_highlightedItem, value))
                 {
-                    _highlightedItemChanged?.Invoke(this, new EventArgs());
+                    HighlightedItemChanged?.Invoke(this, new EventArgs());
                     _highlightedItem = value;
                 }
             }
         }
 
-        public event EventHandler _highlightedItemChanged;
+        public event EventHandler HighlightedItemChanged;
         public HUD_Item _highlightedItem;
         public List<HUD_Item> Items { get; set; } = new List<HUD_Item>() { };
         public HUD_Item CloseBtn;
