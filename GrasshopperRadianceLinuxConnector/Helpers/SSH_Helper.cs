@@ -78,8 +78,13 @@ namespace GrasshopperRadianceLinuxConnector
 
         public static string ToLinuxPath(this string s)
         {
+            
+            if (sftpClient == null)
+                throw new System.NullReferenceException("No Connection");
+
             if (s == null)
                 return null;
+
             HomeDirectory = HomeDirectory ?? sftpClient.WorkingDirectory;
 
             if (s.StartsWith(WindowsParentPath))
@@ -92,8 +97,12 @@ namespace GrasshopperRadianceLinuxConnector
 
         public static string ToWindowsPath(this string s)
         {
+            if (sftpClient == null)
+                throw new System.NullReferenceException("No Connection");
+
             if (s == null)
                 return null;
+
             if (s.StartsWith(LinuxParentPath))
             {
                 return (windowsParentPath + s.Substring(LinuxParentPath.Length)).Replace("/", @"\");
@@ -480,8 +489,8 @@ namespace GrasshopperRadianceLinuxConnector
                     log.Append("[");
                     log.Append(DateTime.Now.ToString("G"));
                     log.Append("] $ ");
-                    log.Append(command.Replace("\n", "\n   ").Replace(";", "\n   "));
-                    log.Append("\n ERROR: There was no connection. Please run the connect component again");
+                    log.Append(String.Join("\n", command.Replace("\n", "\n   ").Replace(";", "\n   ").Split('\n').Take(5)));
+                    log.Append("\n...\n ERROR: There was no connection. Please run the connect component again");
                 }
 
                 if (errors != null)
@@ -489,8 +498,8 @@ namespace GrasshopperRadianceLinuxConnector
                     errors.Append("[");
                     errors.Append(DateTime.Now.ToString("G"));
                     errors.Append("] $ ");
-                    errors.Append(command.Replace("\n", "\n   ").Replace(";", "\n   "));
-                    errors.Append("\n ERROR: There was no connection. Please run the connect component again");
+                    errors.Append(String.Join("\n", command.Replace("\n", "\n   ").Replace(";", "\n   ").Split('\n').Take(5)));
+                    errors.Append("\n...\n ERROR: There was no connection. Please run the connect component again");
                 }
 
             }
