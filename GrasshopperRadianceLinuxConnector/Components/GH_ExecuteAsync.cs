@@ -44,7 +44,9 @@ namespace GrasshopperRadianceLinuxConnector
         /// </summary>
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
-            pManager.AddTextParameter("SSH Commands", "SSH commands", "SSH commands. Each item in list will be executed", GH_ParamAccess.tree);
+            pManager.AddTextParameter("SSH Commands", "SSH commands", "SSH commands. Each item in list will be executed\n\n" +
+                "Do a grafted tree input to run in parallel. However there is no checks if this starts too many CPUs on the host\n" +
+                "Use with caution!!", GH_ParamAccess.tree);
             pManager[pManager.AddBooleanParameter("Run", "Run", "Run", GH_ParamAccess.tree, false)].Optional = true;
         }
 
@@ -69,9 +71,84 @@ namespace GrasshopperRadianceLinuxConnector
                 RequestCancellation();
             }, PhaseForColors == AestheticPhase.Running);
 
-            Menu_AppendItem(menu, "Add prefix", (s, e) =>  { addPrefix = !addPrefix; ExpireSolution(true); },true, addPrefix);
-            Menu_AppendItem(menu, "Add suffix", (s, e) =>  { addSuffix = !addSuffix; ExpireSolution(true); },true, addSuffix);
+            Menu_AppendItem(menu, "Add prefix", (s, e) => { addPrefix = !addPrefix; ExpireSolution(true); }, true, addPrefix);
+            Menu_AppendItem(menu, "Add suffix", (s, e) => { addSuffix = !addSuffix; ExpireSolution(true); }, true, addSuffix);
             Menu_AppendItem(menu, "Suppress warnings", (s, e) => { suppressWarnings = !suppressWarnings; ExpireSolution(true); }, true, suppressWarnings);
+            Menu_AppendItem(menu, "Set Log details", (s, e) => { SetLogDetails(); }, true);
+        }
+
+        private void SetLogDetails()
+        {
+
+            Font inputFont = new Font("Arial", 11.0f,
+                        FontStyle.Bold);
+
+            Font font = new Font("Arial", 10.0f,
+                        FontStyle.Bold);
+
+            Form prompt = new Form()
+            {
+                Width = 400,
+                Height = 450,
+                FormBorderStyle = FormBorderStyle.FixedDialog,
+                Text = "Set Details",
+                StartPosition = FormStartPosition.CenterScreen,
+                BackColor = Color.FromArgb(255, 185, 185, 185),
+                ForeColor = Color.FromArgb(255, 30, 30, 30),
+                Font = font
+
+            };
+
+            Label label = new Label() { Left = 50, Top = 35, Width = 300, Height = 60, Text = $"This will set log entry\ndetails for this component" };
+
+            Label nameLabel = new Label() { Left = 50, Top = 100, Width = 300, Height = 25, Text = $"Name/Header" };
+            TextBox nameTextBox = new TextBox()
+            {
+                Left = 50,
+                Top = 125,
+                Width = 300,
+                Height = 25,
+                Text = logName,
+                ForeColor = Color.FromArgb(88, 100, 84),
+                Font = inputFont,
+                BackColor = Color.FromArgb(148, 180, 140),
+                Margin = new Padding(2),
+                
+            };
+
+
+            Label descriptionLabel = new Label() { Left = 50, Top = 160, Width = 300, Height = 25, Text = $"Description" };
+            TextBox descriptionTextBox = new TextBox()
+            {
+                Left = 50,
+                Top = 185,
+                Width = 300,
+                Height = 140,
+                Text = logDescription,
+                Multiline = true,
+                ForeColor = Color.FromArgb(88, 100, 84),
+                Font = inputFont,
+                BackColor = Color.FromArgb(148, 180, 140),
+                Margin = new Padding(2),
+
+            };
+
+
+            Button okButton = new Button() { Text = "Ok", Left = 50, Width = 100, Top = 330, Height = 40, DialogResult = DialogResult.OK };
+            Button cancelButton = new Button() { Text = "Cancel", Left = 250, Width = 100, Top = 330, Height = 40, DialogResult = DialogResult.Cancel };
+
+            prompt.Controls.AddRange(new Control[] { label, nameLabel, nameTextBox, descriptionLabel, descriptionTextBox, okButton, cancelButton });
+
+            prompt.AcceptButton = okButton;
+
+            DialogResult result = prompt.ShowDialog();
+
+            if (result == DialogResult.OK)
+            {
+                logName = nameTextBox.Text;
+                logDescription = descriptionTextBox.Text;
+            }
+ 
         }
 
         protected override void PerformIfInactive(IGH_DataAccess DA)
@@ -105,8 +182,8 @@ namespace GrasshopperRadianceLinuxConnector
             base.RequestCancellation();
         }
 
-        
-        
+
+
 
         public class RunInfo
         {
@@ -157,7 +234,11 @@ namespace GrasshopperRadianceLinuxConnector
                     object myLock = new object();
                     results = new RunInfo[commands.Branches.Count];
 
+                    
 
+
+                    //TODO: Really, really bad to use parallel for locally to execute something on SSH in parallel. Superbug imo.
+                    //Good thing is that noone uses it. Right?
                     Parallel.For(0, commands.Branches.Count, i =>
                     {
 
@@ -165,7 +246,7 @@ namespace GrasshopperRadianceLinuxConnector
 
                         int pid = -1;
 
-                        string command = String.Join(";", commands.Branches[i].Select(c => c.Value)).AddGlobals().Replace("\r\n","\n");
+                        string command = String.Join(";", commands.Branches[i].Select(c => c.Value)).AddGlobals().Replace("\r\n", "\n");
 
                         pid = SSH_Helper.Execute(command, result.Log, result.Stdout, result.Stderr, prependPrefix: ((GH_ExecuteAsync)Parent).addPrefix, ((GH_ExecuteAsync)Parent).addSuffix, HasZeroAreaPolygons);
 
@@ -259,7 +340,7 @@ namespace GrasshopperRadianceLinuxConnector
 
                 foreach (string msg in results?.Where(r => !r.Success).Select(r => r.Stderr.ToString()))
                 {
-                    Parent.AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, msg);
+                    Parent.AddRuntimeMessage(msg.ToLower().Contains("error") ? GH_RuntimeMessageLevel.Error : GH_RuntimeMessageLevel.Warning, msg);
                 }
 
             }
@@ -272,9 +353,12 @@ namespace GrasshopperRadianceLinuxConnector
 
             //writer.SetString("stdouts", String.Join(">JOIN<", ((SSH_Worker)BaseWorker).results.Select(r => r.Stdout)));
             writer.SetString("stdouts", String.Join(">JOIN<", savedResults.Select(r => r.Stdout)));
+            writer.SetString("description", logDescription);
+            writer.SetString("name", logName);
             writer.SetBoolean("addPrefix", addPrefix);
             writer.SetBoolean("addSuffix", addSuffix);
             writer.SetBoolean("suppressWarnings", suppressWarnings);
+
 
 
 
@@ -297,6 +381,15 @@ namespace GrasshopperRadianceLinuxConnector
                 {
                     savedResults[i] = new RunInfo() { Stdout = new StringBuilder(splitString[i]) };
                 }
+            }
+
+            if (reader.TryGetString("description", ref s))
+            {
+                logDescription = s;
+            }
+            if (reader.TryGetString("name", ref s))
+            {
+                logName = s;
             }
 
             reader.TryGetBoolean("addPrefix", ref addPrefix);

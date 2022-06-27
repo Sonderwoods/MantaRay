@@ -30,6 +30,9 @@ namespace GrasshopperRadianceLinuxConnector
 
         Stopwatch stopwatch = new Stopwatch();
 
+        public string logDescription;
+        public string logName;
+
         public bool RunInput { get; set; } = true;
         public double RunTime { get; set; }
 
@@ -99,7 +102,13 @@ namespace GrasshopperRadianceLinuxConnector
                 }
                 RunTime = stopwatch.ElapsedMilliseconds;
                 stopwatch.Reset();
-                
+
+                if (!String.IsNullOrEmpty(logName) || !String.IsNullOrEmpty(logDescription))
+                {
+                    LogHelper logHelper = LogHelper.Default;
+                    logHelper.Add(logName, logDescription + " Done", InstanceGuid);
+                }
+
 
             };
 
@@ -262,6 +271,12 @@ namespace GrasshopperRadianceLinuxConnector
                 stopwatch.Start();
                 PhaseForColors = AestheticPhase.Running;
 
+
+                if (!String.IsNullOrEmpty(logName) || !String.IsNullOrEmpty(logDescription))
+                {
+                    LogHelper logHelper = LogHelper.Default;
+                    logHelper.Add(logName, logDescription + " Starting", InstanceGuid);
+                }
 
                 // Create the task
                 var tokenSource = new CancellationTokenSource();
