@@ -35,14 +35,28 @@ namespace GrasshopperRadianceLinuxConnector
 
 
 
-        public List<string> GetLatestLogs(int number = 10)
+        public List<string> GetLatestLogs(int number = 10, string filter = null)
         {
             List<string> msgs = new List<string>(number);
+            IEnumerable<LogEntry> items;
 
-            foreach (var l in logMessages.OrderByDescending(lo => lo.Timestamp).Take(number))
+            if (!string.IsNullOrEmpty(filter))
+            {
+                items = logMessages.OrderByDescending(lo => lo.Timestamp)
+                    .Where(l => l.Name.Contains(filter) || l.Description.Contains(filter))
+                    .Take(number);
+            }
+            else
+            {
+                items = logMessages.OrderByDescending(lo => lo.Timestamp)
+                    .Take(number);
+            }
+
+            foreach (LogEntry l in items)
             {
                 msgs.Add($"[{l.Timestamp:G}, {l.Name}]: {l.Description.Replace("\n", "        \n")}");
             }
+
 
             return msgs;
         }
@@ -76,7 +90,7 @@ namespace GrasshopperRadianceLinuxConnector
 
         public void Add(string name, string description, Guid guid = default)
         {
-            lock(_lock)
+            lock (_lock)
             {
                 logMessages.Add(
                 new LogEntry()
@@ -88,7 +102,7 @@ namespace GrasshopperRadianceLinuxConnector
                 });
                 LogUpdated?.Invoke(this, new EventArgs());
             }
-            
+
         }
 
         public void CLear()

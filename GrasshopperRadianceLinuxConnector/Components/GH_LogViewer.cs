@@ -14,7 +14,7 @@ namespace GrasshopperRadianceLinuxConnector.Components
         /// </summary>
         public GH_LogViewer()
           : base("LogViewer", "LogViewer",
-              "Description",
+              "Auto update log viewer. Output only to a panel",
               "0 Setup")
         {
         }
@@ -28,6 +28,7 @@ namespace GrasshopperRadianceLinuxConnector.Components
         {
             pManager[pManager.AddTextParameter("Name", "Name", "Name", GH_ParamAccess.item, "")].Optional = true;
             pManager[pManager.AddIntegerParameter("Number", "Number", "Number", GH_ParamAccess.item, 10)].Optional = true;
+            pManager[pManager.AddTextParameter("Filter", "Filter", "Filter", GH_ParamAccess.item, "")].Optional = true;
         }
 
         /// <summary>
@@ -53,7 +54,7 @@ namespace GrasshopperRadianceLinuxConnector.Components
 
             logHelper.LogUpdated += LogHelper_LogUpdated;
 
-            DA.SetDataList(0, logHelper.GetLatestLogs(DA.Fetch<int>("Number")));
+            DA.SetDataList(0, logHelper.GetLatestLogs(DA.Fetch<int>("Number"), DA.Fetch<string>("Filter")));
         }
 
 
