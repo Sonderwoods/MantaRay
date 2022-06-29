@@ -8,6 +8,7 @@ using System.IO;
 using Grasshopper.Kernel.Data;
 using Grasshopper.Kernel.Types;
 using System.Drawing;
+using GH_IO.Serialization;
 
 namespace GrasshopperRadianceLinuxConnector.Components
 {
@@ -23,6 +24,8 @@ namespace GrasshopperRadianceLinuxConnector.Components
               "2 Radiance")
         {
         }
+
+        string[] oldResults;
 
         /// <summary>
         /// Registers all the input parameters for this component.
@@ -61,8 +64,19 @@ namespace GrasshopperRadianceLinuxConnector.Components
             DA.SetDataTree(Params.Output.Count - 1, runTree);
 
             if (!DA.Fetch<bool>("Run"))
+            {
+                if (oldResults != null)
+                {
+                    Message = "Reusing results";
+                    AddRuntimeMessage(GH_RuntimeMessageLevel.Remark, "Using an old existing radPaths\nThis can be convenient for opening old workflows and not running everything again.");
+                    DA.SetDataList(1, oldResults);
+                }
+                this.Hidden = true;
                 return;
 
+            }
+            this.Hidden = false;
+            Message = "";
 
 
 
@@ -90,7 +104,7 @@ namespace GrasshopperRadianceLinuxConnector.Components
 
             //SSH_Helper.Execute($"pwd", sb);
 
-            string linuxPath = string.IsNullOrEmpty(subfolderOverride) ? SSH_Helper.LinuxFullpath: SSH_Helper.LinuxParentPath + "/" + subfolderOverride;
+            string linuxPath = string.IsNullOrEmpty(subfolderOverride) ? SSH_Helper.LinuxFullpath : SSH_Helper.LinuxParentPath + "/" + subfolderOverride;
 
 
             for (int i = 0; i < allFilePaths.Count; i++)
@@ -115,7 +129,7 @@ namespace GrasshopperRadianceLinuxConnector.Components
                     string radFilePath = Path.GetFileNameWithoutExtension(filePath);
                     if (sb.Length < 10)
                     {
-                    SSH_Helper.Execute($"obj2rad -m {linuxPath}/{Path.GetFileName(allFilePaths[0].AddGlobals())} -f {linuxPath}/{Path.GetFileName(filePath)} >{linuxPath}/{radFilePath}.rad", log: sb, errors: sb);
+                        SSH_Helper.Execute($"obj2rad -m {linuxPath}/{Path.GetFileName(allFilePaths[0].AddGlobals())} -f {linuxPath}/{Path.GetFileName(filePath)} >{linuxPath}/{radFilePath}.rad", log: sb, errors: sb);
 
                     }
                     else
@@ -129,7 +143,7 @@ namespace GrasshopperRadianceLinuxConnector.Components
 
 
 
-
+            oldResults = radFilePaths.ToArray();
             DA.SetData("Status", sb.ToString());
             DA.SetDataList("Rad Files", radFilePaths);
 
@@ -138,6 +152,26 @@ namespace GrasshopperRadianceLinuxConnector.Components
         }
 
 
+        public override bool Read(GH_IReader reader)
+        {
+            string s = String.Empty;
+
+            if (reader.TryGetString("stdouts", ref s))
+            {
+                oldResults = s.Split(new[] { ">JOIN<" }, StringSplitOptions.None);
+            }
+
+            return base.Read(reader);
+        }
+
+        public override bool Write(GH_IWriter writer)
+        {
+            writer.SetString("stdouts", String.Join(">JOIN<", oldResults));
+
+            return base.Write(writer);
+        }
+
+        public override bool IsPreviewCapable => true;
         protected override Bitmap Icon => Resources.Resources.Ra_Rad_Icon;
 
 
