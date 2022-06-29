@@ -110,6 +110,10 @@ namespace GrasshopperRadianceLinuxConnector.Components
                     {
                         AddRuntimeMessage(GH_RuntimeMessageLevel.Error, $"Key {input.NickName} (in the dynamic parameters) already exists");
                     }
+                    else
+                    {
+                        GlobalsHelper.Globals.Add(input.NickName, s.Value);
+                    }
                     
                 }
 
