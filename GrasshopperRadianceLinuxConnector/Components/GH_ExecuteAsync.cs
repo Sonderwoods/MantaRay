@@ -31,6 +31,7 @@ namespace GrasshopperRadianceLinuxConnector
 
         }
 
+        public string[] commands = new string[0];
         public bool addPrefix = true;
         public bool addSuffix = true;
         public bool suppressWarnings = false;
@@ -213,6 +214,8 @@ namespace GrasshopperRadianceLinuxConnector
 
             public RunInfo[] results = new RunInfo[0];
 
+            
+
 
             public SSH_Worker(GH_Component component) : base(component) { }
 
@@ -233,8 +236,7 @@ namespace GrasshopperRadianceLinuxConnector
 
                     object myLock = new object();
                     results = new RunInfo[commands.Branches.Count];
-
-                    
+                    var cmds = new string[commands.Branches.Count];
 
 
                     //TODO: Really, really bad to use parallel for locally to execute something on SSH in parallel. Superbug imo.
@@ -266,12 +268,16 @@ namespace GrasshopperRadianceLinuxConnector
                         lock (myLock)
                         {
                             results[i] = result;
+                            cmds[i] = command;
                         }
 
                     });
+                    
 
-                    ((GH_ExecuteAsync)Parent).savedResults = results.ToArray();
-
+                    if (String.IsNullOrEmpty(((GH_ExecuteAsync)Parent).logDescription))
+                    {
+                        ((GH_ExecuteAsync)Parent).logDescription = string.Join("\n", cmds);
+                    }
 
                 }
                 else //run==false
