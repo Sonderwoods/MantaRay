@@ -152,8 +152,9 @@ namespace GrasshopperRadianceLinuxConnector.Components
                 .Where(inp => inp.VolatileDataCount > 0))
             {
                 
+                
+                System.Collections.IList dataList = input.VolatileData.get_Branch(input.VolatileDataCount == 1 ? 0 : this.RunCount - 1);
 
-                System.Collections.IList dataList = input.VolatileData.get_Branch(this.RunCount - 1);
                 if (dataList.Count > 0 && dataList[0] is GH_String s)
                 {
                     if (locals.ContainsKey(input.NickName))
