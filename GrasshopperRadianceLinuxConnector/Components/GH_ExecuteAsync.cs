@@ -45,7 +45,7 @@ namespace GrasshopperRadianceLinuxConnector
         /// </summary>
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
-            pManager.AddTextParameter("SSH Commands", "SSH commands", "SSH commands. Each item in list will be executed\n\n" +
+            pManager.AddTextParameter("SSH Commands", "_SSH commands_", "SSH commands. Each item in list will be executed\n\n" +
                 "Do a grafted tree input to run in parallel. However there is no checks if this starts too many CPUs on the host\n" +
                 "Use with caution!!", GH_ParamAccess.tree);
             pManager[pManager.AddBooleanParameter("Run", "Run", "Run", GH_ParamAccess.tree, false)].Optional = true;
@@ -57,88 +57,127 @@ namespace GrasshopperRadianceLinuxConnector
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
             pManager.AddTextParameter("stdout", "stdout", "stdout", GH_ParamAccess.list);
-            pManager.AddTextParameter("stderr", "stderr", "stderr", GH_ParamAccess.list);
+            pManager.AddTextParameter("stderr", "stderr_", "stderr\nWill output any eventual errors or warnings", GH_ParamAccess.list);
             pManager.AddTextParameter("log", "log", "log", GH_ParamAccess.list);
-            pManager.AddIntegerParameter("Pid", "Pid", "Linux process id. Can be used to kill the task if it takes too long. Simply write in a bash prompt: kill <id>", GH_ParamAccess.item);
-            pManager.AddBooleanParameter("Ran", "Ran", "Ran without stderr", GH_ParamAccess.tree); //always keep ran as the last parameter
+            pManager.AddIntegerParameter("Pid", "Pid", "Linux process id. Can be used to kill the task if it takes too long. " +
+                "Simply write in a bash prompt: kill <id>", GH_ParamAccess.item);
+            pManager.AddBooleanParameter("Ran", "Ran", "Ran without any stderr. If you want it to output true even with errors, " +
+                "right click on the component and enable suppress warnings.", GH_ParamAccess.tree); //always keep ran as the last parameter
         }
 
         public override void AppendAdditionalMenuItems(ToolStripDropDown menu)
         {
             base.AppendAdditionalMenuItems(menu);
-            Menu_AppendItem(menu, "Cancel and kill linux", (s, e) =>
-            {
-                LinuxKill();
-                RequestCancellation();
-            }, PhaseForColors == AestheticPhase.Running);
 
-            Menu_AppendItem(menu, "Add prefix", (s, e) => { addPrefix = !addPrefix; ExpireSolution(true); }, true, addPrefix);
-            Menu_AppendItem(menu, "Add suffix", (s, e) => { addSuffix = !addSuffix; ExpireSolution(true); }, true, addSuffix);
-            Menu_AppendItem(menu, "Suppress warnings", (s, e) => { suppressWarnings = !suppressWarnings; ExpireSolution(true); }, true, suppressWarnings);
-            Menu_AppendItem(menu, "Set Log details", (s, e) => { SetLogDetails(); }, true);
+            if(PhaseForColors == AestheticPhase.Running)
+            {
+                Menu_AppendItem(menu, "Cancel and kill linux", (s, e) => { LinuxKill(); RequestCancellation(); })
+                .ToolTipText = "Currently not working... >_< Instead open bash and kill the pid with kill <id>";
+            }
+            
+            Menu_AppendItem(menu, "Add prefix", (s, e) => { addPrefix = !addPrefix; UpdateNickNames();  ExpireSolution(true); }, true, addPrefix)
+                .ToolTipText = "Adding a prefix with export settings for SSH. This is on by default";
+            Menu_AppendItem(menu, "Add suffix", (s, e) => { addSuffix = !addSuffix; UpdateNickNames();  ExpireSolution(true); }, true, addSuffix)
+                .ToolTipText = "Adding a suffix to pipe out the PID of the process to allow us to kill it. This is on by default";
+            Menu_AppendItem(menu, "Suppress warnings", (s, e) => { suppressWarnings = !suppressWarnings; UpdateNickNames(); ExpireSolution(true); },
+                true, suppressWarnings)
+                .ToolTipText = "By default, the ran parameter will only output true if there was no warnings. " +
+                "You can however suppress this and make ran_output = run_input";
+            Menu_AppendItem(menu, "Set Log details", (s, e) => { SetLogDetails(); }, true)
+                .ToolTipText = "Opens a dialog with settings for local logging";
+        }
+
+        
+
+        public void UpdateNickNames()
+        {
+            Params.Input[0].NickName = (addPrefix ? "_" : "") + "SSH Commands" + (addSuffix ? "_" : "");
+            Params.Output[1].NickName = "stderr" + (suppressWarnings ? "" : "_");
+            
         }
 
         private void SetLogDetails()
         {
 
-            Font inputFont = new Font("Arial", 11.0f,
-                        FontStyle.Bold);
+            Font inputFont = new Font("Arial", 10.0f,
+                        FontStyle.Regular);
 
             Font font = new Font("Arial", 10.0f,
                         FontStyle.Bold);
 
             Form prompt = new Form()
             {
-                Width = 400,
-                Height = 450,
+                Width = 820,
+                Height = 660,
                 FormBorderStyle = FormBorderStyle.FixedDialog,
-                Text = "Set Details",
+                Text = "Set Logging Details",
                 StartPosition = FormStartPosition.CenterScreen,
                 BackColor = Color.FromArgb(255, 185, 185, 185),
                 ForeColor = Color.FromArgb(255, 30, 30, 30),
                 Font = font
 
             };
+            CheckBox checkBox = new CheckBox()
+            {
+                Text = "Set log entry details for this component",
+                Left = 50,
+                Top = 50,
+                Width = 500,
+                Height = 40,
+                Checked = LogSave
 
-            Label label = new Label() { Left = 50, Top = 35, Width = 300, Height = 60, Text = $"This will set log entry\ndetails for this component" };
+            };
+            //Label label = new Label() { Left = 50, Top = 50, Width = 700, Height = 40, Text = $"This will set log entry details for this component" };
 
-            Label nameLabel = new Label() { Left = 50, Top = 100, Width = 300, Height = 25, Text = $"Name/Header" };
+            Label nameLabel = new Label() { Left = 50, Top = 100, Width = 700, Height = 25, Text = $"Name/Header" };
             TextBox nameTextBox = new TextBox()
             {
                 Left = 50,
                 Top = 125,
-                Width = 300,
+                Width = 700,
                 Height = 25,
-                Text = logName,
-                ForeColor = Color.FromArgb(88, 100, 84),
+                Text = LogName,
+                ForeColor = Color.FromArgb(42, 48, 40),
                 Font = inputFont,
                 BackColor = Color.FromArgb(148, 180, 140),
                 Margin = new Padding(2),
-                
+
             };
 
 
-            Label descriptionLabel = new Label() { Left = 50, Top = 160, Width = 300, Height = 25, Text = $"Description" };
+            CheckBox useDescriptionCheckBox = new CheckBox()
+            {
+                Left = 50,
+                Top = 160,
+                Width = 700,
+                Height = 25,
+                Checked = LogUseFixedDescription,
+                Text = $"Use fixed description?"
+            };
             TextBox descriptionTextBox = new TextBox()
             {
                 Left = 50,
                 Top = 185,
-                Width = 300,
-                Height = 140,
-                Text = logDescription,
+                Width = 700,
+                Height = 340,
+                Text = LogDescriptionDynamic,
                 Multiline = true,
-                ForeColor = Color.FromArgb(88, 100, 84),
+                AcceptsReturn = true,
+                ForeColor = Color.FromArgb(42, 48, 40),
                 Font = inputFont,
                 BackColor = Color.FromArgb(148, 180, 140),
                 Margin = new Padding(2),
+                Enabled = LogUseFixedDescription,
+                ScrollBars = ScrollBars.Vertical,
 
             };
 
+            useDescriptionCheckBox.CheckedChanged += UseDescriptionCheckBox_CheckedChanged;
 
-            Button okButton = new Button() { Text = "Ok", Left = 50, Width = 100, Top = 330, Height = 40, DialogResult = DialogResult.OK };
-            Button cancelButton = new Button() { Text = "Cancel", Left = 250, Width = 100, Top = 330, Height = 40, DialogResult = DialogResult.Cancel };
+            Button okButton = new Button() { Text = "Ok", Left = 50, Width = 100, Top = 545, Height = 40, DialogResult = DialogResult.OK };
+            Button cancelButton = new Button() { Text = "Cancel", Left = 170, Width = 100, Top = 545, Height = 40, DialogResult = DialogResult.Cancel };
 
-            prompt.Controls.AddRange(new Control[] { label, nameLabel, nameTextBox, descriptionLabel, descriptionTextBox, okButton, cancelButton });
+            prompt.Controls.AddRange(new Control[] { checkBox, nameLabel, nameTextBox, useDescriptionCheckBox, descriptionTextBox, okButton, cancelButton });
 
             prompt.AcceptButton = okButton;
 
@@ -146,14 +185,42 @@ namespace GrasshopperRadianceLinuxConnector
 
             if (result == DialogResult.OK)
             {
-                logName = nameTextBox.Text;
-                logDescription = descriptionTextBox.Text;
+                LogName = nameTextBox.Text;
+                LogDescriptionDynamic = descriptionTextBox.Text;
+                LogSave = checkBox.Checked;
+                LogUseFixedDescription = useDescriptionCheckBox.Checked;
+
             }
- 
+
+            void UseDescriptionCheckBox_CheckedChanged(object sender, EventArgs e)
+            {
+                if (useDescriptionCheckBox.Checked)
+                {
+                    descriptionTextBox.Enabled = true;
+                    if (!String.IsNullOrEmpty(LogDescriptionStatic))
+                    {
+                        descriptionTextBox.Text = LogDescriptionStatic;
+                    }
+
+                }
+                else
+                {
+                    descriptionTextBox.Enabled = false;
+                    LogDescriptionStatic = descriptionTextBox.Text;
+                    descriptionTextBox.Text = LogDescriptionDynamic;
+                }
+            }
+
         }
+
+
 
         protected override void PerformIfInactive(IGH_DataAccess DA)
         {
+            if (FirstRun)
+            {
+                UpdateNickNames();
+            }
 
             DA.SetData("Ran", false);
 
@@ -214,13 +281,15 @@ namespace GrasshopperRadianceLinuxConnector
 
             public RunInfo[] results = new RunInfo[0];
 
-            
+
 
 
             public SSH_Worker(GH_Component component) : base(component) { }
 
             public override void DoWork(Action<string, double> ReportProgress, Action Done)
             {
+
+                
                 bool HasZeroAreaPolygons(string errors)
                 {
                     return !errors.StartsWith("oconv: warning - zero area");
@@ -272,12 +341,11 @@ namespace GrasshopperRadianceLinuxConnector
                         }
 
                     });
-                    
 
-                    if (String.IsNullOrEmpty(((GH_ExecuteAsync)Parent).logDescription))
-                    {
-                        ((GH_ExecuteAsync)Parent).logDescription = string.Join("\n", cmds);
-                    }
+
+                    ((GH_ExecuteAsync)Parent).LogDescriptionDynamic = string.Join("\n", cmds);
+                    ((GH_ExecuteAsync)Parent).savedResults = results;
+
 
                 }
                 else //run==false
@@ -359,11 +427,13 @@ namespace GrasshopperRadianceLinuxConnector
 
             //writer.SetString("stdouts", String.Join(">JOIN<", ((SSH_Worker)BaseWorker).results.Select(r => r.Stdout)));
             writer.SetString("stdouts", String.Join(">JOIN<", savedResults.Select(r => r.Stdout)));
-            writer.SetString("description", logDescription);
-            writer.SetString("name", logName);
+            writer.SetString("description", LogDescriptionDynamic);
+            writer.SetString("staticDescription", LogDescriptionStatic);
+            writer.SetString("name", LogName);
             writer.SetBoolean("addPrefix", addPrefix);
             writer.SetBoolean("addSuffix", addSuffix);
             writer.SetBoolean("suppressWarnings", suppressWarnings);
+            writer.SetBoolean("fireLogs", LogSave);
 
 
 
@@ -376,6 +446,7 @@ namespace GrasshopperRadianceLinuxConnector
         public override bool Read(GH_IReader reader)
         {
             string s = String.Empty;
+            bool logSave = false;
 
             if (reader.TryGetString("stdouts", ref s))
             {
@@ -391,16 +462,25 @@ namespace GrasshopperRadianceLinuxConnector
 
             if (reader.TryGetString("description", ref s))
             {
-                logDescription = s;
+                LogDescriptionDynamic = s;
+            }
+            if (reader.TryGetString("staticDescription", ref s))
+            {
+                LogDescriptionStatic = s;
             }
             if (reader.TryGetString("name", ref s))
             {
-                logName = s;
+                LogName = s;
             }
 
             reader.TryGetBoolean("addPrefix", ref addPrefix);
             reader.TryGetBoolean("addSuffix", ref addSuffix);
             reader.TryGetBoolean("suppressWarnings", ref suppressWarnings);
+
+            if (reader.TryGetBoolean("fireLogs", ref logSave))
+            {
+                LogSave = logSave;
+            }
 
             return base.Read(reader);
         }
