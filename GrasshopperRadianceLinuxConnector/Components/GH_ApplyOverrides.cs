@@ -90,10 +90,10 @@ namespace GrasshopperRadianceLinuxConnector.Components
             }
             keysLength += 2; // account for <>
 
-            foreach (KeyValuePair<string, string> item in GlobalsHelper.Globals)
-            {
-                outPairs.Add($"{("<" + item.Key + ">").PadRight(keysLength + 1)} --> {item.Value}");
-            }
+            //foreach (KeyValuePair<string, string> item in GlobalsHelper.Globals)
+            //{
+            //    outPairs.Add($"{("<" + item.Key + ">").PadRight(keysLength + 1)} --> {item.Value}");
+            //}
 
 
             // House keeping if list lengths are OK
@@ -116,7 +116,7 @@ namespace GrasshopperRadianceLinuxConnector.Components
             }
 
 
-            Dictionary<string, string> locals = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            Dictionary<string, string> locals = new Dictionary<string, string>(GlobalsHelper.Globals, StringComparer.OrdinalIgnoreCase);
 
             // Adding keys and values from the Key/Value list
             int valuesCount = values.Count;
@@ -133,14 +133,10 @@ namespace GrasshopperRadianceLinuxConnector.Components
                     }
                     if (locals.ContainsKey(keys[Math.Min(i, keysCount - 1)]))
                     {
-                        AddRuntimeMessage(GH_RuntimeMessageLevel.Error, $"Key {keys[Math.Min(i, keysCount - 1)]} (in the Keys list) already exists");
+                        AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, $"Key {keys[Math.Min(i, keysCount - 1)]} (in the Keys list) already exists. Overwritten to {values[Math.Min(i, valuesCount - 1)]}");
                     }
-                    else
-                    {
-                        locals.Add(keys[Math.Min(i, keysCount - 1)], values[Math.Min(i, valuesCount - 1)]);
-                        outPairs.Add($"{("<" + keys[Math.Min(i, keysCount - 1)]).PadRight(keysLength + 1)}> --> {values[Math.Min(i, valuesCount - 1)]}");
 
-                    }
+                    locals[keys[Math.Min(i, keysCount - 1)]] = values[Math.Min(i, valuesCount - 1)];
                 }
 
             }
@@ -159,17 +155,19 @@ namespace GrasshopperRadianceLinuxConnector.Components
                 {
                     if (locals.ContainsKey(input.NickName))
                     {
-                        AddRuntimeMessage(GH_RuntimeMessageLevel.Error, $"Key {input.NickName} (in the dynamic parameters) already exists");
+                        AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, $"Key {input.NickName} (in the dynamic parameters) already exists. Overwritten to {s.Value}");
                     }
-                    else
-                    {
-                        locals.Add(input.NickName, s.Value);
-                        outPairs.Add($"{("<" + input.NickName + ">").PadRight(keysLength + 1)} --> {s.Value}");
+             
 
-                    }
+                    locals[input.NickName] = s.Value;
 
                 }
 
+            }
+
+            foreach (KeyValuePair<string, string> item in locals.OrderBy(o => o.Key))
+            {
+                outPairs.Add($"{("<" + item.Key + ">").PadRight(keysLength + 1)} --> {item.Value}");
             }
 
             //as array instead of IEnumerable, otherwise the misingInputs is not updated before the check below.

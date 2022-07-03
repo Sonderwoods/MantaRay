@@ -86,13 +86,14 @@ namespace GrasshopperRadianceLinuxConnector.Components
             if (keys.Count != values.Count) throw new ArgumentOutOfRangeException("The list lengths do not match in Keys/Values inputs");
 
             GlobalsHelper.Globals.Clear();
-            GlobalsHelper.Globals.Add("WinHome", SSH_Helper.WindowsFullpath);
-            GlobalsHelper.Globals.Add("LinuxHome", SSH_Helper.LinuxFullpath);
+            GlobalsHelper.Globals["WinHome"] = SSH_Helper.WindowsFullpath;
+            GlobalsHelper.Globals["LinuxHome"] = SSH_Helper.LinuxFullpath;
+            GlobalsHelper.Globals["cpus"] = (Environment.ProcessorCount - 1).ToString();
 
-            
+
             for (int i = 0; i < keys.Count; i++)
             {
-                GlobalsHelper.Globals.Add(keys[i], values[i]);
+                GlobalsHelper.Globals[keys[i]] = values[i];
             }
 
             // Adding keys and values from the dynamic parameter inputs
@@ -108,24 +109,20 @@ namespace GrasshopperRadianceLinuxConnector.Components
                 {
                     if (GlobalsHelper.Globals.ContainsKey(input.NickName))
                     {
-                        AddRuntimeMessage(GH_RuntimeMessageLevel.Error, $"Key {input.NickName} (in the dynamic parameters) already exists");
+                        AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, $"Key {input.NickName} (in the dynamic parameters) already exists and is now overwritten");
                     }
-                    else
-                    {
-                        GlobalsHelper.Globals.Add(input.NickName, s.Value);
-                    }
-                    
+
+                    GlobalsHelper.Globals[input.NickName] = s.Value;
+
                 }
 
             }
-
 
             int keysLength = 3;
             if (GlobalsHelper.Globals.Keys.Count > 0)
             {
                 keysLength = GlobalsHelper.Globals.Keys.Select(k => k.Length).Max();
             }
-
 
 
             // Outputs
@@ -162,7 +159,7 @@ namespace GrasshopperRadianceLinuxConnector.Components
 
         void IGH_VariableParameterComponent.VariableParameterMaintenance()
         {
-            
+
             for (var i = staticParameterCount; i < Params.Input.Count; i++)
             {
                 var param = Params.Input[i];
@@ -203,7 +200,7 @@ namespace GrasshopperRadianceLinuxConnector.Components
 
         public override void RemovedFromDocument(GH_Document document)
         {
-            if(!Locked)
+            if (!Locked)
             {
                 GH_Globals otherGlobal = document.Objects
                 .OfType<GH_Globals>()
@@ -216,7 +213,7 @@ namespace GrasshopperRadianceLinuxConnector.Components
                     otherGlobal.ExpireSolution(true);
                 }
             }
-            
+
         }
 
         protected override Bitmap Icon => Resources.Resources.Ra_Globals_Icon2;
