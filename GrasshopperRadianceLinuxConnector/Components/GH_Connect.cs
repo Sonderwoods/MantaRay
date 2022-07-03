@@ -101,7 +101,7 @@ namespace GrasshopperRadianceLinuxConnector.Components
                 {
                     if (_pw == null)
                     {
-                        if (GetPassword(username, out string pw))
+                        if (GetPassword(username + "@" + ip, out string pw))
                             _pw = pw;
                         else
                             run = false;
@@ -180,7 +180,7 @@ namespace GrasshopperRadianceLinuxConnector.Components
                     var mb = MessageBox.Show("Wrong SSH Password? Try again?", "Wrong SSH Password? Try again?", MessageBoxButtons.RetryCancel);
                     if (mb == DialogResult.Retry)
                     {
-                        if (GetPassword(username, out string pw))
+                        if (GetPassword(username + "@" + ip, out string pw))
                             _pw = pw;
                         this.ExpireSolution(true);
                     }
@@ -321,22 +321,25 @@ namespace GrasshopperRadianceLinuxConnector.Components
             Font font = new Font("Arial", 10.0f,
                         FontStyle.Bold);
 
+            Font smallFont = new Font("Arial", 8.0f,
+                        FontStyle.Bold);
+
             Form prompt = new Form()
             {
-                Width = 400,
-                Height = 270,
+                Width = 460,
+                Height = 370,
                 FormBorderStyle = FormBorderStyle.FixedDialog,
                 Text = "Connect to SSH",
                 StartPosition = FormStartPosition.CenterScreen,
-                BackColor = Color.FromArgb(255, 185, 185, 185),
+                BackColor = Color.FromArgb(255, 195, 195, 195),
                 ForeColor = Color.FromArgb(255, 30, 30, 30),
                 Font = font
                 
             };
             
             
-            Label label = new Label() { Left = 50, Top = 35, Width=300, Height = 60, Text = $"Connecting to SSH\nInsert password for {username}:" };
-            TextBox passwordTextBox = new TextBox() { Left = 50, Top = 95, Width = 300, Height = 30, Text = "",
+            Label label = new Label() { Left = 50, Top = 45, Width=340, Height = 60, Text = $"Connecting to SSH\nInsert password for '{username}':" };
+            TextBox passwordTextBox = new TextBox() { Left = 50, Top = 105, Width = 340, Height = 30, Text = "",
                 ForeColor = Color.FromArgb(88, 100, 84),
                 PasswordChar = '*',
                 Font = redFont,
@@ -345,10 +348,13 @@ namespace GrasshopperRadianceLinuxConnector.Components
             };
             
 
-            Button connectButton = new Button() { Text = "Connect", Left = 50, Width = 100, Top = 150, Height = 40, DialogResult = DialogResult.OK };
-            Button cancel = new Button() { Text = "Cancel", Left = 250, Width = 100, Top = 150, Height = 40, DialogResult = DialogResult.Cancel };
+            Button connectButton = new Button() { Text = "Connect", Left = 50, Width = 120, Top = 160, Height = 40, DialogResult = DialogResult.OK };
+            Button cancel = new Button() { Text = "Cancel", Left = 270, Width = 120, Top = 160, Height = 40, DialogResult = DialogResult.Cancel };
 
-            prompt.Controls.AddRange(new Control[] { label, passwordTextBox, connectButton, cancel });
+
+            Label label2 = new Label() { Font = smallFont, Left = 50, Top = 270, Width=340, Height = 60, Text = "Part of the GrasshopperRadianceLinuxConnector\n" +
+                "(C) Mathias Sønderskov Schaltz 2022" };
+            prompt.Controls.AddRange(new Control[] { label, passwordTextBox, connectButton, cancel, label2 });
 
             prompt.AcceptButton = connectButton;
 

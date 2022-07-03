@@ -56,10 +56,14 @@ namespace GrasshopperRadianceLinuxConnector
 
             if (locals != null)
             {
-                Dictionary<string, string> _locals = new Dictionary<string, string>(locals);
+                Dictionary<string, string> _locals = new Dictionary<string, string>(Globals);
                 // Setup the dict only once and not in the Replacers method
-                foreach (KeyValuePair<string, string> item in Globals) _locals[item.Key] = item.Value;
-                
+                foreach (KeyValuePair<string, string> item in locals)
+                {
+                    _locals[item.Key] = item.Value;
+
+                }
+
                 return regexAdvanced.Replace(s, new MatchEvaluator((v) => Replacers(v, _locals, missingKeys)));
             }
             else

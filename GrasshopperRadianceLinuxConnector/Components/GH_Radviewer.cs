@@ -34,7 +34,8 @@ namespace GrasshopperRadianceLinuxConnector.Components
 
         }
 
-
+        public bool isRunning = true;
+        public bool wasHidden = false;
 
         public bool TwoSided = false;
         public bool ShowEdges = true;
@@ -47,6 +48,8 @@ namespace GrasshopperRadianceLinuxConnector.Components
 
 
         private HUD hud = new HUD();
+
+        TimeSpan timeSpan = default;
 
 
 
@@ -71,6 +74,15 @@ namespace GrasshopperRadianceLinuxConnector.Components
             pManager.AddTextParameter("Modifiers", "Modifiers", "Modifiers", GH_ParamAccess.list);
             pManager.AddCurveParameter("FailedWireFrame", "FailedWireFrame", "fail", GH_ParamAccess.list);
 
+
+        }
+
+        public override TimeSpan ProcessorTime => timeSpan;
+
+        protected override void ExpireDownStreamObjects()
+        {
+            if (!isRunning)
+                base.ExpireDownStreamObjects();
         }
 
         /// <summary>
@@ -80,7 +92,25 @@ namespace GrasshopperRadianceLinuxConnector.Components
         protected override void SolveInstance(IGH_DataAccess DA)
         {
 
+            if (!isRunning)
+            {
+                DA.SetDataList(0, objects.Where(o => o.Value is RaPolygon).OrderBy(o => o.Key).Select(o => ((RaPolygon)o.Value).Mesh));
+                DA.SetDataList(1, objects.Where(o => o.Value is RaPolygon).OrderBy(o => o.Key).Select(o => ((RaPolygon)o.Value).Name));
+                DA.SetDataList(2, objects.Where(o => o.Value is RaPolygon).OrderBy(o => o.Key).Select(o => ((RaPolygon)o.Value).ModifierName));
+                DA.SetDataList(3, objects.Where(o => o.Value is RaPolygon).OrderBy(o => o.Key).Select(o => (o.Value.Modifier)).Select(m => m is RadianceMaterial ? (m as RadianceMaterial).MaterialDefinition : null));
+                DA.SetDataList(4, failedCurves);
+                isRunning = true;
+                
+                this.Hidden = wasHidden;
+                return;
+            }
 
+            //this.Locked = true;
+            timeSpan = new TimeSpan(0);
+            Stopwatch sw = new Stopwatch();
+            sw.Start();
+            wasHidden = this.Hidden;
+            this.Hidden = true;
 
             /*
              * The RAD viewer architecture is a setup im testing. I have not benchmarked it but it runs in several steps asynchronously.
@@ -223,144 +253,147 @@ namespace GrasshopperRadianceLinuxConnector.Components
                 }
                 radianceObjects.CompleteAdding();
                 Debug.WriteLine("done processing lines");
+
+
+
+
+
+
+                objects.Clear();
+                failedCurves.Clear();
+
+                Debug.WriteLine("starting making objects");
+
+                int counter = 0;
+
+                foreach (var obj in radianceObjects.GetConsumingEnumerable())
+                {
+
+                    // Thank you james ramsden
+
+                    if (counter++ % 10 == 0 && GH_Document.IsEscapeKeyDown())
+                    {
+                        GH_Document GHDocument = OnPingDocument();
+                        GHDocument.RequestAbortSolution();
+                    }
+
+
+                    if (obj is RaPolygon geo)
+                    {
+                        if (bb.Min == bb.Max)
+                            bb = geo.Mesh.GetBoundingBox(false);
+                        else
+                            bb.Union(geo.Mesh.GetBoundingBox(false));
+
+                        if (objects.ContainsKey(obj.ModifierName))
+                        {
+                            if (objects[obj.ModifierName] is RaPolygon poly)
+                            {
+
+                                poly.AddTempMesh(geo.Mesh);
+                            }
+                            else
+                                throw new Exception($"ehh im not a poly but my modifier name is {obj.ModifierName} and it already exists.");
+                        }
+                        else
+                        {
+                            if (!colors.TryGetValue(obj.ModifierName, out System.Drawing.Color color))
+                            {
+                                color = System.Drawing.Color.FromArgb(rnd.Next(150, 256), rnd.Next(150, 256), rnd.Next(150, 256));
+                                colors.Add(obj.ModifierName, color);
+
+                            }
+
+                            geo.Material = new Rhino.Display.DisplayMaterial(color);
+                            geo.Material.Emission = geo.Material.Diffuse;
+                            geo.Material.IsTwoSided = TwoSided;
+                            geo.Material.BackDiffuse = System.Drawing.Color.Red;
+                            geo.Material.BackEmission = System.Drawing.Color.Red;
+
+
+                            objects.Add(obj.ModifierName, geo);
+                        }
+                    }
+                    else
+                    {
+                        objects.Add("Material_" + obj.Name, obj);
+                    }
+
+                }
+
+                Debug.WriteLine("done making objects");
+
+
+                foreach (var pol in objects.Select(obj => obj.Value).OfType<RaPolygon>())
+                {
+                    pol.UpdateMesh();
+                }
+
+
+
+                Debug.WriteLine("done updating meshes");
+
+
+
+                HashSet<string> uniqueMissingModifiers = new HashSet<string>();
+
+                foreach (var obj in objects)
+                {
+                    if (objects.ContainsKey(obj.Value.ModifierName) && obj.Value.ModifierName != objects[obj.Value.ModifierName].ModifierName)
+                    {
+                        obj.Value.Modifier = objects[obj.Value.ModifierName];
+                    }
+                    else if (objects.ContainsKey("Material_" + obj.Value.ModifierName))
+                    {
+                        obj.Value.Modifier = objects["Material_" + obj.Value.ModifierName];
+                    }
+                    else
+                    {
+                        if (uniqueMissingModifiers.Add(obj.Value.ModifierName) && obj.Value.ModifierName != "void")
+                            AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, $"Modifier not found: {obj.Value.ModifierName}. Refered to by {obj.Key}");
+                    }
+
+                }
+
+                Debug.WriteLine("done setting modifiers");
+                hud.Component = this;
+                hud.Callback.Enabled = true;
+
+                hud.Items.Clear();
+
+                if (!hud.CloseBtn.ContextMenuItems.ContainsKey("Toggle Twosided"))
+                {
+                    hud.CloseBtn.ContextMenuItems.Add("Toggle Twosided", ToggleTwoSided);
+                }
+                if (!hud.CloseBtn.ContextMenuItems.ContainsKey("Transparent"))
+                {
+                    hud.CloseBtn.ContextMenuItems.Add("Transparent", (s, e) => { Transparent = !Transparent; });
+                }
+                if (!hud.CloseBtn.ContextMenuItems.ContainsKey("Toggle Edges"))
+                {
+                    hud.CloseBtn.ContextMenuItems.Add("Toggle Edges", (s, e) => { ShowEdges = !ShowEdges; });
+                }
+                if (!hud.CloseBtn.ContextMenuItems.ContainsKey("Update Colors"))
+                {
+                    hud.CloseBtn.ContextMenuItems.Add("Update Colors", ClearColors);
+                }
+
+
+
+                foreach (RaPolygon poly in objects.Where(o => o.Value is RaPolygon).Select(o => (RaPolygon)o.Value))
+                {
+                    string desc = poly.Modifier is RadianceMaterial m ? m.MaterialDefinition : string.Empty;
+                    hud.Items.Add(new HUD.HUD_Item() { Name = poly.Name, Description = desc, Mesh = poly.Mesh, Color = poly.Material.Diffuse });
+                }
+                //this.Locked = false;
+                isRunning = false;
+                timeSpan = new TimeSpan(0, 0, 0, 0, (int)sw.ElapsedMilliseconds);
+                sw.Stop();
+                this.ExpireSolution(true);
+
             });
 
 
-
-            //
-
-            objects.Clear();
-            failedCurves.Clear();
-
-            Debug.WriteLine("starting making objects");
-
-            int counter = 0;
-
-            foreach (var obj in radianceObjects.GetConsumingEnumerable())
-            {
-
-                // Thank you james ramsden
-
-                if (counter++ % 10 == 0 && GH_Document.IsEscapeKeyDown())
-                {
-                    GH_Document GHDocument = OnPingDocument();
-                    GHDocument.RequestAbortSolution();
-                }
-
-
-                if (obj is RaPolygon geo)
-                {
-                    if (bb.Min == bb.Max)
-                        bb = geo.Mesh.GetBoundingBox(false);
-                    else
-                        bb.Union(geo.Mesh.GetBoundingBox(false));
-
-                    if (objects.ContainsKey(obj.ModifierName))
-                    {
-                        if (objects[obj.ModifierName] is RaPolygon poly)
-                        {
-
-                            poly.AddTempMesh(geo.Mesh);
-                        }
-                        else
-                            throw new Exception($"ehh im not a poly but my modifier name is {obj.ModifierName} and it already exists.");
-                    }
-                    else
-                    {
-                        if (!colors.TryGetValue(obj.ModifierName, out System.Drawing.Color color))
-                        {
-                            color = System.Drawing.Color.FromArgb(rnd.Next(150, 256), rnd.Next(150, 256), rnd.Next(150, 256));
-                            colors.Add(obj.ModifierName, color);
-
-                        }
-
-                        geo.Material = new Rhino.Display.DisplayMaterial(color);
-                        geo.Material.Emission = geo.Material.Diffuse;
-                        geo.Material.IsTwoSided = TwoSided;
-                        geo.Material.BackDiffuse = System.Drawing.Color.Red;
-                        geo.Material.BackEmission = System.Drawing.Color.Red;
-
-
-                        objects.Add(obj.ModifierName, geo);
-                    }
-                }
-                else
-                {
-                    objects.Add("Material_" + obj.Name, obj);
-                }
-
-            }
-
-            Debug.WriteLine("done making objects");
-
-
-            foreach (var pol in objects.Select(obj => obj.Value).OfType<RaPolygon>())
-            {
-                pol.UpdateMesh();
-            }
-
-            Debug.WriteLine("done updating meshes");
-
-
-
-            HashSet<string> uniqueMissingModifiers = new HashSet<string>();
-
-            foreach (var obj in objects)
-            {
-                if (objects.ContainsKey(obj.Value.ModifierName) && obj.Value.ModifierName != objects[obj.Value.ModifierName].ModifierName)
-                {
-                    obj.Value.Modifier = objects[obj.Value.ModifierName];
-                }
-                else if (objects.ContainsKey("Material_" + obj.Value.ModifierName))
-                {
-                    obj.Value.Modifier = objects["Material_" + obj.Value.ModifierName];
-                }
-                else
-                {
-                    if (uniqueMissingModifiers.Add(obj.Value.ModifierName) && obj.Value.ModifierName != "void")
-                        AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, $"Modifier not found: {obj.Value.ModifierName}. Refered to by {obj.Key}");
-                }
-
-            }
-
-            Debug.WriteLine("done setting modifiers");
-            hud.Component = this;
-            hud.Callback.Enabled = true;
-
-            hud.Items.Clear();
-            
-            if (!hud.CloseBtn.ContextMenuItems.ContainsKey("Toggle Twosided"))
-            {
-                hud.CloseBtn.ContextMenuItems.Add("Toggle Twosided", ToggleTwoSided);
-            }
-            if (!hud.CloseBtn.ContextMenuItems.ContainsKey("Transparent"))
-            {
-                hud.CloseBtn.ContextMenuItems.Add("Transparent", (s,e) => { Transparent = !Transparent; });
-            }
-            if (!hud.CloseBtn.ContextMenuItems.ContainsKey("Toggle Edges"))
-            {
-                hud.CloseBtn.ContextMenuItems.Add("Toggle Edges", (s, e) => { ShowEdges = !ShowEdges; });
-            }
-            if (!hud.CloseBtn.ContextMenuItems.ContainsKey("Update Colors"))
-            {
-                hud.CloseBtn.ContextMenuItems.Add("Update Colors", ClearColors);
-            }
-
-
-
-            foreach (RaPolygon poly in objects.Where(o => o.Value is RaPolygon).Select(o => (RaPolygon)o.Value))
-            {
-                string desc = poly.Modifier is RadianceMaterial m ? m.MaterialDefinition : string.Empty;
-                hud.Items.Add(new HUD.HUD_Item() { Name = poly.Name, Description = desc, Mesh = poly.Mesh, Color = poly.Material.Diffuse });
-            }
-
-
-
-            DA.SetDataList(0, objects.Where(o => o.Value is RaPolygon).Select(o => ((RaPolygon)o.Value).Mesh));
-            DA.SetDataList(1, objects.Where(o => o.Value is RaPolygon).Select(o => ((RaPolygon)o.Value).Name));
-            DA.SetDataList(2, objects.Where(o => o.Value is RaPolygon).Select(o => ((RaPolygon)o.Value).ModifierName));
-            DA.SetDataList(3, objects.Where(o => o.Value is RaPolygon).Select(o => (o.Value.Modifier)).Select(m => m is RadianceMaterial ? (m as RadianceMaterial).MaterialDefinition : null));
-            DA.SetDataList(4, failedCurves);
         }
 
         public override void RemovedFromDocument(GH_Document document)
@@ -517,24 +550,24 @@ namespace GrasshopperRadianceLinuxConnector.Components
             //if (true)
             //{
 
-                if (hud.HighlightedItem != null && !hud.HighlightedItem.GetType().IsSubclassOf(typeof(HUD.HUD_Item)))
+            if (hud.HighlightedItem != null && !hud.HighlightedItem.GetType().IsSubclassOf(typeof(HUD.HUD_Item)))
+            {
+                hud.HighlightedItem.DrawMesh(args, 1, TwoSided);
+
+                foreach (var item in hud.Items.Where(i => !object.ReferenceEquals(i, hud.HighlightedItem)))
+                    item.DrawMesh(args, 0.2, grey: true);
+
+            }
+            else
+            {
+                //foreach (var item in hud.Items)
+                //    item.DrawMesh(args, Transparent ? 0.9 : 1.0);
+
+                foreach (RadianceGeometry obj in objects.Where(o => o.Value is RadianceGeometry).Select(o => o.Value))
                 {
-                    hud.HighlightedItem.DrawMesh(args, 1, TwoSided);
-
-                    foreach (var item in hud.Items.Where(i => !object.ReferenceEquals(i, hud.HighlightedItem)))
-                        item.DrawMesh(args, 0.2, grey: true);
-
+                    obj.DrawObject(args, Transparent ? 0.9 : 1.0); //This one works with twosided option.
                 }
-                else
-                {
-                    //foreach (var item in hud.Items)
-                    //    item.DrawMesh(args, Transparent ? 0.9 : 1.0);
-
-                    foreach (RadianceGeometry obj in objects.Where(o => o.Value is RadianceGeometry).Select(o => o.Value))
-                    {
-                        obj.DrawObject(args, Transparent ? 0.9 : 1.0); //This one works with twosided option.
-                    }
-                }
+            }
             //}
             //else
             //{
@@ -830,6 +863,8 @@ namespace GrasshopperRadianceLinuxConnector.Components
                         throw new PolygonException($"Could not create polygon from:\n{String.Join(" ", data)}");
                     }
 
+
+
                 }
 
 
@@ -852,6 +887,7 @@ namespace GrasshopperRadianceLinuxConnector.Components
                 if (Mesh == null)
                     Mesh = new Mesh();
                 Mesh.Append(meshes);
+                Mesh.Faces.CullDegenerateFaces();
                 meshes.Clear();
             }
 
