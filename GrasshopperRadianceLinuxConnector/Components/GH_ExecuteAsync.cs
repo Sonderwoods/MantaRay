@@ -85,7 +85,7 @@ namespace GrasshopperRadianceLinuxConnector
                 "You can however suppress this and make ran_output = run_input";
             Menu_AppendItem(menu, "Set Log details", (s, e) => { SetLogDetails(); }, true)
                 .ToolTipText = "Opens a dialog with settings for local logging";
-            Menu_AppendItem(menu, "Clear cached stdout", (s, e) => { savedResults = new RunInfo[0]; ExpireSolution(true); }, !RunInput)
+            Menu_AppendItem(menu, "Clear cached stdout", (s, e) => { savedResults = new RunInfo[0]; RunTime = 0; ExpireSolution(true); }, !RunInput)
                 .ToolTipText = "Removes the data saved in the component.";
         }
 
