@@ -6,6 +6,7 @@ using System.Windows.Forms;
 using Grasshopper.Kernel;
 using Grasshopper.Kernel.Parameters;
 using Grasshopper.Kernel.Types;
+using GrasshopperRadianceLinuxConnector.Components;
 using Rhino.Geometry;
 
 namespace GrasshopperRadianceLinuxConnector.Components

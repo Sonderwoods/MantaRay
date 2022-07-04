@@ -2,9 +2,10 @@
 using System.Collections.Generic;
 using System.Linq;
 using Grasshopper.Kernel;
+using GrasshopperRadianceLinuxConnector.Components;
 using Rhino.Geometry;
 
-namespace GrasshopperRadianceLinuxConnector.Components
+namespace GrasshopperRadianceLinuxConnector.OldComponents
 {
     [Obsolete]
     public class GH_ApplyOverrides_old : GH_Template
@@ -24,7 +25,7 @@ namespace GrasshopperRadianceLinuxConnector.Components
         /// <summary>
         /// Registers all the input parameters for this component.
         /// </summary>
-        protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
+        protected override void RegisterInputParams(GH_InputParamManager pManager)
         {
             pManager.AddTextParameter("Input", "Input", "Input", GH_ParamAccess.list);
             pManager[pManager.AddTextParameter("Additional Keys", "Keys", "Keys", GH_ParamAccess.list, new List<string>())].Optional = true;
@@ -34,7 +35,7 @@ namespace GrasshopperRadianceLinuxConnector.Components
         /// <summary>
         /// Registers all the output parameters for this component.
         /// </summary>
-        protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
+        protected override void RegisterOutputParams(GH_OutputParamManager pManager)
         {
             pManager.AddTextParameter("Output", "O", "output with globals applied", GH_ParamAccess.list);
             pManager.AddTextParameter("Pairs", "K,V", "Pairs", GH_ParamAccess.list);

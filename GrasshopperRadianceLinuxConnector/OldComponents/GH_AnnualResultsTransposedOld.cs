@@ -6,22 +6,25 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Grasshopper.Kernel;
+using GrasshopperRadianceLinuxConnector.Components;
 using Rhino.Geometry;
 
 namespace GrasshopperRadianceLinuxConnector.Components
 {
     [Obsolete]
-    public class GH_AnnualResultsTransposed : GH_Template
+    public class GH_AnnualResultsTransposedOld : GH_Template
     {
         /// <summary>
         /// Initializes a new instance of the GH_AnnualResults class.
         /// </summary>
-        public GH_AnnualResultsTransposed()
+        public GH_AnnualResultsTransposedOld()
           : base("AnnualResults(old)", "AnnualResults(old)",
               "Read Ill files...",
               "2 Radiance")
         {
         }
+
+        public override GH_Exposure Exposure => GH_Exposure.hidden;
 
         /// <summary>
         /// Registers all the input parameters for this component.

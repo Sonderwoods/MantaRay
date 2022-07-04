@@ -9,10 +9,11 @@ using Grasshopper.Kernel.Data;
 using Grasshopper.Kernel.Types;
 using System.Drawing;
 using GH_IO.Serialization;
+using GrasshopperRadianceLinuxConnector.Components;
 
 namespace GrasshopperRadianceLinuxConnector.Components
 {
-    public class GH_ObjToRad : GH_Template
+    public class GH_ObjToRad : GH_Template_SaveStrings
     {
         /// <summary>
         /// Initializes a new instance of the GH_ObjToRad class.
@@ -24,8 +25,6 @@ namespace GrasshopperRadianceLinuxConnector.Components
               "2 Radiance")
         {
         }
-
-        string[] oldResults;
 
         /// <summary>
         /// Registers all the input parameters for this component.
@@ -57,28 +56,7 @@ namespace GrasshopperRadianceLinuxConnector.Components
         protected override void SolveInstance(IGH_DataAccess DA)
         {
 
-            //Read and parse the input.
-            var runTree = new GH_Structure<GH_Boolean>();
-            runTree.Append(new GH_Boolean(DA.Fetch<bool>("Run")));
-            Params.Output[Params.Output.Count - 1].ClearData();
-            DA.SetDataTree(Params.Output.Count - 1, runTree);
-
-            if (!DA.Fetch<bool>("Run"))
-            {
-                if (oldResults != null)
-                {
-                    Message = "Reusing results";
-                    AddRuntimeMessage(GH_RuntimeMessageLevel.Remark, "Using an old existing radPaths\nThis can be convenient for opening old workflows and not running everything again.");
-                    DA.SetDataList(1, oldResults);
-                }
-                this.Hidden = true;
-                return;
-
-            }
-            this.Hidden = false;
-            Message = "";
-
-
+            if (!CheckIfRunOrUseOldResults(DA, 1)) return; //template
 
             List<string> allFilePaths = DA.FetchList<string>("Obj Files");
 
@@ -141,37 +119,13 @@ namespace GrasshopperRadianceLinuxConnector.Components
             }
 
 
-
-
-            oldResults = radFilePaths.ToArray();
+            OldResults = radFilePaths.ToArray();
             DA.SetData("Status", sb.ToString());
             DA.SetDataList("Rad Files", radFilePaths);
 
-
-
         }
 
 
-        public override bool Read(GH_IReader reader)
-        {
-            string s = String.Empty;
-
-            if (reader.TryGetString("stdouts", ref s))
-            {
-                oldResults = s.Split(new[] { ">JOIN<" }, StringSplitOptions.None);
-            }
-
-            return base.Read(reader);
-        }
-
-        public override bool Write(GH_IWriter writer)
-        {
-            writer.SetString("stdouts", String.Join(">JOIN<", oldResults));
-
-            return base.Write(writer);
-        }
-
-        public override bool IsPreviewCapable => true;
         protected override Bitmap Icon => Resources.Resources.Ra_Rad_Icon;
 
 

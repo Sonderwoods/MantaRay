@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Windows.Forms;
 using GH_IO.Serialization;
 using Grasshopper.Kernel;
+using GrasshopperRadianceLinuxConnector.Components;
 using Rhino.Geometry;
 
 namespace GrasshopperRadianceLinuxConnector.Components

@@ -1,6 +1,7 @@
 ﻿using Grasshopper.Kernel;
 using Grasshopper.Kernel.Data;
 using Grasshopper.Kernel.Types;
+using GrasshopperRadianceLinuxConnector.Components;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -104,14 +105,15 @@ namespace GrasshopperRadianceLinuxConnector
                     });
                 }
                 RunTime = stopwatch.ElapsedMilliseconds;
-                stopwatch.Reset();
+                
 
                 if (LogSave)
                 {
                     LogHelper logHelper = LogHelper.Default;
-                    logHelper.Add(LogName, LogUseFixedDescription ? LogDescriptionDynamic: LogDescriptionStatic + " Done", InstanceGuid);
+                    logHelper.Add(LogName, LogUseFixedDescription ? LogDescriptionDynamic: LogDescriptionStatic + $" Done in {stopwatch.Elapsed.ToReadableString()}", InstanceGuid);
                 }
 
+                stopwatch.Reset();
 
             };
 

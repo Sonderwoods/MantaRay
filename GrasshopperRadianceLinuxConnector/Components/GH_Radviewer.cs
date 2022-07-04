@@ -17,6 +17,7 @@ using Rhino.Display;
 using Rhino.Geometry;
 using Grasshopper.Kernel.Special;
 using System.Drawing;
+using GrasshopperRadianceLinuxConnector.Components;
 
 namespace GrasshopperRadianceLinuxConnector.Components
 {

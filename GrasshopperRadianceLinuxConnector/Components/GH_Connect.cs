@@ -9,6 +9,7 @@ using System.Diagnostics;
 using Grasshopper.Kernel.Data;
 using Grasshopper.Kernel.Types;
 using System.Linq;
+using GrasshopperRadianceLinuxConnector.Components;
 
 namespace GrasshopperRadianceLinuxConnector.Components
 {

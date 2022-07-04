@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
 using Grasshopper.Kernel;
+using GrasshopperRadianceLinuxConnector.Components;
 using Rhino.Geometry;
 
 namespace GrasshopperRadianceLinuxConnector.Components
