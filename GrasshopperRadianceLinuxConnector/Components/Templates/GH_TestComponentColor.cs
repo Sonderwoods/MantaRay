@@ -31,7 +31,7 @@ namespace GrasshopperRadianceLinuxConnector.Components.Templates
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
             pManager.AddColourParameter("Color", "Col", "Col", GH_ParamAccess.item);
-            pManager.AddColourParameter("SelColor", "SelCol", "Col", GH_ParamAccess.item);
+            pManager[pManager.AddColourParameter("SelColor", "SelCol", "Col", GH_ParamAccess.item)].Optional = true;
         }
 
         /// <summary>
