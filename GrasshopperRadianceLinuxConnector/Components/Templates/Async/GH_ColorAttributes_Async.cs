@@ -22,8 +22,19 @@ namespace GrasshopperRadianceLinuxConnector
           : base(component)
         {
             this.component = component as GH_TemplateAsync;
+
+            palette_normal_standard = GH_Skin.palette_normal_standard;
+            palette_normal_selected = GH_Skin.palette_normal_selected;
+            palette_hidden_standard = GH_Skin.palette_hidden_standard;
+            palette_hidden_selected = GH_Skin.palette_hidden_selected;
         }
 
+        public GH_PaletteStyle palette_normal_standard;
+        public GH_PaletteStyle palette_normal_selected;
+        public GH_PaletteStyle palette_hidden_standard;
+        public GH_PaletteStyle palette_hidden_selected;
+        public GH_PaletteStyle ColorUnselected { get; set; }
+        public GH_PaletteStyle ColorSelected { get; set; }
 
 
         /// <summary>
@@ -34,28 +45,22 @@ namespace GrasshopperRadianceLinuxConnector
         /// <param name="channel"></param>
         protected override void Render(GH_Canvas canvas, Graphics graphics, GH_CanvasChannel channel)
         {
-            if (channel == GH_CanvasChannel.Objects && component.PhaseForColors == GH_TemplateAsync.AestheticPhase.Running)
+            if (channel == GH_CanvasChannel.Objects && component.PhaseForColors != GH_TemplateAsync.AestheticPhase.NotRunning)
             {
-                // Cache the existing style.
-                GH_PaletteStyle style = GH_Skin.palette_normal_standard;
-                GH_PaletteStyle selectedStyle = GH_Skin.palette_normal_selected;
-                GH_PaletteStyle styleHidden = GH_Skin.palette_hidden_standard;
-                GH_PaletteStyle styleHiddenSelected = GH_Skin.palette_hidden_selected;
 
                 // Swap out palette for normal, unselected components.
-                GH_Skin.palette_normal_standard = new GH_PaletteStyle(Color.Purple);
-                GH_Skin.palette_hidden_standard = new GH_PaletteStyle(Color.Purple);
-                
-                GH_Skin.palette_normal_selected = new GH_PaletteStyle(Color.MediumVioletRed);
-                GH_Skin.palette_hidden_selected = new GH_PaletteStyle(Color.MediumVioletRed);
+                GH_Skin.palette_normal_standard = ColorUnselected;
+                GH_Skin.palette_hidden_standard = ColorUnselected;
+                GH_Skin.palette_normal_selected = ColorSelected;
+                GH_Skin.palette_hidden_selected = ColorSelected;
 
                 base.Render(canvas, graphics, channel);
 
                 // Put the original style back.
-                GH_Skin.palette_normal_standard = style;
-                GH_Skin.palette_normal_selected = selectedStyle;
-                GH_Skin.palette_hidden_standard = styleHidden;
-                GH_Skin.palette_hidden_selected = styleHiddenSelected;
+                GH_Skin.palette_normal_standard = palette_normal_standard;
+                GH_Skin.palette_normal_selected = palette_normal_selected;
+                GH_Skin.palette_hidden_standard = palette_hidden_standard;
+                GH_Skin.palette_hidden_selected = palette_hidden_selected;
             }
             else
                 base.Render(canvas, graphics, channel);

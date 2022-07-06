@@ -6,6 +6,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Drawing;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -24,10 +25,11 @@ namespace GrasshopperRadianceLinuxConnector
         public enum AestheticPhase
         {
             Running,
+            Reusing,
             NotRunning
         }
 
-        public AestheticPhase PhaseForColors = GH_TemplateAsync.AestheticPhase.NotRunning;
+        public AestheticPhase PhaseForColors { get; set; } = GH_TemplateAsync.AestheticPhase.NotRunning;
 
         Stopwatch stopwatch = new Stopwatch();
 
@@ -275,6 +277,8 @@ namespace GrasshopperRadianceLinuxConnector
 
                 stopwatch.Start();
                 PhaseForColors = AestheticPhase.Running;
+                ((GH_ColorAttributes_Async)m_attributes).ColorSelected = new Grasshopper.GUI.Canvas.GH_PaletteStyle(Color.Purple);
+                ((GH_ColorAttributes_Async)m_attributes).ColorUnselected = new Grasshopper.GUI.Canvas.GH_PaletteStyle(Color.MediumVioletRed);
 
 
                 if (LogSave)
