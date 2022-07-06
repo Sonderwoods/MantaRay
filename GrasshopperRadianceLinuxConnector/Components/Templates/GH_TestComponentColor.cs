@@ -6,15 +6,15 @@ using Rhino.Geometry;
 
 namespace GrasshopperRadianceLinuxConnector.Components.Templates
 {
-    public class GH_TestComponentColor : GH_Component
+    public class GH_TestComponentColor : GH_Template
     {
         /// <summary>
         /// Initializes a new instance of the GH_TestComponentColor class.
         /// </summary>
         public GH_TestComponentColor()
-          : base("GH_TestComponentColor", "Nickname",
-              "Description",
-              "Category", "Subcategory")
+          : base("TestComponentColor", "Component Color",
+              "Test colors of a component... For Development",
+              "Test")
         {
         }
 
@@ -51,18 +51,6 @@ namespace GrasshopperRadianceLinuxConnector.Components.Templates
             ((GH_TestComponentColor_Attr)m_attributes).ColorSelected = DA.Fetch<System.Drawing.Color>("SelColor");
         }
 
-        /// <summary>
-        /// Provides an Icon for the component.
-        /// </summary>
-        protected override System.Drawing.Bitmap Icon
-        {
-            get
-            {
-                //You can add image files to your project resources and access them like this:
-                // return Resources.IconForThisComponent;
-                return null;
-            }
-        }
 
         /// <summary>
         /// Gets the unique ID for this component. Do not change this ID after release.
