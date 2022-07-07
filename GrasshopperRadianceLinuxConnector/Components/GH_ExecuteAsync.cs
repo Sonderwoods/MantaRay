@@ -15,7 +15,7 @@ using Rhino.Geometry;
 
 namespace GrasshopperRadianceLinuxConnector
 {
-    public class GH_ExecuteAsync : GH_TemplateAsync
+    public class GH_ExecuteAsync : GH_TemplateAsync, IClearData
     {
         /// <summary>
         /// Initializes a new instance of the GH_Execute class.
@@ -85,8 +85,16 @@ namespace GrasshopperRadianceLinuxConnector
                 "You can however suppress this and make ran_output = run_input";
             Menu_AppendItem(menu, "Set Log details", (s, e) => { SetLogDetails(); }, true)
                 .ToolTipText = "Opens a dialog with settings for local logging";
-            Menu_AppendItem(menu, "Clear cached stdout", (s, e) => { savedResults = new RunInfo[0]; RunTime = 0; ExpireSolution(true); }, !RunInput)
+            Menu_AppendItem(menu, "Clear cached stdout", (s, e) => { ClearCachedData(); ExpireSolution(true); }, !RunInput)
                 .ToolTipText = "Removes the data saved in the component.";
+            Menu_AppendItem(menu, "Clear cached data in ALL components", (s, e) => { GH_Template_SaveStrings.ClearAllCachedData(); ExpireSolution(true); }, !RunInput)
+                .ToolTipText = "Removes the data saved in the component.";
+        }
+
+        public void ClearCachedData()
+        {
+            savedResults = new RunInfo[0];
+            RunTime = 0;
         }
 
 

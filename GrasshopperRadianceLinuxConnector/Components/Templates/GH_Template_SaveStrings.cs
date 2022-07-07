@@ -11,7 +11,7 @@ using System.Windows.Forms;
 
 namespace GrasshopperRadianceLinuxConnector
 {
-    public abstract class GH_Template_SaveStrings : GH_Template
+    public abstract class GH_Template_SaveStrings : GH_Template, IClearData
     {
 
         protected string[] OldResults = new string[0];
@@ -39,7 +39,7 @@ namespace GrasshopperRadianceLinuxConnector
 
             if (!DA.Fetch<bool>("Run"))
             {
-                
+
                 if (objs != null && objs.Count() > 0)
                 {
                     Message = "Reusing results";
@@ -109,8 +109,31 @@ namespace GrasshopperRadianceLinuxConnector
         {
             base.AppendAdditionalMenuItems(menu);
 
-            Menu_AppendItem(menu, "Clear cached stdout", (s, e) => { OldResults = new string[0]; ExpireSolution(true); })
+            Menu_AppendItem(menu, "Clear cached stdout", (s, e) => { ClearCachedData(); ExpireSolution(true); })
                 .ToolTipText = "Removes the data saved in the component.";
         }
+
+        public void ClearCachedData()
+        {
+            OldResults = new string[0];
+        }
+
+        public static void ClearAllCachedData()
+        {
+
+            var mb = MessageBox.Show("Clear cached strings in all objects,\n" +
+                "including upload component, execute component and others.\n\nThis will recompute your entire document.", "Are you sure?", MessageBoxButtons.YesNo);
+            if (mb == DialogResult.Yes)
+            {
+
+                foreach (IClearData obj in Grasshopper.Instances.ActiveCanvas.Document.Objects.OfType<IClearData>())
+                {
+                    obj.ClearCachedData();
+                }
+                Grasshopper.Instances.ActiveCanvas.Document.ExpireSolution();
+            }
+            
+        }
+
     }
 }
