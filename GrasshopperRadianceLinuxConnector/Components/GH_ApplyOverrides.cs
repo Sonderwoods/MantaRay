@@ -148,9 +148,9 @@ namespace GrasshopperRadianceLinuxConnector.Components
                 .OfType<Param_String>()
                 .Where(inp => inp.VolatileDataCount > 0))
             {
-                
-                
-                System.Collections.IList dataList = input.VolatileData.get_Branch(input.VolatileDataCount == 1 ? 0 : this.RunCount - 1);
+
+
+                System.Collections.IList dataList = input.VolatileData.get_Branch(input.VolatileData.PathCount == 1 ? 0 : this.RunCount - 1);
 
                 if (dataList.Count > 0 && dataList[0] is GH_String s)
                 {
@@ -158,13 +158,27 @@ namespace GrasshopperRadianceLinuxConnector.Components
                     {
                         AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, $"Key {input.NickName} (in the dynamic parameters) already exists. Overwritten to {s.Value}");
                     }
-             
+
 
                     locals[input.NickName] = s.Value;
 
                 }
 
             }
+
+            //for (int i = 2; i < Params.Input.Count; i++)
+            //{
+            //    string key = Params.Input[i].NickName;
+            //    string value = DA.Fetch<string>(i);
+
+            //    if (locals.ContainsKey(key))
+            //    {
+            //        AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, $"Key {key} (in the dynamic parameters) already exists. Overwritten to {value}");
+            //    }
+
+
+            //    locals[key] = value;
+            //}
 
             foreach (KeyValuePair<string, string> item in locals.OrderBy(o => o.Key))
             {
@@ -285,7 +299,7 @@ namespace GrasshopperRadianceLinuxConnector.Components
                 param.Optional = true;
                 param.MutableNickName = true;
 
-                //param.DataMapping = GH_DataMapping.Flatten;
+                param.DataMapping = GH_DataMapping.Graft;
 
             }
 
