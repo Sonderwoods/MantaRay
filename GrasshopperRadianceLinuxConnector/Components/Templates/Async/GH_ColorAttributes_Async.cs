@@ -1,9 +1,12 @@
 ﻿using Grasshopper.GUI.Canvas;
 using Grasshopper.Kernel;
 using Grasshopper.Kernel.Attributes;
+using Grasshopper.Kernel.Parameters;
+using Grasshopper.Kernel.Types;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Drawing.Drawing2D;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -36,6 +39,11 @@ namespace GrasshopperRadianceLinuxConnector
         public GH_PaletteStyle ColorUnselected { get; set; }
         public GH_PaletteStyle ColorSelected { get; set; }
 
+        Pen penTrueSelected = new Pen(Color.FromArgb(255, Color.DarkGreen), 3f);
+        Pen penTrueUnselected = new Pen(Color.FromArgb(60, Color.DarkGreen), 2f);
+        Pen penFalseSelected = new Pen(Color.FromArgb(255, Color.DarkRed), 3f);
+        Pen penFalseUnselected = new Pen(Color.FromArgb(60, Color.DarkRed), 2f);
+
 
         /// <summary>
         /// Renders the running components in another color
@@ -45,25 +53,199 @@ namespace GrasshopperRadianceLinuxConnector
         /// <param name="channel"></param>
         protected override void Render(GH_Canvas canvas, Graphics graphics, GH_CanvasChannel channel)
         {
-            if (channel == GH_CanvasChannel.Objects && component.PhaseForColors != GH_TemplateAsync.AestheticPhase.NotRunning)
+            switch (channel)
             {
-
-                // Swap out palette for normal, unselected components.
-                GH_Skin.palette_normal_standard = ColorUnselected;
-                GH_Skin.palette_hidden_standard = ColorUnselected;
-                GH_Skin.palette_normal_selected = ColorSelected;
-                GH_Skin.palette_hidden_selected = ColorSelected;
-
-                base.Render(canvas, graphics, channel);
-
-                // Put the original style back.
-                GH_Skin.palette_normal_standard = palette_normal_standard;
-                GH_Skin.palette_normal_selected = palette_normal_selected;
-                GH_Skin.palette_hidden_standard = palette_hidden_standard;
-                GH_Skin.palette_hidden_selected = palette_hidden_selected;
+                case GH_CanvasChannel.First:
+                    if (Selected)
+                    {
+                        RenderInputComponentBoxes(graphics);
+                    }
+                    break;
+                case GH_CanvasChannel.Objects:
+                    DrawObjects(canvas, graphics, channel);
+                    break;
+                case GH_CanvasChannel.Wires:
+                    DrawWires(canvas, graphics);
+                    break;
+                default:
+                    base.Render(canvas, graphics, channel);
+                    break;
             }
-            else
-                base.Render(canvas, graphics, channel);
+
         }
+
+        private void DrawObjects(GH_Canvas canvas, Graphics graphics, GH_CanvasChannel channel)
+        {
+            switch (component.PhaseForColors)
+            {
+                case GH_TemplateAsync.AestheticPhase.Running:
+                case GH_TemplateAsync.AestheticPhase.Reusing:
+                    // Swap out palette for normal, unselected components.
+                    GH_Skin.palette_normal_standard = ColorUnselected;
+                    GH_Skin.palette_hidden_standard = ColorUnselected;
+                    GH_Skin.palette_normal_selected = ColorSelected;
+                    GH_Skin.palette_hidden_selected = ColorSelected;
+
+                    base.Render(canvas, graphics, channel);
+
+                    // Put the original style back.
+                    GH_Skin.palette_normal_standard = palette_normal_standard;
+                    GH_Skin.palette_normal_selected = palette_normal_selected;
+                    GH_Skin.palette_hidden_standard = palette_hidden_standard;
+                    GH_Skin.palette_hidden_selected = palette_hidden_selected;
+
+                    break;
+
+                default:
+                    base.Render(canvas, graphics, channel);
+                    break;
+
+            }
+
+        }
+
+        /// <summary>
+        /// From TUNNY plugin
+        /// </summary>
+        /// <param name="graphics"></param>
+        private void RenderInputComponentBoxes(Graphics graphics)
+        {
+            Brush[] fill = new[]
+            {
+                    new SolidBrush(Color.FromArgb(170, Color.DarkBlue)),
+                    new SolidBrush(Color.FromArgb(170, Color.Green)),
+            };
+
+            Pen[] edge = new[] { Pens.DarkBlue, Pens.Green };
+
+
+            Brush[] fillBool = new[]
+            {
+                    new SolidBrush(Color.FromArgb(170, Color.DarkGreen)),
+                    new SolidBrush(Color.FromArgb(170, Color.DarkRed)),
+            };
+
+            Pen[] edgeBool = new[] { Pens.DarkGreen, Pens.DarkRed };
+
+            for (int i = 0; i < 2; i++)
+            {
+                foreach (IGH_Param source in Owner.Params.Input[i].Sources)
+                {
+                    Guid guid = source.InstanceGuid;
+
+                    if (Owner.Params.Input[i] is Param_Boolean)
+                    {
+                        bool allTrue = source.VolatileData.AllData(false).All(b => ((GH_Boolean)b).IsValid && ((GH_Boolean)b).Value == true);
+                        RenderBox(graphics, fillBool[allTrue ? 0 : 1], edgeBool[allTrue ? 0 : 1], guid);
+                    }
+                    else
+                    {
+                        RenderBox(graphics, fill[i], edge[i], guid);
+                    }
+
+                }
+            }
+        }
+
+        /// <summary>
+        /// From TUNNY plugin
+        /// </summary>
+        /// <param name="graphics"></param>
+        /// <param name="fill"></param>
+        /// <param name="edge"></param>
+        /// <param name="guid"></param>
+        private void RenderBox(Graphics graphics, Brush fill, Pen edge, Guid guid)
+        {
+            GH_Document doc = Owner.OnPingDocument();
+
+            if (doc == null) return;
+
+            IGH_DocumentObject obj = doc.FindObject(guid, false);
+            if (obj == null) return;
+
+            if (!obj.Attributes.IsTopLevel)
+            {
+                Guid topLevelGuid = obj.Attributes.GetTopLevel.InstanceGuid;
+                obj = doc.FindObject(topLevelGuid, true);
+            }
+            var rectangle = GH_Convert.ToRectangle(obj.Attributes.Bounds);
+            rectangle.Inflate(6, 6);
+            graphics.FillRectangle(fill, rectangle);
+            graphics.DrawRectangle(edge, rectangle);
+        }
+
+        /// <summary>
+        /// From TUNNY plugin
+        /// </summary>
+        /// <param name="canvas"></param>
+        /// <param name="graphics"></param>
+        private void DrawWires(GH_Canvas canvas, Graphics graphics)
+        {
+            Pen[] pensSelected = new[]
+                {
+                    new Pen(Color.DarkBlue, 5f),
+                    new Pen(Color.Green, 3f)
+                };
+            Pen[] pensUnselected = new[]
+
+                {
+                    new Pen(Color.FromArgb(120, Color.DarkBlue), 4f),
+                    new Pen(Color.FromArgb(120, Color.Green), 2f)
+                };
+
+            for (int i = 0; i < 2; i++)
+            {
+                DrawPath(canvas, graphics, Owner.Params.Input[i], pensSelected[i], pensUnselected[i]);
+            }
+
+            pensSelected[0].Dispose();
+            pensSelected[1].Dispose();
+            pensUnselected[0].Dispose();
+            pensUnselected[1].Dispose();
+
+        }
+
+        /// <summary>
+        /// From TUNNY plugin
+        /// </summary>
+        /// <param name="canvas"></param>
+        /// <param name="graphics"></param>
+        /// <param name="param"></param>
+        private void DrawPath(GH_Canvas canvas, Graphics graphics, IGH_Param param, Pen wirePenSelected, Pen wirePenUnselected)
+        {
+            PointF p1 = param.Attributes.InputGrip;
+
+            foreach (IGH_Param source in param.Sources)
+            {
+                PointF p0 = source.Attributes.OutputGrip;
+
+                if (!canvas.Painter.ConnectionVisible(p0, p1)) continue;
+
+                using (GraphicsPath wirePath = GH_Painter.ConnectionPath(p0, p1, GH_WireDirection.right, GH_WireDirection.left))
+                {
+                    if (wirePath == null) continue;
+
+                    if (param is Param_Boolean && source.VolatileData.AllData(false).All(b => ((GH_Boolean)b).IsValid && ((GH_Boolean)b).Value == true))
+                    {
+                        graphics.DrawPath(source.Attributes.Selected || Owner.Attributes.Selected ? penTrueSelected : penTrueUnselected, wirePath);
+                    }
+                    else if (param is Param_Boolean)
+                    {
+                        graphics.DrawPath(source.Attributes.Selected || Owner.Attributes.Selected ? penFalseSelected : penFalseUnselected, wirePath);
+                    }
+                    else
+                    {
+                        graphics.DrawPath(source.Attributes.Selected || Owner.Attributes.Selected ? wirePenSelected : wirePenUnselected, wirePath);
+                    }
+                    //wirePen.Dispose();
+
+
+                }
+
+            }
+
+        }
+
     }
+
 }
