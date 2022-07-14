@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Grasshopper.Kernel;
+using GrasshopperRadianceLinuxConnector.Components;
 using Rhino.Geometry;
 
 namespace GrasshopperRadianceLinuxConnector.Components
@@ -76,7 +77,10 @@ namespace GrasshopperRadianceLinuxConnector.Components
         {
             if (!Locked)
             {
-                args.Display.DrawPoints(pts, Rhino.Display.PointStyle.RoundSimple, 2f, System.Drawing.Color.DarkSlateBlue);
+                //this.Attributes.Selected
+                //Type t = GetType();
+                //Grasshopper.Instances.ActiveCanvas.Document.Objects.OfType<GH_PtsViewer>().Where(o => o.Attributes.Selected)//OfType<IGH_ActiveObject>().Where(o => o)
+                args.Display.DrawPoints(pts, Rhino.Display.PointStyle.RoundSimple, 2f, Attributes.Selected ? System.Drawing.Color.ForestGreen : System.Drawing.Color.DarkSlateBlue);
             }
             
             

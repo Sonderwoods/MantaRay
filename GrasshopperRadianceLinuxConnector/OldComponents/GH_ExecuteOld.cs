@@ -5,19 +5,20 @@ using GH_IO.Serialization;
 using Grasshopper.Kernel;
 using Grasshopper.Kernel.Data;
 using Grasshopper.Kernel.Types;
+using GrasshopperRadianceLinuxConnector.Components;
 using Rhino.Geometry;
 
 namespace GrasshopperRadianceLinuxConnector
 {
     [Obsolete]
-    public class GH_Execute : GH_Template
+    public class GH_ExecuteOld : GH_Template
     {
         
         /// <summary>
         /// Initializes a new instance of the GH_Execute class.
         /// </summary>
         ///
-        public GH_Execute()
+        public GH_ExecuteOld()
           : base("Execute SSH", "Execute SSH",
               "Use me to execute a SSH Command",
               "1 SSH")

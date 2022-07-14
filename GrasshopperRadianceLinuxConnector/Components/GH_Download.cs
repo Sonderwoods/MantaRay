@@ -3,14 +3,16 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
 using System.Text;
+using GH_IO.Serialization;
 using Grasshopper.Kernel;
 using Grasshopper.Kernel.Data;
 using Grasshopper.Kernel.Types;
+using GrasshopperRadianceLinuxConnector.Components;
 using Rhino.Geometry;
 
 namespace GrasshopperRadianceLinuxConnector.Components
 {
-    public class GH_Download : GH_Template
+    public class GH_Download : GH_Template_SaveStrings
     {
         /// <summary>
         /// Initializes a new instance of the GH_Download class.
@@ -21,6 +23,8 @@ namespace GrasshopperRadianceLinuxConnector.Components
               "1 SSH")
         {
         }
+
+        
 
         /// <summary>
         /// Registers all the input parameters for this component.
@@ -39,7 +43,7 @@ namespace GrasshopperRadianceLinuxConnector.Components
         {
             pManager.AddTextParameter("Status", "Status", "status", GH_ParamAccess.item);
             pManager.AddTextParameter("File Paths", "File Paths", "Path to the files", GH_ParamAccess.list);
-            pManager.AddTextParameter("Run", "Run", "Run", GH_ParamAccess.tree);
+            pManager.AddTextParameter("Ran", "Ran", "Run", GH_ParamAccess.tree);
         }
 
         /// <summary>
@@ -49,14 +53,8 @@ namespace GrasshopperRadianceLinuxConnector.Components
         protected override void SolveInstance(IGH_DataAccess DA)
         {
 
-            //Read and parse the input.
-            var runTree = new GH_Structure<GH_Boolean>();
-            runTree.Append(new GH_Boolean(DA.Fetch<bool>("Run")));
-            Params.Output[Params.Output.Count - 1].ClearData();
-            DA.SetDataTree(Params.Output.Count - 1, runTree);
+            if (!CheckIfRunOrUseOldResults(DA, 1)) return; //template
 
-            if (!DA.Fetch<bool>("Run"))
-                return;
 
             string targetFolder = DA.Fetch<string>("Target local folder");
 
@@ -78,13 +76,18 @@ namespace GrasshopperRadianceLinuxConnector.Components
                 localFilePaths.Add(localTargetFolder + "\\" + Path.GetFileName(file));
             }
 
+            OldResults = localFilePaths.ToArray();
+
+
             DA.SetDataList("File Paths", localFilePaths);
             DA.SetData("Status", sb.ToString());
         }
 
-        
+
 
         protected override Bitmap Icon => Resources.Resources.Ra_Download_Icon;
+
+        
 
 
         /// <summary>

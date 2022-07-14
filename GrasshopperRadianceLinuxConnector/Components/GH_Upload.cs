@@ -7,11 +7,12 @@ using GH_IO.Serialization;
 using Grasshopper.Kernel;
 using Grasshopper.Kernel.Data;
 using Grasshopper.Kernel.Types;
+using GrasshopperRadianceLinuxConnector.Components;
 using Rhino.Geometry;
 
 namespace GrasshopperRadianceLinuxConnector.Components
 {
-    public class GH_Upload : GH_Template
+    public class GH_Upload : GH_Template_SaveStrings
     {
         /// <summary>
         /// Initializes a new instance of the GH_Upload class.
@@ -23,7 +24,7 @@ namespace GrasshopperRadianceLinuxConnector.Components
         {
         }
 
-        string[] oldResults;
+        
 
         /// <summary>
         /// Registers all the input parameters for this component.
@@ -44,7 +45,7 @@ namespace GrasshopperRadianceLinuxConnector.Components
         {
             pManager.AddTextParameter("Status", "Status", "status", GH_ParamAccess.item);
             pManager.AddTextParameter("File Paths", "File Paths", "Path to the files", GH_ParamAccess.list);
-            pManager.AddTextParameter("Run", "Run", "Run", GH_ParamAccess.tree);
+            pManager.AddTextParameter("Ran", "Ran", "Ran", GH_ParamAccess.tree);
         }
 
         /// <summary>
@@ -54,26 +55,7 @@ namespace GrasshopperRadianceLinuxConnector.Components
         protected override void SolveInstance(IGH_DataAccess DA)
         {
 
-            //Read and parse the input.
-            var runTree = new GH_Structure<GH_Boolean>();
-            runTree.Append(new GH_Boolean(DA.Fetch<bool>("Run")));
-            Params.Output[Params.Output.Count - 1].ClearData();
-            DA.SetDataTree(Params.Output.Count - 1, runTree);
-
-            if (!DA.Fetch<bool>("Run"))
-            {
-                if (oldResults != null)
-                {
-                    Message = "Reusing results";
-                    AddRuntimeMessage(GH_RuntimeMessageLevel.Remark, "Using an old existing radPaths\nThis can be convenient for opening old workflows and not running everything again.");
-                    DA.SetDataList(1, oldResults);
-                }
-                this.Hidden = true;
-                return;
-
-            }
-            this.Hidden = false;
-            Message = "";
+            if (!CheckIfRunOrUseOldResults(DA, 1)) return; //template
 
             List<string> allFilePaths = DA.FetchList<string>("Local File Paths");
 
@@ -101,34 +83,13 @@ namespace GrasshopperRadianceLinuxConnector.Components
 
             }
 
-            oldResults = outFilePaths.ToArray();
+            OldResults = outFilePaths.ToArray();
             DA.SetDataList("File Paths", outFilePaths);
             DA.SetData("Status", sb.ToString());
 
 
         }
 
-
-        public override bool Read(GH_IReader reader)
-        {
-            string s = String.Empty;
-
-            if (reader.TryGetString("stdouts", ref s))
-            {
-                oldResults = s.Split(new[] { ">JOIN<" }, StringSplitOptions.None);
-            }
-
-            return base.Read(reader);
-        }
-
-        public override bool Write(GH_IWriter writer)
-        {
-            writer.SetString("stdouts", String.Join(">JOIN<", oldResults));
-
-            return base.Write(writer);
-        }
-
-        public override bool IsPreviewCapable => true;
         protected override Bitmap Icon => Resources.Resources.Ra_Upload_Icon;
 
         /// <summary>

@@ -1,10 +1,12 @@
 ﻿using Grasshopper.Kernel;
 using Grasshopper.Kernel.Data;
 using Grasshopper.Kernel.Types;
+using GrasshopperRadianceLinuxConnector.Components;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Drawing;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -23,10 +25,11 @@ namespace GrasshopperRadianceLinuxConnector
         public enum AestheticPhase
         {
             Running,
+            Reusing,
             NotRunning
         }
 
-        public AestheticPhase PhaseForColors = GH_TemplateAsync.AestheticPhase.NotRunning;
+        public AestheticPhase PhaseForColors { get; set; } = GH_TemplateAsync.AestheticPhase.NotRunning;
 
         Stopwatch stopwatch = new Stopwatch();
 
@@ -104,14 +107,15 @@ namespace GrasshopperRadianceLinuxConnector
                     });
                 }
                 RunTime = stopwatch.ElapsedMilliseconds;
-                stopwatch.Reset();
+                
 
                 if (LogSave)
                 {
                     LogHelper logHelper = LogHelper.Default;
-                    logHelper.Add(LogName, LogUseFixedDescription ? LogDescriptionDynamic: LogDescriptionStatic + " Done", InstanceGuid);
+                    logHelper.Add(LogName, LogUseFixedDescription ? LogDescriptionDynamic: LogDescriptionStatic + $" Done in {stopwatch.Elapsed.ToReadableString()}", InstanceGuid);
                 }
 
+                stopwatch.Reset();
 
             };
 
@@ -273,6 +277,8 @@ namespace GrasshopperRadianceLinuxConnector
 
                 stopwatch.Start();
                 PhaseForColors = AestheticPhase.Running;
+                ((GH_ColorAttributes_Async)m_attributes).ColorSelected = new Grasshopper.GUI.Canvas.GH_PaletteStyle(Color.MediumVioletRed);
+                ((GH_ColorAttributes_Async)m_attributes).ColorUnselected = new Grasshopper.GUI.Canvas.GH_PaletteStyle(Color.Purple);
 
 
                 if (LogSave)

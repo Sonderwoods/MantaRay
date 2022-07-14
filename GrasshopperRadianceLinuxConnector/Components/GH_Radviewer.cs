@@ -17,6 +17,7 @@ using Rhino.Display;
 using Rhino.Geometry;
 using Grasshopper.Kernel.Special;
 using System.Drawing;
+using GrasshopperRadianceLinuxConnector.Components;
 
 namespace GrasshopperRadianceLinuxConnector.Components
 {
@@ -45,6 +46,7 @@ namespace GrasshopperRadianceLinuxConnector.Components
         readonly Random rnd = new Random();
         readonly List<Curve> failedCurves = new List<Curve>();
         readonly Dictionary<string, System.Drawing.Color> colors = new Dictionary<string, System.Drawing.Color>();
+        public bool Polychromatic = true;
 
 
         private HUD hud = new HUD();
@@ -299,7 +301,10 @@ namespace GrasshopperRadianceLinuxConnector.Components
                         {
                             if (!colors.TryGetValue(obj.ModifierName, out System.Drawing.Color color))
                             {
-                                color = System.Drawing.Color.FromArgb(rnd.Next(150, 256), rnd.Next(150, 256), rnd.Next(150, 256));
+                                if (Polychromatic)
+                                    color = System.Drawing.Color.FromArgb(rnd.Next(150, 256), rnd.Next(150, 256), rnd.Next(150, 256));
+                                else
+                                    color = System.Drawing.Color.FromArgb(200, 140, 140, 140);
                                 colors.Add(obj.ModifierName, color);
 
                             }
@@ -309,6 +314,7 @@ namespace GrasshopperRadianceLinuxConnector.Components
                             geo.Material.IsTwoSided = TwoSided;
                             geo.Material.BackDiffuse = System.Drawing.Color.Red;
                             geo.Material.BackEmission = System.Drawing.Color.Red;
+                            
 
 
                             objects.Add(obj.ModifierName, geo);
@@ -377,6 +383,10 @@ namespace GrasshopperRadianceLinuxConnector.Components
                 {
                     hud.CloseBtn.ContextMenuItems.Add("Update Colors", ClearColors);
                 }
+                if (!hud.CloseBtn.ContextMenuItems.ContainsKey("Toggle Colors"))
+                {
+                    hud.CloseBtn.ContextMenuItems.Add("Toggle Colors", ToggleColors);
+                }
 
 
 
@@ -429,17 +439,13 @@ namespace GrasshopperRadianceLinuxConnector.Components
 
             }
 
-
         }
 
         public override void DocumentContextChanged(GH_Document document, GH_DocumentContext context)
         {
 
-
             if (hud != null)
             {
-
-
 
                 DisplayPipeline.DrawForeground -= DrawForeground;
                 if (context == GH_DocumentContext.Loaded)
@@ -508,27 +514,20 @@ namespace GrasshopperRadianceLinuxConnector.Components
 
                 }
 
-
             }
             if (ptList2[0] != ptList2[ptList2.Count - 1])
             {
                 ptList2.Add(ptList2[0]);
             }
 
-
             var segs = new Polyline(ptList2).ToNurbsCurve().DuplicateSegments();
 
             return Curve.JoinCurves(segs.AsParallel().AsOrdered().Where(s => !RaPolygon.IsCurveDup(s, segs)));
 
-
         }
 
 
-
-
         public override Guid ComponentGuid => new Guid("1FA443D0-8881-4546-9BA1-259B22CF89B4");
-
-
 
         public override BoundingBox ClippingBox => bb;
 
@@ -625,7 +624,6 @@ namespace GrasshopperRadianceLinuxConnector.Components
                 obj.Material.IsTwoSided = TwoSided;
             }
 
-
         }
 
         public void ToggleTransparent(object s, EventArgs e)
@@ -643,6 +641,7 @@ namespace GrasshopperRadianceLinuxConnector.Components
         public override bool Read(GH_IReader reader)
         {
             reader.TryGetBoolean("IsTwoSided", ref TwoSided);
+            reader.TryGetBoolean("Polychromatic", ref Polychromatic);
             reader.TryGetBoolean("ShowEdges", ref ShowEdges);
             reader.TryGetBoolean("Transparent", ref Transparent);
             return base.Read(reader);
@@ -651,6 +650,7 @@ namespace GrasshopperRadianceLinuxConnector.Components
         public override bool Write(GH_IWriter writer)
         {
             writer.SetBoolean("IsTwoSided", TwoSided);
+            writer.SetBoolean("Polychromatic", Polychromatic);
             writer.SetBoolean("ShowEdges", ShowEdges);
             writer.SetBoolean("Transparent", Transparent);
             return base.Write(writer);
@@ -663,16 +663,22 @@ namespace GrasshopperRadianceLinuxConnector.Components
             base.AppendAdditionalMenuItems(menu);
             Menu_AppendItem(menu, "Toggle Twosided", ToggleTwoSided, true, TwoSided);
             Menu_AppendItem(menu, "Transparent", ToggleTransparent, true, Transparent);
-
             Menu_AppendItem(menu, "Show edges", (s, e) => { ShowEdges = !ShowEdges; }, true, ShowEdges);
-
-
+            Menu_AppendItem(menu, "Use Colors", ToggleColors, true, Polychromatic);
             Menu_AppendItem(menu, "Clear Colors", ClearColors, true);
         }
 
         public void ClearColors(object s, EventArgs e)
         {
             colors.Clear();
+            ExpireSolution(true);
+            Rhino.RhinoDoc.ActiveDoc.Views.Redraw();
+        }
+
+        public void ToggleColors(object s, EventArgs e)
+        {
+            colors.Clear();
+            Polychromatic = !Polychromatic;
             ExpireSolution(true);
             Rhino.RhinoDoc.ActiveDoc.Views.Redraw();
         }

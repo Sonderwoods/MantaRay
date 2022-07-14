@@ -1,23 +1,28 @@
 ﻿using System;
 using System.Collections.Generic;
 
-using System.Drawing;
 using Grasshopper.Kernel;
-using GrasshopperRadianceLinuxConnector.Components;
 using Rhino.Geometry;
 
-namespace GrasshopperRadianceLinuxConnector.Components
+namespace GrasshopperRadianceLinuxConnector.Components.Templates
 {
-    public class GH_ConvertPaths : GH_Template
+    public class GH_TestComponentColor : GH_Template
     {
         /// <summary>
-        /// Initializes a new instance of the GH_ToLinux class.
+        /// Initializes a new instance of the GH_TestComponentColor class.
         /// </summary>
-        public GH_ConvertPaths()
-          : base("ConvertPaths", "ConvertPaths",
-              "converts a windows path to linux path",
-              "0 Setup")
+        public GH_TestComponentColor()
+          : base("TestComponentColor", "Component Color",
+              "Test colors of a component... For Development",
+              "Test")
         {
+        }
+
+        public override void CreateAttributes()
+        {
+            //base.CreateAttributes();
+            m_attributes = new GH_TestComponentColor_Attr(this);
+
         }
 
         /// <summary>
@@ -25,7 +30,8 @@ namespace GrasshopperRadianceLinuxConnector.Components
         /// </summary>
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
-            pManager.AddTextParameter("I", "I", "Input linux/windows path", GH_ParamAccess.item);
+            pManager.AddColourParameter("Color", "Col", "Col", GH_ParamAccess.item);
+            pManager[pManager.AddColourParameter("SelColor", "SelCol", "Col", GH_ParamAccess.item)].Optional = true;
         }
 
         /// <summary>
@@ -33,8 +39,6 @@ namespace GrasshopperRadianceLinuxConnector.Components
         /// </summary>
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
-            pManager.AddTextParameter("Linux", "L", "Linux", GH_ParamAccess.item);
-            pManager.AddTextParameter("Windows", "W", "Windows", GH_ParamAccess.item);
         }
 
         /// <summary>
@@ -43,21 +47,17 @@ namespace GrasshopperRadianceLinuxConnector.Components
         /// <param name="DA">The DA object is used to retrieve from inputs and store in outputs.</param>
         protected override void SolveInstance(IGH_DataAccess DA)
         {
-            string path = DA.Fetch<string>(0);
-
-            
-            DA.SetData(0, path.ToLinuxPath());
-            DA.SetData(1, path.ToWindowsPath());
+            ((GH_TestComponentColor_Attr)m_attributes).Color = DA.Fetch<System.Drawing.Color>("Color");
+            ((GH_TestComponentColor_Attr)m_attributes).ColorSelected = DA.Fetch<System.Drawing.Color>("SelColor");
         }
 
-        protected override Bitmap Icon => Resources.Resources.Ra_Paths_Icon;
 
         /// <summary>
         /// Gets the unique ID for this component. Do not change this ID after release.
         /// </summary>
         public override Guid ComponentGuid
         {
-            get { return new Guid("AF816E54-D307-4E15-9FDD-3DD9A0DC61ED"); }
+            get { return new Guid("6A4DEF5C-7EB4-4490-B233-3C630BED68D1"); }
         }
     }
 }

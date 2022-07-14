@@ -15,7 +15,7 @@ using Rhino.Geometry;
 
 namespace GrasshopperRadianceLinuxConnector
 {
-    public class GH_ExecuteAsync : GH_TemplateAsync
+    public class GH_ExecuteAsync : GH_TemplateAsync, IClearData
     {
         /// <summary>
         /// Initializes a new instance of the GH_Execute class.
@@ -69,15 +69,15 @@ namespace GrasshopperRadianceLinuxConnector
         {
             base.AppendAdditionalMenuItems(menu);
 
-            if(PhaseForColors == AestheticPhase.Running)
+            if (PhaseForColors == AestheticPhase.Running)
             {
                 Menu_AppendItem(menu, "Cancel and kill linux", (s, e) => { LinuxKill(); RequestCancellation(); })
                 .ToolTipText = "Currently not working... >_< Instead open bash and kill the pid with kill <id>";
             }
-            
-            Menu_AppendItem(menu, "Add prefix", (s, e) => { addPrefix = !addPrefix; UpdateNickNames();  ExpireSolution(true); }, true, addPrefix)
+
+            Menu_AppendItem(menu, "Add prefix", (s, e) => { addPrefix = !addPrefix; UpdateNickNames(); ExpireSolution(true); }, true, addPrefix)
                 .ToolTipText = "Adding a prefix with export settings for SSH. This is on by default";
-            Menu_AppendItem(menu, "Add suffix", (s, e) => { addSuffix = !addSuffix; UpdateNickNames();  ExpireSolution(true); }, true, addSuffix)
+            Menu_AppendItem(menu, "Add suffix", (s, e) => { addSuffix = !addSuffix; UpdateNickNames(); ExpireSolution(true); }, true, addSuffix)
                 .ToolTipText = "Adding a suffix to pipe out the PID of the process to allow us to kill it. This is on by default";
             Menu_AppendItem(menu, "Suppress warnings", (s, e) => { suppressWarnings = !suppressWarnings; UpdateNickNames(); ExpireSolution(true); },
                 true, suppressWarnings)
@@ -85,17 +85,25 @@ namespace GrasshopperRadianceLinuxConnector
                 "You can however suppress this and make ran_output = run_input";
             Menu_AppendItem(menu, "Set Log details", (s, e) => { SetLogDetails(); }, true)
                 .ToolTipText = "Opens a dialog with settings for local logging";
-            Menu_AppendItem(menu, "Clear cached stdout", (s, e) => { savedResults = new RunInfo[0]; ExpireSolution(true); }, !RunInput)
+            Menu_AppendItem(menu, "Clear cached stdout", (s, e) => { ClearCachedData(); ExpireSolution(true); }, !RunInput)
+                .ToolTipText = "Removes the data saved in the component.";
+            Menu_AppendItem(menu, "Clear cached data in ALL components", (s, e) => { GH_Template_SaveStrings.ClearAllCachedData(); ExpireSolution(true); }, !RunInput)
                 .ToolTipText = "Removes the data saved in the component.";
         }
 
-        
+        public void ClearCachedData()
+        {
+            savedResults = new RunInfo[0];
+            RunTime = 0;
+        }
+
+
 
         public void UpdateNickNames()
         {
             Params.Input[0].NickName = (addPrefix ? "_" : "") + "SSH Commands" + (addSuffix ? "_" : "");
             Params.Output[1].NickName = "stderr" + (suppressWarnings ? "" : "_");
-            
+
         }
 
         private void SetLogDetails()
@@ -233,6 +241,9 @@ namespace GrasshopperRadianceLinuxConnector
                 AddRuntimeMessage(GH_RuntimeMessageLevel.Remark, "Using an old existing stdout\nThis can be convenient for opening old workflows and not running everything again.");
                 DA.SetDataList(0, savedResults.Select(r => r.Stdout.ToString()));
                 Message = "Reusing results";
+                PhaseForColors = AestheticPhase.Reusing;
+                ((GH_ColorAttributes_Async)m_attributes).ColorSelected = new Grasshopper.GUI.Canvas.GH_PaletteStyle(Color.FromArgb(76, 128, 122));
+                ((GH_ColorAttributes_Async)m_attributes).ColorUnselected = new Grasshopper.GUI.Canvas.GH_PaletteStyle(Color.FromArgb(95, 115, 113));
                 OnDisplayExpired(true);
             }
 
@@ -291,7 +302,7 @@ namespace GrasshopperRadianceLinuxConnector
             public override void DoWork(Action<string, double> ReportProgress, Action Done)
             {
 
-                
+
                 bool HasZeroAreaPolygons(string errors)
                 {
                     return !errors.StartsWith("oconv: warning - zero area");

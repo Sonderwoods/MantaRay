@@ -1,16 +1,19 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using GH_IO.Serialization;
 using Grasshopper.Kernel;
+using GrasshopperRadianceLinuxConnector.Components;
 using Rhino.Geometry;
 
 namespace GrasshopperRadianceLinuxConnector.Components
 {
-    public class GH_AnnualResults : GH_Template
+    public class GH_AnnualResults : GH_Template_SaveStrings
     {
         /// <summary>
         /// Initializes a new instance of the GH_AnnualResults class.
@@ -21,6 +24,8 @@ namespace GrasshopperRadianceLinuxConnector.Components
               "2 Radiance")
         {
         }
+
+        double[] OldNumberResults = new double[0];
 
         /// <summary>
         /// Registers all the input parameters for this component.
@@ -52,7 +57,8 @@ namespace GrasshopperRadianceLinuxConnector.Components
         /// <param name="DA">The DA object is used to retrieve from inputs and store in outputs.</param>
         protected override void SolveInstance(IGH_DataAccess DA)
         {
-
+            CheckIfRunOrUseOldResults(DA, 0); //template
+            if (!CheckIfRunOrUseOldResults(DA, 1, OldNumberResults)) return; //template
 
 
             string illFile = DA.Fetch<string>("illFile");
@@ -61,12 +67,12 @@ namespace GrasshopperRadianceLinuxConnector.Components
             bool[] schedule = DA.FetchList<int>("schedule").AsParallel().AsOrdered().Select(s => s >= 1).ToArray();
             int headerRows = 0;
             int headerColumns = 0;
-
+            int readLinesCounter = 0;
 
             var readLines = Task.Factory.StartNew(() =>
             {
                 bool begin = false;
-                int counter = 0;
+                
 
                 if (String.IsNullOrEmpty(illFile) || !File.Exists(illFile))
                     return;
@@ -90,12 +96,14 @@ namespace GrasshopperRadianceLinuxConnector.Components
                     {
                         //if (counter == 0)
                         // pointCount = line.Split('\t').Length + 1;
-                        if (schedule[counter++]) //<<-- TO FILTER ROWS BY SCHEDULE
+                        if (schedule[readLinesCounter]) //<<-- TO FILTER ROWS BY SCHEDULE
                             linesPerHour.Add(line);
+                        Interlocked.Increment(ref readLinesCounter);
 
                     }
 
                 }
+                
 
                 linesPerHour.CompleteAdding();
             });
@@ -125,19 +133,19 @@ namespace GrasshopperRadianceLinuxConnector.Components
 
 
             int pointCount = 0;
-            int lineCount = 0;
+            int filteredLineCount = 0;
 
             var processLines = Task.Factory.StartNew(() =>
             {
                 foreach (var line in linesPerHour.GetConsumingEnumerable())
                 {
-                    Interlocked.Increment(ref lineCount);
+                    Interlocked.Increment(ref filteredLineCount);
 
                     var resultsPerPointPerHour = line.Split('\t')
                         .AsParallel()
                         .AsOrdered()
                         .Where(x => !String.IsNullOrWhiteSpace(x))
-                        .Select(x => double.Parse(x.Trim(' ')))
+                        .Select(x => double.Parse(x.Trim(' '), CultureInfo.InvariantCulture))//.ToArray();
                         .Select(x => x >= min && x <= max ? 1 : 0)
                         .ToArray();
 
@@ -155,8 +163,8 @@ namespace GrasshopperRadianceLinuxConnector.Components
 
                 }
 
-                if (lineCount != scheduleHoursCount)
-                    throw new Exception($"Schedule hours count  ({scheduleHoursCount}) does not match the hours in ill file  ({lineCount})!");
+                if (filteredLineCount != scheduleHoursCount)
+                    throw new Exception($"Schedule hours count  ({scheduleHoursCount}) does not match the hours in ill file  ({filteredLineCount})!");
 
             });
 
@@ -165,14 +173,15 @@ namespace GrasshopperRadianceLinuxConnector.Components
 
             Task.WaitAll(readLines);
 
-            DA.SetDataList("Headers", headerLines);
+            OldResults = headerLines.ToArray();
+            DA.SetDataList("Headers", OldResults);
 
 
-            Task.WaitAll(readLines, processLines);
+            Task.WaitAll(processLines);
 
-            if (headerRows != 0 && headerRows != lineCount)
+            if (headerRows != 0 && headerRows != readLinesCounter)
             {
-                AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, $"NROWS={headerRows}, but the file contained {lineCount} lines.");
+                AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, $"NROWS={headerRows}, but the file contained {readLinesCounter} lines.");
             }
 
             if (headerColumns != 0 && headerColumns != pointCount)
@@ -181,11 +190,37 @@ namespace GrasshopperRadianceLinuxConnector.Components
             }
 
 
+            OldNumberResults = wellLitHoursPerPoint.Select(r => r / (double)scheduleHoursCount).ToArray();
+
+            DA.SetDataList("Results", OldNumberResults);
 
 
-            DA.SetDataList("Results", wellLitHoursPerPoint.Select(r => r / (double)scheduleHoursCount));
+        }
 
+        public override bool Read(GH_IReader reader)
+        {
+            List<double> oldNumbers = new List<double>();
+            double v = 0;
+            int i = 0;
+            while (reader.TryGetDouble("numbers", i++, ref v))
+            {
+                oldNumbers.Add(v);
+            }
+            OldNumberResults = oldNumbers.ToArray();
 
+            return base.Read(reader);
+        }
+
+        public override bool Write(GH_IWriter writer)
+        {
+            writer.RemoveChunk("numbers");
+            for (int i = 0; i < OldNumberResults.Length; i++)
+            {
+                writer.SetDouble("numbers", i, OldNumberResults[i]);
+            }
+            
+
+            return base.Write(writer);
         }
 
 
