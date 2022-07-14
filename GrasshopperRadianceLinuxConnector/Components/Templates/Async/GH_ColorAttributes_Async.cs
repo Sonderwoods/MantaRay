@@ -39,10 +39,10 @@ namespace GrasshopperRadianceLinuxConnector
         public GH_PaletteStyle ColorUnselected { get; set; }
         public GH_PaletteStyle ColorSelected { get; set; }
 
-        Pen penTrueSelected = new Pen(Color.FromArgb(255, Color.DarkGreen), 3f);
-        Pen penTrueUnselected = new Pen(Color.FromArgb(60, Color.DarkGreen), 2f);
-        Pen penFalseSelected = new Pen(Color.FromArgb(255, Color.DarkRed), 3f);
-        Pen penFalseUnselected = new Pen(Color.FromArgb(60, Color.DarkRed), 2f);
+        Pen penTrueSelected = new Pen(Color.FromArgb(255, Color.DarkGreen), 4f);
+        Pen penTrueUnselected = new Pen(Color.FromArgb(80, Color.DarkGreen), 4f);
+        Pen penFalseSelected = new Pen(Color.FromArgb(255, Color.DarkRed), 4f);
+        Pen penFalseUnselected = new Pen(Color.FromArgb(80, Color.DarkRed), 4f);
 
 
         /// <summary>
@@ -127,7 +127,7 @@ namespace GrasshopperRadianceLinuxConnector
 
             Pen[] edgeBool = new[] { Pens.DarkGreen, Pens.DarkRed };
 
-            for (int i = 0; i < 2; i++)
+            for (int i = 1; i < 2; i++)
             {
                 foreach (IGH_Param source in Owner.Params.Input[i].Sources)
                 {
