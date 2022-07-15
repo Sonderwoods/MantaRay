@@ -55,7 +55,7 @@
   </PropertyGroup>
   
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">
-    <Exec Command="XCOPY &quot;$(OutDir)&quot; &quot;%25appdata%25\Grasshopper\Libraries\MantaRay&quot; /R /Y /I" />
+    <Exec Command="XCOPY &quot;$(OutDir)&quot; &quot;%25appdata%25\Grasshopper\Libraries\MantaRay&quot; /R /Y /I&#xD;&#xA;XCOPY &quot;$(OutDir)\MantaRay.gha&quot; &quot;%25appdata%25\Grasshopper\Libraries\MantaRay\MantaRay.gha&quot; /R /Y /I" />
   </Target>
 
 </Project>
