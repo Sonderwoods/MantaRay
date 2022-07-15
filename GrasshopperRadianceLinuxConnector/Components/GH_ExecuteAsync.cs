@@ -13,7 +13,7 @@ using Grasshopper.Kernel.Data;
 using Grasshopper.Kernel.Types;
 using Rhino.Geometry;
 
-namespace GrasshopperRadianceLinuxConnector
+namespace MantaRay
 {
     public class GH_ExecuteAsync : GH_TemplateAsync, IClearData
     {

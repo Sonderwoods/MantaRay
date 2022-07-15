@@ -2,10 +2,10 @@
 using System.Collections.Generic;
 using System.Linq;
 using Grasshopper.Kernel;
-using GrasshopperRadianceLinuxConnector.Components;
+using MantaRay.Components;
 using Rhino.Geometry;
 
-namespace GrasshopperRadianceLinuxConnector.OldComponents
+namespace MantaRay.OldComponents
 {
     [Obsolete]
     public class GH_ApplyOverrides_old : GH_Template

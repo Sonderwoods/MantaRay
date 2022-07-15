@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using Grasshopper.Kernel;
 using Rhino.Geometry;
 
-namespace GrasshopperRadianceLinuxConnector.Components.Templates
+namespace MantaRay.Components.Templates
 {
     public class GH_TestComponentColor : GH_Template
     {

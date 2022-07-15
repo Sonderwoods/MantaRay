@@ -3,10 +3,10 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Text;
 using Grasshopper.Kernel;
-using GrasshopperRadianceLinuxConnector.Components;
+using MantaRay.Components;
 using Rhino.Geometry;
 
-namespace GrasshopperRadianceLinuxConnector.Components
+namespace MantaRay.Components
 {
     public class GH_TestConnection : GH_Template
     {

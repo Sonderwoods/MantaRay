@@ -8,7 +8,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace GrasshopperRadianceLinuxConnector
+namespace MantaRay
 {
     /// <summary>
     /// DataAccessHelper for GH. Original from Arend van Waart  arend@studioavw.nl

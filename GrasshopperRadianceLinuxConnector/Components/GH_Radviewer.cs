@@ -17,9 +17,9 @@ using Rhino.Display;
 using Rhino.Geometry;
 using Grasshopper.Kernel.Special;
 using System.Drawing;
-using GrasshopperRadianceLinuxConnector.Components;
+using MantaRay.Components;
 
-namespace GrasshopperRadianceLinuxConnector.Components
+namespace MantaRay.Components
 {
     public class GH_Radviewer : GH_Template
     {

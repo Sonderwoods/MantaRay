@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 using Renci.SshNet;
 
 
-namespace GrasshopperRadianceLinuxConnector
+namespace MantaRay
 {
     internal static class SSH_Helper
     {

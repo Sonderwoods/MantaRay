@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace GrasshopperRadianceLinuxConnector
+namespace MantaRay
 {
     public class LogHelper
     {
@@ -19,9 +19,10 @@ namespace GrasshopperRadianceLinuxConnector
 
         public static LogHelper Default { get => GetLogHelper(); }
 
-        public static LogHelper GetLogHelper(string name = "GrasshopperRadianceLinuxConnector")
+        public static LogHelper GetLogHelper(string name = null)
         {
-            if ((name == "GrasshopperRadianceLinuxConnector" && !AllLogSystems.ContainsKey("GrasshopperRadianceLinuxConnector"))
+            name = name ?? ConstantsHelper.ProjectName;
+            if ((name == ConstantsHelper.ProjectName && !AllLogSystems.ContainsKey(ConstantsHelper.ProjectName))
                || name == null
                || String.IsNullOrEmpty(name))
             {
@@ -64,8 +65,9 @@ namespace GrasshopperRadianceLinuxConnector
 
         public Dictionary<string, LogHelper> LogHelpers { get; set; }
 
-        public static LogHelper CreateLogHelper(string name = "GrasshopperRadianceLinuxConnector", bool overwrite = false)
+        public static LogHelper CreateLogHelper(string name = null, bool overwrite = false)
         {
+            name = name ?? ConstantsHelper.ProjectName;
             LogHelper logHelper = new LogHelper()
             {
                 Name = name

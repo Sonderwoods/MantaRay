@@ -8,10 +8,10 @@ using System.Threading.Tasks;
 using Grasshopper.Kernel;
 using Grasshopper.Kernel.Data;
 using Grasshopper.Kernel.Types;
-using GrasshopperRadianceLinuxConnector.Components;
+using MantaRay.Components;
 using Rhino.Geometry;
 
-namespace GrasshopperRadianceLinuxConnector
+namespace MantaRay
 {
     public class GH_MeshToObj : GH_Template
     {
@@ -168,7 +168,7 @@ namespace GrasshopperRadianceLinuxConnector
 
                 StringBuilder geometryFile = new StringBuilder();
 
-                geometryFile.Append("# Written with GrasshopperRadianceLinuxConnector/GH_MeshToRad\r\n");
+                geometryFile.Append($"# Written with {ConstantsHelper.ProjectName} plugin/GH_MeshToRad\r\n");
 
                 geometryFile.AppendFormat("g {0}\r\n", name);
 
