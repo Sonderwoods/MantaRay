@@ -7,7 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace GrasshopperRadianceLinuxConnector
+namespace MantaRay
 {
     public static class PointsHelper
     {

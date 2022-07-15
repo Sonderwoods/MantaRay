@@ -1,7 +1,7 @@
 ﻿using Grasshopper.Kernel;
 using Grasshopper.Kernel.Data;
 using Grasshopper.Kernel.Types;
-using GrasshopperRadianceLinuxConnector.Components;
+using MantaRay.Components;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -12,7 +12,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Timer = System.Timers.Timer;
 
-namespace GrasshopperRadianceLinuxConnector
+namespace MantaRay
 {
 
 
@@ -32,6 +32,8 @@ namespace GrasshopperRadianceLinuxConnector
         public AestheticPhase PhaseForColors { get; set; } = GH_TemplateAsync.AestheticPhase.NotRunning;
 
         Stopwatch stopwatch = new Stopwatch();
+
+        public List<string> inCommands { get; set; }
 
         public string LogDescriptionDynamic { get; set; }
         public string LogDescriptionStatic { get; set; }
@@ -238,6 +240,15 @@ namespace GrasshopperRadianceLinuxConnector
                 {
                     RunInput = false;
                 }
+            }
+
+            IGH_Param cmdParam = this.Params.Input.FirstOrDefault();
+
+            if (cmdParam != null)
+            {
+                inCommands = DA.FetchTree<GH_String>(0).FlattenData().Select(v => v.Value).ToList();
+
+           
             }
 
             if (!RunInput)

@@ -1,5 +1,5 @@
 ﻿using Grasshopper.Kernel;
-using GrasshopperRadianceLinuxConnector.Components;
+using MantaRay.Components;
 using Rhino.Display;
 using Rhino.Geometry;
 using Rhino.UI;
@@ -11,7 +11,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
-namespace GrasshopperRadianceLinuxConnector
+namespace MantaRay
 {
     public class HUD
     {

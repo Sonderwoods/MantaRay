@@ -5,9 +5,9 @@ using System.Linq;
 using Grasshopper.Kernel;
 using Grasshopper.Kernel.Parameters;
 using Grasshopper.Kernel.Types;
-using GrasshopperRadianceLinuxConnector.Components;
+using MantaRay.Components;
 
-namespace GrasshopperRadianceLinuxConnector.Components
+namespace MantaRay.Components
 {
     public class GH_Globals : GH_Template, IGH_VariableParameterComponent
     {

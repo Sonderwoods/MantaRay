@@ -11,7 +11,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace GrasshopperRadianceLinuxConnector
+namespace MantaRay
 {
     /// <summary>
     /// This class sets colors for the grasshopper components
@@ -135,7 +135,7 @@ namespace GrasshopperRadianceLinuxConnector
 
                     if (Owner.Params.Input[i] is Param_Boolean)
                     {
-                        bool allTrue = source.VolatileData.AllData(false).All(b => ((GH_Boolean)b).IsValid && ((GH_Boolean)b).Value == true);
+                        bool allTrue = source.VolatileData.AllData(false).All(b => b is GH_Boolean v && v.IsValid && v.Value == true);
                         RenderBox(graphics, fillBool[allTrue ? 0 : 1], edgeBool[allTrue ? 0 : 1], guid);
                     }
                     else
@@ -225,7 +225,7 @@ namespace GrasshopperRadianceLinuxConnector
                 {
                     if (wirePath == null) continue;
 
-                    if (param is Param_Boolean && source.VolatileData.AllData(false).All(b => ((GH_Boolean)b).IsValid && ((GH_Boolean)b).Value == true))
+                    if (param is Param_Boolean && source.VolatileData.AllData(false).All(b => b is GH_Boolean c && c.IsValid && c.Value == true))
                     {
                         graphics.DrawPath(source.Attributes.Selected || Owner.Attributes.Selected ? penTrueSelected : penTrueUnselected, wirePath);
                     }

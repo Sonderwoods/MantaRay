@@ -7,10 +7,10 @@ using GH_IO.Serialization;
 using Grasshopper.Kernel;
 using Grasshopper.Kernel.Data;
 using Grasshopper.Kernel.Types;
-using GrasshopperRadianceLinuxConnector.Components;
+using MantaRay.Components;
 using Rhino.Geometry;
 
-namespace GrasshopperRadianceLinuxConnector.Components
+namespace MantaRay.Components
 {
     public class GH_Download : GH_Template_SaveStrings
     {

@@ -9,7 +9,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
-namespace GrasshopperRadianceLinuxConnector
+namespace MantaRay
 {
     public abstract class GH_Template_SaveStrings : GH_Template, IClearData
     {

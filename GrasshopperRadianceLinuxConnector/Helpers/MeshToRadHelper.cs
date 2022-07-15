@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Rhino.Geometry;
 
-namespace GrasshopperRadianceLinuxConnector
+namespace MantaRay
 {
     public static class MeshToRadHelper
     {

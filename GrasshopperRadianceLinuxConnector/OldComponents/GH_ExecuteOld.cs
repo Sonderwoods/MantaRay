@@ -5,10 +5,10 @@ using GH_IO.Serialization;
 using Grasshopper.Kernel;
 using Grasshopper.Kernel.Data;
 using Grasshopper.Kernel.Types;
-using GrasshopperRadianceLinuxConnector.Components;
+using MantaRay.Components;
 using Rhino.Geometry;
 
-namespace GrasshopperRadianceLinuxConnector
+namespace MantaRay
 {
     [Obsolete]
     public class GH_ExecuteOld : GH_Template

@@ -9,9 +9,9 @@ using System.Diagnostics;
 using Grasshopper.Kernel.Data;
 using Grasshopper.Kernel.Types;
 using System.Linq;
-using GrasshopperRadianceLinuxConnector.Components;
+using MantaRay.Components;
 
-namespace GrasshopperRadianceLinuxConnector.Components
+namespace MantaRay.Components
 {
     public class GH_Connect : GH_Template
     {
@@ -59,6 +59,10 @@ namespace GrasshopperRadianceLinuxConnector.Components
         /// <param name="DA">The DA object is used to retrieve from inputs and store in outputs.</param>
         protected override void SolveInstance(IGH_DataAccess DA)
         {
+
+            ManPageHelper.Initiate();
+
+
             // Moving to back will make sure this expires/runs before other objects when you load the file
             Grasshopper.Instances.ActiveCanvas.Document.ArrangeObject(this, GH_Arrange.MoveToBack);
 
@@ -262,6 +266,9 @@ namespace GrasshopperRadianceLinuxConnector.Components
             if (SSH_Helper.CheckConnection() != SSH_Helper.ConnectionDetails.Connected)
                 AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Not Connected.\n\nTry restarting SSH in your bash with:\nsudo service ssh start");
 
+
+            
+
         }
 
         
@@ -353,7 +360,7 @@ namespace GrasshopperRadianceLinuxConnector.Components
             Button cancel = new Button() { Text = "Cancel", Left = 270, Width = 120, Top = 160, Height = 40, DialogResult = DialogResult.Cancel };
 
 
-            Label label2 = new Label() { Font = smallFont, Left = 50, Top = 270, Width=340, Height = 60, Text = "Part of the GrasshopperRadianceLinuxConnector\n" +
+            Label label2 = new Label() { Font = smallFont, Left = 50, Top = 270, Width=340, Height = 60, Text = $"Part of the {ConstantsHelper.ProjectName} plugin\n" +
                 "(C) Mathias Sønderskov Schaltz 2022" };
             prompt.Controls.AddRange(new Control[] { label, passwordTextBox, connectButton, cancel, label2 });
 

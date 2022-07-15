@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace GrasshopperRadianceLinuxConnector
+namespace MantaRay
 {
     public static class StringHelper
     {
@@ -17,6 +17,23 @@ namespace GrasshopperRadianceLinuxConnector
         public static string ToReadableAgeString(this TimeSpan span)
         {
             return string.Format("{0:0}", span.Days / 365.25);
+        }
+
+        public static string Cleaned(this string s)
+        {
+
+            StringBuilder sb = new StringBuilder();
+            foreach (char c in s)
+            {
+                if ((c >= '0' && c <= '9') || (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || c == '.' || c == '_')
+                {
+                    sb.Append(c);
+                }
+                else
+                    sb.Append('_');
+            }
+            return sb.ToString();
+
         }
 
 

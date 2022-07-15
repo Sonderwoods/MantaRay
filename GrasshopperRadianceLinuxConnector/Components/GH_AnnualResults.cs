@@ -8,10 +8,10 @@ using System.Threading;
 using System.Threading.Tasks;
 using GH_IO.Serialization;
 using Grasshopper.Kernel;
-using GrasshopperRadianceLinuxConnector.Components;
+using MantaRay.Components;
 using Rhino.Geometry;
 
-namespace GrasshopperRadianceLinuxConnector.Components
+namespace MantaRay.Components
 {
     public class GH_AnnualResults : GH_Template_SaveStrings
     {

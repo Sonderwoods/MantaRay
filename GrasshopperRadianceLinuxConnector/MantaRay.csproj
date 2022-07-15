@@ -29,6 +29,7 @@
   </ItemGroup>
   
   <ItemGroup>
+    <Reference Include="System.Net.Http" />
     <Reference Include="System.Windows.Forms" />
   </ItemGroup>
   
@@ -54,7 +55,7 @@
   </PropertyGroup>
   
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">
-    <Exec Command="Copy &quot;$(TargetPath)&quot; &quot;C:\Users\mm1013\AppData\Roaming\Grasshopper\Libraries\Radiance\GrasshopperRadianceLinuxConnector.gha&quot;" />
+    <Exec Command="XCOPY &quot;$(OutDir)&quot; &quot;%25appdata%25\Grasshopper\Libraries\MantaRay&quot; /R /Y /I&#xD;&#xA;XCOPY &quot;$(OutDir)\MantaRay.gha&quot; &quot;%25appdata%25\Grasshopper\Libraries\MantaRay\MantaRay.gha&quot; /R /Y /I" />
   </Target>
 
 </Project>

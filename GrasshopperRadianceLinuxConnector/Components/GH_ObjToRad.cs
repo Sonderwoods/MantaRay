@@ -9,9 +9,9 @@ using Grasshopper.Kernel.Data;
 using Grasshopper.Kernel.Types;
 using System.Drawing;
 using GH_IO.Serialization;
-using GrasshopperRadianceLinuxConnector.Components;
+using MantaRay.Components;
 
-namespace GrasshopperRadianceLinuxConnector.Components
+namespace MantaRay.Components
 {
     public class GH_ObjToRad : GH_Template_SaveStrings
     {

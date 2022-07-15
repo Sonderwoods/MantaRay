@@ -8,7 +8,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace GrasshopperRadianceLinuxConnector
+namespace MantaRay
 {
     /// <summary>
     /// This class sets colors for the grasshopper components
