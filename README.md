@@ -1,4 +1,4 @@
-## GrasshopperRadianceLinuxConnector
+## Project MantaRay (GrasshopperRadianceLinuxConnector)
 An educational tool to work directly with [Radiance](https://www.radiance-online.org/) through [Grasshopper](https://www.grasshopper3d.com/).
 This allows you to utilize all the linux native Radiance commands including the GUI tools such as rvu, bsdfviewer etc.
 
@@ -54,6 +54,11 @@ Async SSH Components in place (based on the [speckle async](https://github.com/s
 - Input a perspective named view from Rhino or use the active viewport
 - Outputs the data for a viewfile. Can be echoed into a .vf file.
 - Previews your camera in Rhino viewport in red. Green if the component is selected.
+
+#### ManPages
+![ManPage](https://user-images.githubusercontent.com/19936679/179314601-eb0dc6d2-f30a-4bd6-bdc4-8a021f8c2f39.gif)
+- ManPages show the help files relevant to your promt
+- They are live loaded from https://floyd.lbl.gov/radiance/ 
 
 
 ## Todo:
