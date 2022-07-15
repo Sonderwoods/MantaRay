@@ -135,7 +135,7 @@ namespace MantaRay
 
                     if (Owner.Params.Input[i] is Param_Boolean)
                     {
-                        bool allTrue = source.VolatileData.AllData(false).All(b => ((GH_Boolean)b).IsValid && ((GH_Boolean)b).Value == true);
+                        bool allTrue = source.VolatileData.AllData(false).All(b => b is GH_Boolean v && v.IsValid && v.Value == true);
                         RenderBox(graphics, fillBool[allTrue ? 0 : 1], edgeBool[allTrue ? 0 : 1], guid);
                     }
                     else
