@@ -69,11 +69,12 @@ namespace MantaRay
         {
             base.AppendAdditionalMenuItems(menu);
 
-            if (PhaseForColors == AestheticPhase.Running)
-            {
-                Menu_AppendItem(menu, "Cancel and kill linux", (s, e) => { LinuxKill(); RequestCancellation(); })
-                .ToolTipText = "Currently not working... >_< Instead open bash and kill the pid with kill <id>";
-            }
+            var m = Menu_AppendItem(menu, "Set Log details...", (s, e) => { SetLogDetails(); }, true);
+            m.ToolTipText = "Opens a dialog with settings for local logging";
+           
+
+            Menu_AppendSeparator(menu);
+
 
             Menu_AppendItem(menu, "Add prefix", (s, e) => { addPrefix = !addPrefix; UpdateNickNames(); ExpireSolution(true); }, true, addPrefix)
                 .ToolTipText = "Adding a prefix with export settings for SSH. This is on by default";
@@ -83,12 +84,45 @@ namespace MantaRay
                 true, suppressWarnings)
                 .ToolTipText = "By default, the ran parameter will only output true if there was no warnings. " +
                 "You can however suppress this and make ran_output = run_input";
-            Menu_AppendItem(menu, "Set Log details", (s, e) => { SetLogDetails(); }, true)
-                .ToolTipText = "Opens a dialog with settings for local logging";
+
+
+            Menu_AppendSeparator(menu);
+
+
             Menu_AppendItem(menu, "Clear cached stdout", (s, e) => { ClearCachedData(); ExpireSolution(true); }, !RunInput)
                 .ToolTipText = "Removes the data saved in the component.";
             Menu_AppendItem(menu, "Clear cached data in ALL components", (s, e) => { GH_Template_SaveStrings.ClearAllCachedData(); ExpireSolution(true); }, !RunInput)
                 .ToolTipText = "Removes the data saved in the component.";
+
+            if (PhaseForColors == AestheticPhase.Running)
+            {
+                Menu_AppendItem(menu, "Cancel and kill linux", (s, e) => { LinuxKill(); RequestCancellation(); })
+                .ToolTipText = "Currently not working... >_< Instead open bash and kill the pid with kill <id>";
+            }
+
+            HashSet<string> radProgs = new HashSet<string>();
+
+            foreach (var cmd in inCommands)
+            {
+                foreach (var prog in ManPageHelper.Instance.AllRadiancePrograms.Keys)
+                {
+                    if (cmd.Contains(prog))
+                    {
+                        radProgs.Add(prog);
+
+                    }
+                }
+            }
+
+            if (radProgs.Count > 0)
+            {
+                Menu_AppendSeparator(menu);
+            }
+
+            foreach (var item in radProgs)
+            {
+                Menu_AppendItem(menu, $"ManPage: {item}...", (s, e) => { ManPageHelper.Instance.OpenManual(item); });
+            }
         }
 
         public void ClearCachedData()

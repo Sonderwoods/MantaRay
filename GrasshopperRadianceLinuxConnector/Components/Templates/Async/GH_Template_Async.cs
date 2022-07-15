@@ -33,6 +33,8 @@ namespace MantaRay
 
         Stopwatch stopwatch = new Stopwatch();
 
+        public List<string> inCommands { get; set; }
+
         public string LogDescriptionDynamic { get; set; }
         public string LogDescriptionStatic { get; set; }
         public string LogName { get; set; }
@@ -238,6 +240,15 @@ namespace MantaRay
                 {
                     RunInput = false;
                 }
+            }
+
+            IGH_Param cmdParam = this.Params.Input.FirstOrDefault();
+
+            if (cmdParam != null)
+            {
+                inCommands = DA.FetchTree<GH_String>(0).FlattenData().Select(v => v.Value).ToList();
+
+           
             }
 
             if (!RunInput)

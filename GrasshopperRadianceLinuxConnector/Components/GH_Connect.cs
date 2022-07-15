@@ -59,6 +59,10 @@ namespace MantaRay.Components
         /// <param name="DA">The DA object is used to retrieve from inputs and store in outputs.</param>
         protected override void SolveInstance(IGH_DataAccess DA)
         {
+
+            ManPageHelper.Initiate();
+
+
             // Moving to back will make sure this expires/runs before other objects when you load the file
             Grasshopper.Instances.ActiveCanvas.Document.ArrangeObject(this, GH_Arrange.MoveToBack);
 
@@ -261,6 +265,9 @@ namespace MantaRay.Components
 
             if (SSH_Helper.CheckConnection() != SSH_Helper.ConnectionDetails.Connected)
                 AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Not Connected.\n\nTry restarting SSH in your bash with:\nsudo service ssh start");
+
+
+            
 
         }
 
