@@ -40,9 +40,13 @@ namespace MantaRay
         public GH_PaletteStyle ColorSelected { get; set; }
 
         Pen penTrueSelected = new Pen(Color.FromArgb(255, Color.DarkGreen), 4f);
+        Pen penTrueSelectedTree = new Pen(Color.FromArgb(255, Color.DarkGreen), 4f) { DashStyle = DashStyle.Dash };
         Pen penTrueUnselected = new Pen(Color.FromArgb(80, Color.DarkGreen), 4f);
+        Pen penTrueUnselectedTree = new Pen(Color.FromArgb(80, Color.DarkGreen), 4f) {  DashStyle = DashStyle.Dash};
         Pen penFalseSelected = new Pen(Color.FromArgb(255, Color.DarkRed), 4f);
+        Pen penFalseSelectedTree = new Pen(Color.FromArgb(255, Color.DarkRed), 4f) { DashStyle = DashStyle.Dash };
         Pen penFalseUnselected = new Pen(Color.FromArgb(80, Color.DarkRed), 4f);
+        Pen penFalseUnselectedTree = new Pen(Color.FromArgb(80, Color.DarkRed), 4f) { DashStyle = DashStyle.Dash };
 
 
         /// <summary>
@@ -133,17 +137,46 @@ namespace MantaRay
                 {
                     Guid guid = source.InstanceGuid;
 
-                    if (Owner.Params.Input[i] is Param_Boolean)
+                    bool? isPos = IsPositiveParam(Owner.Params.Input[i]);
+
+                    if (isPos != null)
                     {
-                        bool allTrue = source.VolatileData.AllData(false).All(b => b is GH_Boolean v && v.IsValid && v.Value == true);
-                        RenderBox(graphics, fillBool[allTrue ? 0 : 1], edgeBool[allTrue ? 0 : 1], guid);
+                        RenderBox(graphics, fillBool[isPos.Value ? 0 : 1], edgeBool[isPos.Value ? 0 : 1], guid);
                     }
                     else
                     {
                         RenderBox(graphics, fill[i], edge[i], guid);
                     }
 
+
                 }
+            }
+        }
+
+        private bool? IsPositiveParam(IGH_Param param)
+        {
+            switch (param)
+            {
+                case Param_Boolean p:
+                    return p.VolatileData.AllData(false).All(b => b is GH_Boolean v && v.IsValid && v.Value == true);
+                    
+ 
+                case Param_String p:
+                    return p.VolatileData.AllData(false)
+                        .All(b => b is GH_String v && v.IsValid 
+                        && (string.Equals(v.Value, "true", StringComparison.InvariantCultureIgnoreCase)
+                        || (double.TryParse(v.Value, out double r) && r > 1.0)));
+
+                case Param_Number p:
+                    return p.VolatileData.AllData(false)
+                        .All(b => b is GH_Number v && v.IsValid && v.Value >= 1.0);
+
+                case Param_Integer p:
+                    return p.VolatileData.AllData(false)
+                        .All(b => b is GH_Integer v && v.IsValid && v.Value >= 1);
+
+                default:
+                    return null;
             }
         }
 
@@ -225,18 +258,31 @@ namespace MantaRay
                 {
                     if (wirePath == null) continue;
 
-                    if (param is Param_Boolean && source.VolatileData.AllData(false).All(b => b is GH_Boolean c && c.IsValid && c.Value == true))
+                    bool? isPos = IsPositiveParam(param);
+
+                    if(isPos.HasValue)
                     {
-                        graphics.DrawPath(source.Attributes.Selected || Owner.Attributes.Selected ? penTrueSelected : penTrueUnselected, wirePath);
-                    }
-                    else if (param is Param_Boolean)
-                    {
-                        graphics.DrawPath(source.Attributes.Selected || Owner.Attributes.Selected ? penFalseSelected : penFalseUnselected, wirePath);
+                        if(isPos.Value)
+                        {
+                            if(param.Access == GH_ParamAccess.tree && param.VolatileData.PathCount > 1)
+                            graphics.DrawPath(source.Attributes.Selected || Owner.Attributes.Selected ? penTrueSelectedTree : penTrueUnselectedTree, wirePath);
+                            else
+
+                            graphics.DrawPath(source.Attributes.Selected || Owner.Attributes.Selected ? penTrueSelected : penTrueUnselected, wirePath);
+                        }
+                        else
+                        {
+                            if (param.Access == GH_ParamAccess.tree && param.VolatileData.PathCount > 1)
+                                graphics.DrawPath(source.Attributes.Selected || Owner.Attributes.Selected ? penFalseSelectedTree : penFalseUnselectedTree, wirePath);
+                            else
+                                graphics.DrawPath(source.Attributes.Selected || Owner.Attributes.Selected ? penFalseSelected : penFalseUnselected, wirePath);
+                        }
                     }
                     else
                     {
                         graphics.DrawPath(source.Attributes.Selected || Owner.Attributes.Selected ? wirePenSelected : wirePenUnselected, wirePath);
                     }
+
                     //wirePen.Dispose();
 
 

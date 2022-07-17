@@ -90,7 +90,7 @@ namespace MantaRay
             {
                 Width = 960,
                 Height = 970,
-                FormBorderStyle = FormBorderStyle.SizableToolWindow,
+                FormBorderStyle = FormBorderStyle.Sizable,
                 Text = $"Man: {name}",
                 StartPosition = FormStartPosition.CenterScreen,
                 BackColor = Color.FromArgb(255, 195, 195, 195),
