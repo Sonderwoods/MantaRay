@@ -1,1 +1,0 @@
-rfluxmtx -I -aa 0.0 -ab 1 -ad 15000 -as 2048 -c 1 -dc 0.5 -dp 256 -dr 1 -ds 0.25 -dt 0.25 -faf -lr 6 -lw 6.67e-07 -ss 0.7 -st 0.5 -y 16 - "sky.dome" -i """scene.oct""" < "grid.pts" | rmtxop -ff - "sky.mtx" > "results.ill"
