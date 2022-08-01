@@ -19,7 +19,7 @@ namespace MantaRay
     /// </summary>
     public class GH_ColorAttributes_Async : GH_ComponentAttributes
     {
-        GH_TemplateAsync component;
+        readonly GH_TemplateAsync component;
 
         public GH_ColorAttributes_Async(IGH_Component component)
           : base(component)
@@ -39,14 +39,43 @@ namespace MantaRay
         public GH_PaletteStyle ColorUnselected { get; set; }
         public GH_PaletteStyle ColorSelected { get; set; }
 
-        Pen penTrueSelected = new Pen(Color.FromArgb(255, Color.DarkGreen), 4f);
-        Pen penTrueSelectedTree = new Pen(Color.FromArgb(255, Color.DarkGreen), 4f) { DashStyle = DashStyle.Dash };
-        Pen penTrueUnselected = new Pen(Color.FromArgb(80, Color.DarkGreen), 4f);
-        Pen penTrueUnselectedTree = new Pen(Color.FromArgb(80, Color.DarkGreen), 4f) {  DashStyle = DashStyle.Dash};
-        Pen penFalseSelected = new Pen(Color.FromArgb(255, Color.DarkRed), 4f);
-        Pen penFalseSelectedTree = new Pen(Color.FromArgb(255, Color.DarkRed), 4f) { DashStyle = DashStyle.Dash };
-        Pen penFalseUnselected = new Pen(Color.FromArgb(80, Color.DarkRed), 4f);
-        Pen penFalseUnselectedTree = new Pen(Color.FromArgb(80, Color.DarkRed), 4f) { DashStyle = DashStyle.Dash };
+
+
+        public enum PenWireTypes
+        {
+            None = 0,
+            Tree = 1,
+            Selected = 2,
+            True = 4,
+            Green = 8
+        }
+
+        public Pen GetPen(PenWireTypes type) => pens[(int)type];
+
+        private readonly Pen[] pens = new Pen[]
+        {
+            new Pen(Color.FromArgb(80, Color.DarkBlue), 4f), //BluePenFalseUnselected
+            new Pen(Color.FromArgb(80, Color.DarkBlue), 4f) { DashStyle = DashStyle.Dash }, //BluePenFalseUnselectedTree
+            new Pen(Color.FromArgb(255, Color.DarkBlue), 4f), //BluePenFalseSelected
+            new Pen(Color.FromArgb(255, Color.DarkBlue), 4f) { DashStyle = DashStyle.Dash }, //BluePenFalseSelectedTree
+
+            new Pen(Color.FromArgb(80, Color.DarkBlue), 4f), //BluePenTrueUnselected
+            new Pen(Color.FromArgb(80, Color.DarkBlue), 4f) { DashStyle = DashStyle.Dash }, //BluePenTrueUnselectedTree
+            new Pen(Color.FromArgb(255, Color.DarkBlue), 4f), //BluePenTrueSelected
+            new Pen(Color.FromArgb(255, Color.DarkBlue), 4f) { DashStyle = DashStyle.Dash }, //BluePenTrueSelectedTree
+
+
+            new Pen(Color.FromArgb(80, Color.DarkRed), 4f), //penFalseUnselected
+            new Pen(Color.FromArgb(80, Color.DarkRed), 4f) { DashStyle = DashStyle.Dash }, //penFalseUnselectedTree
+            new Pen(Color.FromArgb(255, Color.DarkRed), 4f), //penFalseSelected
+            new Pen(Color.FromArgb(255, Color.DarkRed), 4f) { DashStyle = DashStyle.Dash }, //penFalseSelectedTree
+
+            new Pen(Color.FromArgb(80, Color.DarkGreen), 4f), //penTrueUnselected
+            new Pen(Color.FromArgb(80, Color.DarkGreen), 4f) { DashStyle = DashStyle.Dash }, //penTrueUnselectedTree
+            new Pen(Color.FromArgb(255, Color.DarkGreen), 4f), // penTrueSelected
+            new Pen(Color.FromArgb(255, Color.DarkGreen), 4f) { DashStyle = DashStyle.Dash }, //penTrueSelectedTree
+            
+        };
 
 
         /// <summary>
@@ -159,11 +188,11 @@ namespace MantaRay
             {
                 case Param_Boolean p:
                     return p.VolatileData.AllData(false).All(b => b is GH_Boolean v && v.IsValid && v.Value == true);
-                    
- 
+
+
                 case Param_String p:
                     return p.VolatileData.AllData(false)
-                        .All(b => b is GH_String v && v.IsValid 
+                        .All(b => b is GH_String v && v.IsValid
                         && (string.Equals(v.Value, "true", StringComparison.InvariantCultureIgnoreCase)
                         || (double.TryParse(v.Value, out double r) && r > 1.0)));
 
@@ -214,27 +243,14 @@ namespace MantaRay
         /// <param name="graphics"></param>
         private void DrawWires(GH_Canvas canvas, Graphics graphics)
         {
-            Pen[] pensSelected = new[]
-                {
-                    new Pen(Color.DarkBlue, 5f),
-                    new Pen(Color.Green, 3f)
-                };
-            Pen[] pensUnselected = new[]
+            //Pen penSelected = new Pen(Color.DarkBlue, 5f);
+            //Pen penUnselected = new Pen(Color.FromArgb(120, Color.DarkBlue), 4f);
 
-                {
-                    new Pen(Color.FromArgb(120, Color.DarkBlue), 4f),
-                    new Pen(Color.FromArgb(120, Color.Green), 2f)
-                };
+            DrawPath(canvas, graphics, Owner.Params.Input[0], PenWireTypes.None); // First input wire
+            DrawPath(canvas, graphics, Owner.Params.Input[1], PenWireTypes.Green); // Second input wire
 
-            for (int i = 0; i < 2; i++)
-            {
-                DrawPath(canvas, graphics, Owner.Params.Input[i], pensSelected[i], pensUnselected[i]);
-            }
-
-            pensSelected[0].Dispose();
-            pensSelected[1].Dispose();
-            pensUnselected[0].Dispose();
-            pensUnselected[1].Dispose();
+            //penSelected.Dispose();
+            //penUnselected.Dispose();
 
         }
 
@@ -244,7 +260,7 @@ namespace MantaRay
         /// <param name="canvas"></param>
         /// <param name="graphics"></param>
         /// <param name="param"></param>
-        private void DrawPath(GH_Canvas canvas, Graphics graphics, IGH_Param param, Pen wirePenSelected, Pen wirePenUnselected)
+        private void DrawPath(GH_Canvas canvas, Graphics graphics, IGH_Param param, PenWireTypes penTypes)
         {
             PointF p1 = param.Attributes.InputGrip;
 
@@ -260,28 +276,25 @@ namespace MantaRay
 
                     bool? isPos = IsPositiveParam(param);
 
-                    if(isPos.HasValue)
-                    {
-                        if(isPos.Value)
-                        {
-                            if(param.Access == GH_ParamAccess.tree && param.VolatileData.PathCount > 1)
-                            graphics.DrawPath(source.Attributes.Selected || Owner.Attributes.Selected ? penTrueSelectedTree : penTrueUnselectedTree, wirePath);
-                            else
 
-                            graphics.DrawPath(source.Attributes.Selected || Owner.Attributes.Selected ? penTrueSelected : penTrueUnselected, wirePath);
-                        }
-                        else
-                        {
-                            if (param.Access == GH_ParamAccess.tree && param.VolatileData.PathCount > 1)
-                                graphics.DrawPath(source.Attributes.Selected || Owner.Attributes.Selected ? penFalseSelectedTree : penFalseUnselectedTree, wirePath);
-                            else
-                                graphics.DrawPath(source.Attributes.Selected || Owner.Attributes.Selected ? penFalseSelected : penFalseUnselected, wirePath);
-                        }
-                    }
-                    else
+                    if (isPos.HasValue && isPos.Value)
                     {
-                        graphics.DrawPath(source.Attributes.Selected || Owner.Attributes.Selected ? wirePenSelected : wirePenUnselected, wirePath);
+                        penTypes |= PenWireTypes.True;
                     }
+
+                    if(source.Attributes.Selected || Owner.Attributes.Selected)
+                    {
+                        penTypes |= PenWireTypes.Selected;
+                    }
+
+                    if(param.Access == GH_ParamAccess.tree && param.VolatileData.PathCount > 1)
+                    {
+                        penTypes |= PenWireTypes.Tree;
+                    }
+
+                    graphics.DrawPath(GetPen(penTypes), wirePath);
+
+
 
                     //wirePen.Dispose();
 
