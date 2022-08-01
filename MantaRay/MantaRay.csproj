@@ -4,8 +4,13 @@
     <TargetFramework>net48</TargetFramework>
     <Version>1.0</Version>
     <Title>GrasshopperRadianceLinuxConnector</Title>
-    <Description>Description of GrasshopperRadianceLinuxConnector</Description>
+    <Description>A framework to connect Grasshopper to Radiance through SSH</Description>
     <TargetExt>.gha</TargetExt>
+    <Authors>Mathias Sønderskov Schaltz</Authors>
+    <RepositoryType>git</RepositoryType>
+    <RepositoryUrl>https://github.com/Sonderwoods/MantaRay</RepositoryUrl>
+    <AssemblyVersion>1.0.0.1</AssemblyVersion>
+    <FileVersion>1.0.0.1</FileVersion>
   </PropertyGroup>
 	
   <ItemGroup>
