@@ -1,1 +1,0 @@
-gendaymtx -n -D sunpath.mtx -M suns.mod -O0 -r 0.0 -v sky.wea

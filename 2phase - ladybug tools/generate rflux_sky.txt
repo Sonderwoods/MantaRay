@@ -1,2 +1,0 @@
-honeybee-radiance sky skydome --name rflux_sky.sky --sky-density 1
-https://github.com/ladybug-tools/honeybee-radiance/blob/ffb8d8df513318ea5ef6643024dc411ef2027388/honeybee_radiance/lightsource/sky/skydome.py

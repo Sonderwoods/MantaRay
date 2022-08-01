@@ -1,1 +1,0 @@
-oconv -f model/scene/envelope.mat model/scene/envelope.rad model/scene/shades.mat model/scene/shades.rad model/aperture/aperture.mat model/aperture/aperture.rad > scene.oct
