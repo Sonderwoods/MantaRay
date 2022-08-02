@@ -17,10 +17,11 @@ namespace MantaRay.Components
         {
         }
 
-        Point3d[] PointsTo = null;
-        Point3d vp = default(Point3d);
-        BoundingBox clippingBox = default;
-        double length = 1.0;
+        readonly List<Point3d[]> PointsTo = new List<Point3d[]>();
+        readonly List<Point3d> Vp = new List<Point3d>();
+        private BoundingBox clippingBox = default;
+        readonly List<double> Length = new List<double>();
+        readonly List<string> Names = new List<string>();
 
 
 
@@ -42,36 +43,55 @@ namespace MantaRay.Components
             int index = Rhino.RhinoDoc.ActiveDoc.NamedViews.FindByName(DA.Fetch<string>("Viewport"));
             Rhino.DocObjects.ViewportInfo vpInfo;
 
+            if (this.RunCount == 0)
+            {
+                PointsTo.Clear();
+                Vp.Clear();
+                Length.Clear();
+                Names.Clear();
+                clippingBox = new BoundingBox();
+
+            }
+
 
 
             if (index == -1)
             {
 
                 vpInfo = new Rhino.DocObjects.ViewportInfo(Rhino.RhinoDoc.ActiveDoc.Views.ActiveView.ActiveViewport);
-                Message = Rhino.RhinoDoc.ActiveDoc.Views.ActiveView.ActiveViewport.Name;
+                Names.Add(Rhino.RhinoDoc.ActiveDoc.Views.ActiveView.ActiveViewport.Name);
             }
             else
             {
 
                 vpInfo = Rhino.RhinoDoc.ActiveDoc.NamedViews[index].Viewport;
-
-                Message = DA.Fetch<string>("Viewport");
+                Names.Add(DA.Fetch<string>("Viewport"));
+                
             }
 
-            vp = vpInfo.CameraLocation;
+            Message = string.Join(", ", Names);
+
+            var _vp = vpInfo.CameraLocation;
+            Vp.Add(_vp);
 
             Vector3d vu = vpInfo.CameraUp;
             Vector3d vd = vpInfo.CameraDirection;
             vpInfo.GetCameraAngles(out _, out double vv, out double vh);
 
-            length = 10.0.FromMeter();
+            double _length = 10.0.FromMeter();
+            Length.Add(_length);
 
 
-            PointsTo = vpInfo.GetFarPlaneCorners();
-            for (int i = 0; i < PointsTo.Length; i++)
+
+            Point3d[] _pointsTo = vpInfo.GetFarPlaneCorners();
+
+            for (int i = 0; i < _pointsTo.Length; i++)
             {
-                PointsTo[i] = vp + (PointsTo[i] - vp) / (PointsTo[i] - vp).Length * length;
+                _pointsTo[i] = _vp + (_pointsTo[i] - _vp) / (_pointsTo[i] - _vp).Length * _length;
             }
+
+            PointsTo.Add(_pointsTo);
+
             System.Drawing.Rectangle port = vpInfo.GetScreenPort();
             DA.SetData(1, port.Width / (double)port.Height);
 
@@ -101,11 +121,15 @@ namespace MantaRay.Components
 
             if (vpInfo.IsPerspectiveProjection)
             {
-                if (PointsTo.Length > 2)
-                    clippingBox = new BoundingBox(new Point3d[] { PointsTo[0], PointsTo[1], PointsTo[2], vp });
+                if (_pointsTo.Length > 2)
+                {
+                    clippingBox.Union(new BoundingBox(new Point3d[] { _pointsTo[0], _pointsTo[1], _pointsTo[2], _vp }));
+
+
+                }
 
                 string output = $"rvu -vtv " +
-                $"-vp {vp.X} {vp.Y} {vp.Z} " +
+                $"-vp {_vp.X} {_vp.Y} {_vp.Z} " +
                 $"-vd {vd.X} {vd.Y} {vd.Z} " +
                 $"-vu {vu.X} {vu.Y} {vu.Z} " +
                 $"-vh {vh * 2.0 * 180.0 / Math.PI:0.000} " +
@@ -130,8 +154,12 @@ namespace MantaRay.Components
 
         public override void DrawViewportWires(IGH_PreviewArgs args)
         {
+            for (int i = 0; i < Vp.Count; i++)
+            {
+                DrawCamera(Vp[i], PointsTo[i], this.Attributes.Selected ? System.Drawing.Color.DarkGreen : System.Drawing.Color.DarkRed, Names[i], args);
+            }
 
-            DrawCamera(vp, PointsTo, this.Attributes.Selected ? System.Drawing.Color.DarkGreen : System.Drawing.Color.DarkRed, args);
+            
 
             base.DrawViewportWires(args);
         }
@@ -143,11 +171,11 @@ namespace MantaRay.Components
         /// <param name="endPts">the quad end points. TODO: Change to view angle and auto generate...</param>
         /// <param name="color"></param>
         /// <param name="args"></param>
-        public void DrawCamera(Point3d startPt, Point3d[] endPts, System.Drawing.Color color, IGH_PreviewArgs args)
+        public void DrawCamera(Point3d startPt, Point3d[] endPts, System.Drawing.Color color, string name, IGH_PreviewArgs args)
         {
-            if (args.Display.Viewport.Name == Message)
+            if (args.Display.Viewport.Name == name)
                 return;
-            
+
 
             Point3d avgPoint = default;
             if (endPts != null && endPts.Length > 0)
@@ -164,7 +192,7 @@ namespace MantaRay.Components
                 }
 
                 args.Display.DrawLine(startPt, (avgPoint / endPts.Length), color, 3);
-                args.Display.DrawDot(startPt, Message, System.Drawing.Color.Black, this.Attributes.Selected ? System.Drawing.Color.Green : System.Drawing.Color.Red);
+                args.Display.DrawDot(startPt, name, System.Drawing.Color.Black, this.Attributes.Selected ? System.Drawing.Color.Green : System.Drawing.Color.Red);
             }
         }
 
