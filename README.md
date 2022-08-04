@@ -8,7 +8,7 @@ This allows you to utilize all the linux native Radiance commands including the 
 In pure Linux fashion the Grasshopper components will pipe the results to the next component.
 
 Async SSH Components in place (based on the [speckle async](https://github.com/specklesystems/GrasshopperAsyncComponent))
-![radianceasync](https://user-images.githubusercontent.com/19936679/166122160-9a706a61-eaa1-48cb-a5a4-6f95681a83a0.gif)
+![radianceasync](https://user-images.githubusercontent.com/19936679/166122160-9a706a61-eaa1-48cb-a5a4-6f95681a83a0.gif =300x)
 
 
 
