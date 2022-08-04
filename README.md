@@ -63,6 +63,10 @@ Async SSH Components in place (based on the [speckle async](https://github.com/s
 - ManPages show the help files relevant to your promt
 - They are live loaded from https://floyd.lbl.gov/radiance/ 
 
+## Disclaimer:
+This is a personal project that I wrote during my paternity leave and it comes with absolutely no warranties.
+I was reading up on radiance and found the need for a lightweight connection from grasshopper without all the extra jazz from current workflows.
+
 
 ## Todo:
 Check out the issues on my todo list [here](https://github.com/Sonderwoods/GrasshopperRadianceLinuxConnector/issues).
@@ -72,6 +76,8 @@ Check out the issues on my todo list [here](https://github.com/Sonderwoods/Grass
 ## Preparations
 
 ### Setup Windows Subsystem Linux (WSL) and radiance
+
+(I'll see if I can make a youtube vid at some point)
 
 * Start enabling WSL and installing Radiance and XLaunch as per [this link](https://www.mattiabressanelli.com/engineering/linux-radiance-on-windows-with-wsl-and-x11/).
   Don't make your username too long and dont make your password too complex. Do not make the PW the same as your windows user.
