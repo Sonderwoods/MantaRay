@@ -194,22 +194,30 @@ namespace MantaRay.Components
                 {
                     sb.AppendFormat("SSH:  Could not find the SSH server\n      {0}\n      Try restarting it locally in " +
                         "your bash with the command:\n    $ sudo service ssh start\n", e.Message);
-                    var mb = MessageBox.Show("No SSH, try opening it with\nsudo service ssh start\n\nWant me to start it for you??", "No SSH?", MessageBoxButtons.YesNo);
 
-                    if (mb == DialogResult.Yes)
+                    if(String.Equals(ip, "127.0.0.1"))
                     {
-                        Process proc = new System.Diagnostics.Process();
-                        proc.StartInfo.FileName = @"C:\windows\system32\cmd.exe";
-                        proc.StartInfo.Arguments = $"/c \"bash -c \"echo {_pw} | sudo -S service ssh start\" \"";
+                        var mb = MessageBox.Show("No SSH, try opening it with\nsudo service ssh start\n\nWant me to start it for you??" +
+                            "\n\n\nI'll simply run the below bash command for you:\n\n" +
+                            "C:\\windows\\system32\\cmd.exe\n\n" +
+                            $"/c \"bash -c \"echo {{_pw}} | sudo -S service ssh start\" \"");
 
-                        proc.StartInfo.UseShellExecute = true;
-                        proc.StartInfo.RedirectStandardOutput = false;
+                        if (mb == DialogResult.Yes)
+                        {
+                            Process proc = new System.Diagnostics.Process();
+                            proc.StartInfo.FileName = @"C:\windows\system32\cmd.exe";
+                            proc.StartInfo.Arguments = $"/c \"bash -c \"echo {_pw} | sudo -S service ssh start\" \"";
 
-                        proc.Start();
-                        proc.WaitForExit();
+                            proc.StartInfo.UseShellExecute = true;
+                            proc.StartInfo.RedirectStandardOutput = false;
 
-                        this.ExpireSolution(true);
+                            proc.Start();
+                            proc.WaitForExit();
+
+                            this.ExpireSolution(true);
+                        }
                     }
+                    
 
                 }
                 catch (Exception e)

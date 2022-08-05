@@ -1,0 +1,37 @@
+# obj2rad -m /home/mss/simulation/test_project2/radFiles/mapping_windows.map -f /home/mss/simulation/test_project2/radFiles/Glass_30.obj
+# Written with MantaRay plugin/GH_MeshToRad
+
+Glass_30_mat polygon Glass_30_1.1
+0
+0
+9
+         -12578.38          -16931.03            6771.52
+         -13063.78          -16286.88           7547.451
+         -13916.09          -16929.14           7547.451
+
+Glass_30_mat polygon Glass_30_1.2
+0
+0
+9
+         -13916.09          -16929.14           7547.451
+         -13430.69          -17573.29            6771.52
+         -12578.38          -16931.03            6771.52
+
+Glass_30_mat polygon Glass_30_2.3
+0
+0
+9
+         -17066.48          -15476.05           8328.789
+         -16599.51          -16095.74           9135.351
+         -15747.21          -15453.48           9135.351
+
+Glass_30_mat polygon Glass_30_2.4
+0
+0
+9
+         -15747.21          -15453.48           9135.351
+         -16214.17          -14833.79           8328.789
+         -17066.48          -15476.05           8328.789
+
+# Done processing file: /home/mss/simulation/test_project2/radFiles/Glass_30.obj
+# 16 lines, 16 statements, 0 unrecognized

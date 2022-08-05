@@ -1,0 +1,24 @@
+void plastic Wall_50_mat
+0
+0
+5 0.500 0.500 0.500 0.000 0.000
+void plastic Terrain_20_mat
+0
+0
+5 0.200 0.200 0.200 0.000 0.000
+void plastic Frames_70_mat
+0
+0
+5 0.700 0.700 0.700 0.000 0.000
+void plastic Context_25_mat
+0
+0
+5 0.250 0.250 0.250 0.000 0.000
+void plastic Floor_20_mat
+0
+0
+5 0.200 0.200 0.200 0.000 0.000
+void plastic Ceiling_70_mat
+0
+0
+5 0.700 0.700 0.700 0.000 0.000
