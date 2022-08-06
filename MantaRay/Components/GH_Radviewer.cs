@@ -48,6 +48,8 @@ namespace MantaRay.Components
         readonly Dictionary<string, System.Drawing.Color> colors = new Dictionary<string, System.Drawing.Color>();
         public bool Polychromatic = true;
 
+        public List<string> ErrorMsgs = new List<string>();
+
 
         private HUD hud = new HUD();
 
@@ -104,9 +106,16 @@ namespace MantaRay.Components
                 isRunning = true;
 
                 this.Hidden = wasHidden;
+
+                foreach (string msg in ErrorMsgs)
+                {
+                    AddRuntimeMessage(GH_RuntimeMessageLevel.Error, msg);
+                }
                 return;
             }
 
+
+            ErrorMsgs.Clear();
             //this.Locked = true;
             timeSpan = new TimeSpan(0);
             Stopwatch sw = new Stopwatch();
@@ -245,7 +254,18 @@ namespace MantaRay.Components
                         failedCurves.AddRange(GetFailedLines(line));
                         //radianceObjects.CompleteAdding();
                         AddRuntimeMessage(GH_RuntimeMessageLevel.Remark, ex.Message.Substring(0, 100) + "\nCheck the FailedWireFrame output");
+                        ErrorMsgs.Add(ex.Message);
                         //throw ex;
+                    }
+                    catch (RaPolygon.SyntaxException e)
+                    {
+                        ErrorMsgs.Add("SyntaxError: " + e.Message);
+                        
+                    }
+                    catch (Exception e)
+                    {
+                        ErrorMsgs.Add("Other error: " + e.Message);
+                        
                     }
 
                     if (c2++ % 10 == 0 && GH_Document.IsEscapeKeyDown())
@@ -278,56 +298,63 @@ namespace MantaRay.Components
                         GHDocument.RequestAbortSolution();
                     }
 
-
-                    switch (obj)
+                    try
                     {
-                        case RaPolygon geo:
-                            if (bb.Min == bb.Max)
-                                bb = geo.Mesh.GetBoundingBox(false);
-                            else
-                                bb.Union(geo.Mesh.GetBoundingBox(false));
+                        switch (obj)
+                        {
+                            case RaPolygon geo:
+                                if (bb.Min == bb.Max)
+                                    bb = geo.Mesh.GetBoundingBox(false);
+                                else
+                                    bb.Union(geo.Mesh.GetBoundingBox(false));
 
-                            if (objects.ContainsKey(obj.ModifierName))
-                            {
-                                if (objects[obj.ModifierName] is RaPolygon poly)
+                                if (objects.ContainsKey(obj.ModifierName))
                                 {
+                                    if (objects[obj.ModifierName] is RaPolygon poly)
+                                    {
 
-                                    poly.AddTempMesh(geo.Mesh);
+                                        poly.AddTempMesh(geo.Mesh);
+                                    }
+                                    else
+                                    {
+                                        AddRuntimeMessage(GH_RuntimeMessageLevel.Error, $"ehh im not a poly but my modifier name is {obj.ModifierName} and it already exists.");
+                                        //throw new Exception($"ehh im not a poly but my modifier name is {obj.ModifierName} and it already exists.");
+                                        continue;
+                                    }
                                 }
                                 else
                                 {
-                                    AddRuntimeMessage(GH_RuntimeMessageLevel.Error, $"ehh im not a poly but my modifier name is {obj.ModifierName} and it already exists.");
-                                    //throw new Exception($"ehh im not a poly but my modifier name is {obj.ModifierName} and it already exists.");
-                                    continue;
+                                    if (!colors.TryGetValue(obj.ModifierName, out System.Drawing.Color color))
+                                    {
+                                        if (Polychromatic)
+                                            color = System.Drawing.Color.FromArgb(rnd.Next(150, 256), rnd.Next(150, 256), rnd.Next(150, 256));
+                                        else
+                                            color = System.Drawing.Color.FromArgb(200, 140, 140, 140);
+                                        colors.Add(obj.ModifierName, color);
+
+                                    }
+
+                                    geo.Material = new Rhino.Display.DisplayMaterial(color);
+                                    geo.Material.Emission = geo.Material.Diffuse;
+                                    geo.Material.IsTwoSided = TwoSided;
+                                    geo.Material.BackDiffuse = System.Drawing.Color.Red;
+                                    geo.Material.BackEmission = System.Drawing.Color.Red;
+
+
+
+                                    objects.Add(obj.ModifierName, geo);
                                 }
-                            }
-                            else
-                            {
-                                if (!colors.TryGetValue(obj.ModifierName, out System.Drawing.Color color))
-                                {
-                                    if (Polychromatic)
-                                        color = System.Drawing.Color.FromArgb(rnd.Next(150, 256), rnd.Next(150, 256), rnd.Next(150, 256));
-                                    else
-                                        color = System.Drawing.Color.FromArgb(200, 140, 140, 140);
-                                    colors.Add(obj.ModifierName, color);
-
-                                }
-
-                                geo.Material = new Rhino.Display.DisplayMaterial(color);
-                                geo.Material.Emission = geo.Material.Diffuse;
-                                geo.Material.IsTwoSided = TwoSided;
-                                geo.Material.BackDiffuse = System.Drawing.Color.Red;
-                                geo.Material.BackEmission = System.Drawing.Color.Red;
-
-
-
-                                objects.Add(obj.ModifierName, geo);
-                            }
-                            break;
-                        default:
-                            objects.Add("Material_" + obj.Name, obj);
-                            break;
+                                break;
+                            default:
+                                objects.Add("Material_" + obj.Name, obj);
+                                break;
+                        }
                     }
+                    catch (Exception e)
+                    {
+                        ErrorMsgs.Add("Create objs: " + e.Message);
+                    }
+                    
 
 
                 }
@@ -337,7 +364,15 @@ namespace MantaRay.Components
 
                 foreach (var pol in objects.Select(obj => obj.Value).OfType<RaPolygon>())
                 {
+                    try
+                    {
                     pol.UpdateMesh();
+
+                    }
+                    catch (Exception e)
+                    {
+                        ErrorMsgs.Add("Update mesh: " + e.Message);
+                    }
                 }
 
 
@@ -348,22 +383,31 @@ namespace MantaRay.Components
 
                 HashSet<string> uniqueMissingModifiers = new HashSet<string>();
 
-                foreach (var obj in objects)
+                try
                 {
-                    if (objects.ContainsKey(obj.Value.ModifierName) && obj.Value.ModifierName != objects[obj.Value.ModifierName].ModifierName)
+
+                    foreach (var obj in objects)
                     {
-                        obj.Value.Modifier = objects[obj.Value.ModifierName];
-                    }
-                    else if (objects.ContainsKey("Material_" + obj.Value.ModifierName))
-                    {
-                        obj.Value.Modifier = objects["Material_" + obj.Value.ModifierName];
-                    }
-                    else
-                    {
-                        if (uniqueMissingModifiers.Add(obj.Value.ModifierName) && obj.Value.ModifierName != "void")
-                            AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, $"Modifier not found: {obj.Value.ModifierName}. Refered to by {obj.Key}");
+                        if (objects.ContainsKey(obj.Value.ModifierName) && obj.Value.ModifierName != objects[obj.Value.ModifierName].ModifierName)
+                        {
+                            obj.Value.Modifier = objects[obj.Value.ModifierName];
+                        }
+                        else if (objects.ContainsKey("Material_" + obj.Value.ModifierName))
+                        {
+                            obj.Value.Modifier = objects["Material_" + obj.Value.ModifierName];
+                        }
+                        else
+                        {
+                            if (uniqueMissingModifiers.Add(obj.Value.ModifierName) && obj.Value.ModifierName != "void")
+                                AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, $"Modifier not found: {obj.Value.ModifierName}. Refered to by {obj.Key}");
+                        }
+
                     }
 
+                }
+                catch(Exception e)
+                {
+                    ErrorMsgs.Add("modifiers: " + e.Message);
                 }
 
                 Debug.WriteLine("done setting modifiers");
@@ -397,8 +441,16 @@ namespace MantaRay.Components
 
                 foreach (RaPolygon poly in objects.Where(o => o.Value is RaPolygon).Select(o => (RaPolygon)o.Value))
                 {
+                    try
+                    {
                     string desc = poly.Modifier is RadianceMaterial m ? m.MaterialDefinition : string.Empty;
                     hud.Items.Add(new HUD.HUD_Item() { Name = poly.Name, Description = desc, Mesh = poly.Mesh, Color = poly.Material.Diffuse });
+
+                    }
+                    catch(Exception e)
+                    {
+                        ErrorMsgs.Add("add hud: " + e.Message);
+                    }
                 }
                 //this.Locked = false;
                 isRunning = false;
@@ -407,6 +459,10 @@ namespace MantaRay.Components
                 this.ExpireSolution(true);
 
             });
+
+            
+
+
 
 
         }
@@ -941,6 +997,12 @@ namespace MantaRay.Components
                 public PolygonException(string message) : base(message) { }
             }
 
+            [Serializable]
+            internal class SyntaxException : Exception
+            {
+                public SyntaxException(string message) : base(message) { }
+            }
+
 
         }
 
@@ -955,7 +1017,7 @@ namespace MantaRay.Components
 
                 if (dataNoHeader.Count() != 4)
                 {
-                    throw new Exception("Wrong number of parameters in the cylinder");
+                    throw new SyntaxException("Wrong number of parameters in the sphere (should be 4) " + data[3]);
                 }
 
                 sphere = new Sphere(
@@ -998,7 +1060,7 @@ namespace MantaRay.Components
 
                 if (dataNoHeader.Count() != 7)
                 {
-                    throw new Exception("Wrong number of parameters in the cylinder");
+                    throw new SyntaxException("Wrong number of parameters in the cylinder (should be 7) " + data[3]);
                 }
                 Vector3d dir = new Vector3d(dataNoHeader[3] - dataNoHeader[0], dataNoHeader[4] - dataNoHeader[1], dataNoHeader[5] - dataNoHeader[2]);
 
