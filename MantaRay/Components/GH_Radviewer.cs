@@ -48,6 +48,8 @@ namespace MantaRay.Components
         readonly Dictionary<string, System.Drawing.Color> colors = new Dictionary<string, System.Drawing.Color>();
         public bool Polychromatic = true;
 
+        public List<string> ErrorMsgs = new List<string>();
+
 
         private HUD hud = new HUD();
 
@@ -102,11 +104,18 @@ namespace MantaRay.Components
                 DA.SetDataList(3, objects.Where(o => o.Value is RaPolygon).OrderBy(o => o.Key).Select(o => (o.Value.Modifier)).Select(m => m is RadianceMaterial ? (m as RadianceMaterial).MaterialDefinition : null));
                 DA.SetDataList(4, failedCurves);
                 isRunning = true;
-                
+
                 this.Hidden = wasHidden;
+
+                foreach (string msg in ErrorMsgs)
+                {
+                    AddRuntimeMessage(GH_RuntimeMessageLevel.Error, msg);
+                }
                 return;
             }
 
+
+            ErrorMsgs.Clear();
             //this.Locked = true;
             timeSpan = new TimeSpan(0);
             Stopwatch sw = new Stopwatch();
@@ -155,8 +164,11 @@ namespace MantaRay.Components
                 foreach (var radFile in radFiles)
                 {
                     if (String.IsNullOrEmpty(radFile) || !File.Exists(radFile))
-                        //return;
+                    {
+                        AddRuntimeMessage(GH_RuntimeMessageLevel.Error, $"{radFile} not found.");
                         continue;
+                    }
+                        //return;
 
                     StringBuilder currentObject = new StringBuilder(); // current object
 
@@ -242,7 +254,18 @@ namespace MantaRay.Components
                         failedCurves.AddRange(GetFailedLines(line));
                         //radianceObjects.CompleteAdding();
                         AddRuntimeMessage(GH_RuntimeMessageLevel.Remark, ex.Message.Substring(0, 100) + "\nCheck the FailedWireFrame output");
+                        ErrorMsgs.Add(ex.Message);
                         //throw ex;
+                    }
+                    catch (RaPolygon.SyntaxException e)
+                    {
+                        ErrorMsgs.Add("SyntaxError: " + e.Message);
+                        
+                    }
+                    catch (Exception e)
+                    {
+                        ErrorMsgs.Add("Other error: " + e.Message);
+                        
                     }
 
                     if (c2++ % 10 == 0 && GH_Document.IsEscapeKeyDown())
@@ -266,64 +289,73 @@ namespace MantaRay.Components
 
                 Debug.WriteLine("starting making objects");
 
-                int counter = 0;
-
                 foreach (var obj in radianceObjects.GetConsumingEnumerable())
                 {
 
-                    // Thank you james ramsden
-
-                    if (counter++ % 10 == 0 && GH_Document.IsEscapeKeyDown())
+                    if (GH_Document.IsEscapeKeyDown())
                     {
                         GH_Document GHDocument = OnPingDocument();
                         GHDocument.RequestAbortSolution();
                     }
 
-
-                    if (obj is RaPolygon geo)
+                    try
                     {
-                        if (bb.Min == bb.Max)
-                            bb = geo.Mesh.GetBoundingBox(false);
-                        else
-                            bb.Union(geo.Mesh.GetBoundingBox(false));
-
-                        if (objects.ContainsKey(obj.ModifierName))
+                        switch (obj)
                         {
-                            if (objects[obj.ModifierName] is RaPolygon poly)
-                            {
-
-                                poly.AddTempMesh(geo.Mesh);
-                            }
-                            else
-                                throw new Exception($"ehh im not a poly but my modifier name is {obj.ModifierName} and it already exists.");
-                        }
-                        else
-                        {
-                            if (!colors.TryGetValue(obj.ModifierName, out System.Drawing.Color color))
-                            {
-                                if (Polychromatic)
-                                    color = System.Drawing.Color.FromArgb(rnd.Next(150, 256), rnd.Next(150, 256), rnd.Next(150, 256));
+                            case RaPolygon geo:
+                                if (bb.Min == bb.Max)
+                                    bb = geo.Mesh.GetBoundingBox(false);
                                 else
-                                    color = System.Drawing.Color.FromArgb(200, 140, 140, 140);
-                                colors.Add(obj.ModifierName, color);
+                                    bb.Union(geo.Mesh.GetBoundingBox(false));
 
-                            }
+                                if (objects.ContainsKey(obj.ModifierName))
+                                {
+                                    if (objects[obj.ModifierName] is RaPolygon poly)
+                                    {
 
-                            geo.Material = new Rhino.Display.DisplayMaterial(color);
-                            geo.Material.Emission = geo.Material.Diffuse;
-                            geo.Material.IsTwoSided = TwoSided;
-                            geo.Material.BackDiffuse = System.Drawing.Color.Red;
-                            geo.Material.BackEmission = System.Drawing.Color.Red;
-                            
+                                        poly.AddTempMesh(geo.Mesh);
+                                    }
+                                    else
+                                    {
+                                        AddRuntimeMessage(GH_RuntimeMessageLevel.Error, $"ehh im not a poly but my modifier name is {obj.ModifierName} and it already exists.");
+                                        //throw new Exception($"ehh im not a poly but my modifier name is {obj.ModifierName} and it already exists.");
+                                        continue;
+                                    }
+                                }
+                                else
+                                {
+                                    if (!colors.TryGetValue(obj.ModifierName, out System.Drawing.Color color))
+                                    {
+                                        if (Polychromatic)
+                                            color = System.Drawing.Color.FromArgb(rnd.Next(150, 256), rnd.Next(150, 256), rnd.Next(150, 256));
+                                        else
+                                            color = System.Drawing.Color.FromArgb(200, 140, 140, 140);
+                                        colors.Add(obj.ModifierName, color);
+
+                                    }
+
+                                    geo.Material = new Rhino.Display.DisplayMaterial(color);
+                                    geo.Material.Emission = geo.Material.Diffuse;
+                                    geo.Material.IsTwoSided = TwoSided;
+                                    geo.Material.BackDiffuse = System.Drawing.Color.Red;
+                                    geo.Material.BackEmission = System.Drawing.Color.Red;
 
 
-                            objects.Add(obj.ModifierName, geo);
+
+                                    objects.Add(obj.ModifierName, geo);
+                                }
+                                break;
+                            default:
+                                objects.Add("Material_" + obj.Name, obj);
+                                break;
                         }
                     }
-                    else
+                    catch (Exception e)
                     {
-                        objects.Add("Material_" + obj.Name, obj);
+                        ErrorMsgs.Add("Create objs: " + e.Message);
                     }
+                    
+
 
                 }
 
@@ -332,7 +364,15 @@ namespace MantaRay.Components
 
                 foreach (var pol in objects.Select(obj => obj.Value).OfType<RaPolygon>())
                 {
+                    try
+                    {
                     pol.UpdateMesh();
+
+                    }
+                    catch (Exception e)
+                    {
+                        ErrorMsgs.Add("Update mesh: " + e.Message);
+                    }
                 }
 
 
@@ -343,22 +383,31 @@ namespace MantaRay.Components
 
                 HashSet<string> uniqueMissingModifiers = new HashSet<string>();
 
-                foreach (var obj in objects)
+                try
                 {
-                    if (objects.ContainsKey(obj.Value.ModifierName) && obj.Value.ModifierName != objects[obj.Value.ModifierName].ModifierName)
+
+                    foreach (var obj in objects)
                     {
-                        obj.Value.Modifier = objects[obj.Value.ModifierName];
-                    }
-                    else if (objects.ContainsKey("Material_" + obj.Value.ModifierName))
-                    {
-                        obj.Value.Modifier = objects["Material_" + obj.Value.ModifierName];
-                    }
-                    else
-                    {
-                        if (uniqueMissingModifiers.Add(obj.Value.ModifierName) && obj.Value.ModifierName != "void")
-                            AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, $"Modifier not found: {obj.Value.ModifierName}. Refered to by {obj.Key}");
+                        if (objects.ContainsKey(obj.Value.ModifierName) && obj.Value.ModifierName != objects[obj.Value.ModifierName].ModifierName)
+                        {
+                            obj.Value.Modifier = objects[obj.Value.ModifierName];
+                        }
+                        else if (objects.ContainsKey("Material_" + obj.Value.ModifierName))
+                        {
+                            obj.Value.Modifier = objects["Material_" + obj.Value.ModifierName];
+                        }
+                        else
+                        {
+                            if (uniqueMissingModifiers.Add(obj.Value.ModifierName) && obj.Value.ModifierName != "void")
+                                AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, $"Modifier not found: {obj.Value.ModifierName}. Refered to by {obj.Key}");
+                        }
+
                     }
 
+                }
+                catch(Exception e)
+                {
+                    ErrorMsgs.Add("modifiers: " + e.Message);
                 }
 
                 Debug.WriteLine("done setting modifiers");
@@ -392,8 +441,16 @@ namespace MantaRay.Components
 
                 foreach (RaPolygon poly in objects.Where(o => o.Value is RaPolygon).Select(o => (RaPolygon)o.Value))
                 {
+                    try
+                    {
                     string desc = poly.Modifier is RadianceMaterial m ? m.MaterialDefinition : string.Empty;
                     hud.Items.Add(new HUD.HUD_Item() { Name = poly.Name, Description = desc, Mesh = poly.Mesh, Color = poly.Material.Diffuse });
+
+                    }
+                    catch(Exception e)
+                    {
+                        ErrorMsgs.Add("add hud: " + e.Message);
+                    }
                 }
                 //this.Locked = false;
                 isRunning = false;
@@ -402,6 +459,10 @@ namespace MantaRay.Components
                 this.ExpireSolution(true);
 
             });
+
+            
+
+
 
 
         }
@@ -727,8 +788,13 @@ namespace MantaRay.Components
                         return new RaPolygon(data);
                     case "sphere":
                         return new RaSphere(data);
-                    case "cone":
                     case "cylinder":
+                        return new RaCylinder(data);
+                    case "tube":
+                        return new RaTube(data);
+                    case "bubble":
+                        return new RaBubble(data);
+                    case "cone":
                     case "plastic":
                     case "glass":
                     case "metal":
@@ -775,7 +841,7 @@ namespace MantaRay.Components
             public Mesh Mesh { get; set; }
 
 
-            readonly List<Mesh> meshes = new List<Mesh>(64);
+            protected List<Mesh> meshes = new List<Mesh>(64);
 
             public RaPolygon(string[] data) : base(data)
             {
@@ -859,7 +925,7 @@ namespace MantaRay.Components
                     var border = Curve.JoinCurves(segs.AsParallel().AsOrdered().Where(s => !IsCurveDup(s, segs)));
 
                     var breps = Brep.CreatePlanarBreps(border, Rhino.RhinoDoc.ActiveDoc.ModelAbsoluteTolerance);
-                    var brep = breps != null ? breps[0] : null;
+                    var brep = breps?[0];
 
                     if (brep != null)
                         Mesh = Mesh.CreateFromBrep(brep, MeshingParameters.Default)[0];
@@ -931,23 +997,107 @@ namespace MantaRay.Components
                 public PolygonException(string message) : base(message) { }
             }
 
+            [Serializable]
+            internal class SyntaxException : Exception
+            {
+                public SyntaxException(string message) : base(message) { }
+            }
+
 
         }
 
-        public class RaSphere : RadianceGeometry
+        public class RaSphere : RaPolygon
         {
-            public RaSphere(string[] data) : base(data)
+
+            Sphere? sphere;
+
+            public RaSphere(string[] data, bool flipNormals = false) : base(data)
             {
+                double[] dataNoHeader = data.Skip(6).Select(i => double.Parse(i)).ToArray(); // skip header
+
+                if (dataNoHeader.Count() != 4)
+                {
+                    throw new SyntaxException("Wrong number of parameters in the sphere (should be 4) " + data[3]);
+                }
+
+                sphere = new Sphere(
+                    new Point3d(dataNoHeader[0], dataNoHeader[1], dataNoHeader[2]),
+                    dataNoHeader[3]);
+
+                Mesh = Mesh.CreateFromSphere(sphere.Value, 16, 16);
+                if (flipNormals)
+                    Mesh.Flip(true, true, true);
+
             }
 
             public override void DrawObject(IGH_PreviewArgs args, double alpha = 1.0)
             {
-                throw new NotImplementedException();
+                if (sphere != null)
+                    args.Display.DrawSphere(sphere.Value, System.Drawing.Color.Black);
             }
 
-            public override void DrawWires(IGH_PreviewArgs args)
+
+        }
+
+        public class RaBubble : RaSphere
+        {
+            public RaBubble(string[] data) : base(data, true)
             {
-                throw new NotImplementedException();
+
+            }
+        }
+
+        public class RaCylinder : RaPolygon
+        {
+            public virtual void FlipNormals() { }
+            Cylinder? cylinder;
+            
+            public RaCylinder(string[] data, bool flipNormals = false) : base(data)
+            {
+                double[] dataNoHeader = data.Skip(6).Select(i => double.Parse(i)).ToArray(); // skip header
+
+
+
+                if (dataNoHeader.Count() != 7)
+                {
+                    throw new SyntaxException("Wrong number of parameters in the cylinder (should be 7) " + data[3]);
+                }
+                Vector3d dir = new Vector3d(dataNoHeader[3] - dataNoHeader[0], dataNoHeader[4] - dataNoHeader[1], dataNoHeader[5] - dataNoHeader[2]);
+
+                cylinder = new Cylinder(
+                    new Circle(
+                        new Plane(
+                            new Point3d(dataNoHeader[0], dataNoHeader[1], dataNoHeader[2]),
+                            dir
+                            ),
+                        dataNoHeader[6]),
+                    dir.Length);
+
+                Mesh = Mesh.CreateFromCylinder(cylinder.Value, 1, 16, true, true);
+                if (flipNormals)
+                {
+                    Mesh.Flip(true, true, true);
+
+                }
+
+            }
+
+            public override void DrawObject(IGH_PreviewArgs args, double alpha = 1.0)
+            {
+                if (cylinder.HasValue)
+                {
+                    args.Display.DrawCylinder(cylinder.Value, System.Drawing.Color.Black);
+
+                }
+            }
+
+        }
+
+        public class RaTube : RaCylinder
+        {
+            public RaTube(string[] data) : base(data, true)
+            {
+
             }
         }
 
