@@ -27,6 +27,9 @@ namespace MantaRay
 
         protected Timer DisplayProgressTimer;
 
+        /// <summary>
+        /// State is the number of active workers
+        /// </summary>
         protected int State = 0;
 
         protected int SetData = 0;
@@ -159,11 +162,29 @@ namespace MantaRay
             }
         }
 
+        /// <summary>
+        /// To clear lists etc, only running on the first iteration!
+        /// </summary>
+        /// <param name="DA"></param>
+        protected virtual void RunOnlyOnce(IGH_DataAccess DA)
+        {
+
+        }
+
         protected override void SolveInstance(IGH_DataAccess DA)
         {
+
+            
+
             //return;
             if (State == 0) //State 0 == START RUNNING
             {
+                if (RunCount == 0)
+                {
+                    RunOnlyOnce(DA);
+                }
+
+
                 if (BaseWorker == null)
                 {
                     AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Worker class not provided.");
@@ -181,7 +202,10 @@ namespace MantaRay
                 currentWorker.GetData(DA, Params);
 
                 if (!PreRunning(DA))
+                {
+                    PostRunning(DA);
                     return;
+                }
 
 
                 // Create the task
@@ -211,9 +235,10 @@ namespace MantaRay
 
             if (Workers.Count > 0)
             {
-                ClearCachedData(); // <-- to delete persistant data before overriding.
+                //ClearCachedData(); // <-- to delete persistant data before overriding.
                 Interlocked.Decrement(ref State);
-                Workers[State].SetData(DA);
+                if (State < Workers.Count)
+                    Workers[State].SetData(DA);
             }
 
             if (State != 0)
@@ -228,7 +253,7 @@ namespace MantaRay
 
             Interlocked.Exchange(ref SetData, 0);
 
-            PostRunning();
+            PostRunning(DA);
 
 
             OnDisplayExpired(true);
@@ -243,14 +268,14 @@ namespace MantaRay
         protected virtual bool PreRunning(IGH_DataAccess DA) => true;
 
         /// <summary>
-        /// Part of the SolveInstance after a done job. This can be used to set color or Message
+        /// Part of the SolveInstance after a done job. This can be used to set color or Message. OR! Setting output values if RUN == false
         /// </summary>
-        protected virtual void PostRunning()
+        protected virtual void PostRunning(IGH_DataAccess DA)
         {
 
             Message = "Done";
 
-          
+
         }
 
         public override void ClearCachedData()

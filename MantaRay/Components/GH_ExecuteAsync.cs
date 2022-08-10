@@ -24,11 +24,13 @@ namespace MantaRay
         public GH_ExecuteAsync() : base("Execute SSH", "ExecuteSSH", "ExecuteAsync2", "Use me to execute a SSH Command")
         {
             BaseWorker = new SSH_Worker2(this);
+            RunTime = new TimeSpan(0, 0, 0, 0, (int)LastRun.TotalMilliseconds);
         }
 
         public bool addPrefix = true;
-        public bool addSuffix = true;
+        public bool addSuffix = false;
         public bool suppressWarnings = false;
+        public TimeSpan LastRun = default;
         //readonly List<int> Pids = new List<int>();
 
         public List<string> Commands { get; set; } = new List<string>();
@@ -117,7 +119,7 @@ namespace MantaRay
 
 
 
-   
+
         /// <summary>
         /// Update nick names of input and output to show if warnings are suppressed and prefixes are added.
         /// </summary>
@@ -128,27 +130,93 @@ namespace MantaRay
 
         }
 
+        protected override void RunOnlyOnce(IGH_DataAccess DA)
+        {
+            Results.Clear();
+            Commands.Clear();
+            Stderrs.Clear();
+
+            base.RunOnlyOnce(DA); // <-- empty
+        }
+
         protected override bool PreRunning(IGH_DataAccess DA)
         {
-            if (RunCount == 0)
+            base.PreRunning(DA);
+
+            if (RunCount == 1 && RunInput)
             {
                 Commands.Clear();
                 Results.Clear();
                 Commands.Clear();
             }
-            Results.Add(null); // filling the list to match results later. Perhaps this can be done in a better fashion.
-            Stderrs.Add(null);
-            Commands.Add(null);
-            return base.PreRunning(DA);
+            if (RunInput)
+            {
+                Results.Add(null); // filling the list to match results later. Perhaps this can be done in a better fashion.
+                Stderrs.Add(null);
+                Commands.Add(null);
+            }
+
+            return RunInput;
+        }
+
+        protected override void PostRunning(IGH_DataAccess DA)
+        {
+            base.PostRunning(DA);
+
+            // In case it was set to false and we want to still output saved results
+            if (!RunInput)
+            {
+                if (RunCount == 1)
+                {
+                    Params.Output[0].ClearData();
+                    Params.Output[1].ClearData();
+                }
+                if (Results.Count > RunCount -1)
+                {
+                string[] splitResultsPerRun = Results[RunCount - 1] != null ? Results[RunCount - 1].Split(new[] { "\n_JOIN_\n" }, StringSplitOptions.None).Select(v => v.Trim()).ToArray() : new string[0];
+                DA.SetDataList(0, splitResultsPerRun);
+
+                }
+
+                if(Stderrs.Count > RunCount - 1)
+                {
+                string[] splitErrPerRun = Stderrs[RunCount - 1] != null ? Stderrs[RunCount - 1].Split(new[] { "\n_JOIN_\n" }, StringSplitOptions.None).Select(v => v.Trim()).ToArray() : new string[0];
+                DA.SetDataList(1, splitErrPerRun);
+
+                }
+
+                //DA.SetDataList(0, Results);
+                //DA.SetDataList(1, Stderrs);
+                SetOneBoolOutput(this, DA, 2, false);
+      
+                Message = LastRun.TotalMilliseconds > 0 ? $"Cached  (last was {LastRun.ToShortString()})" : "Clean";
+
+            }
+            else
+            {
+                Message = $"Ran in {RunTime.ToShortString()} (last was {LastRun.ToShortString()})";
+                LastRun = RunTime;
+            }
+
+            
+
+
+
         }
 
         public override bool Read(GH_IReader reader)
         {
 
             reader.TryGetBoolean("addPrefix", ref addPrefix);
-            reader.TryGetBoolean("addSuffix", ref addSuffix);
+            //reader.TryGetBoolean("addSuffix", ref addSuffix);
             reader.TryGetBoolean("suppressWarnings", ref suppressWarnings);
-            
+            double lastRun = 0;
+            if (reader.TryGetDouble("lastRunTime", ref lastRun))
+            {
+                LastRun = new TimeSpan(0, 0, 0, 0, (int)lastRun);
+                
+            }
+
 
             string s = String.Empty;
 
@@ -156,17 +224,22 @@ namespace MantaRay
             {
                 Results = s.Split(new[] { ">JOIN<" }, StringSplitOptions.None).ToList();
             }
+            if (reader.TryGetString("stderr", ref s))
+            {
+                Stderrs = s.Split(new[] { ">JOIN<" }, StringSplitOptions.None).ToList();
+            }
 
             return base.Read(reader);
         }
 
         public override bool Write(GH_IWriter writer)
         {
-
+            writer.SetDouble("lastRunTime", LastRun.TotalMilliseconds);
             writer.SetBoolean("addPrefix", addPrefix);
-            writer.SetBoolean("addSuffix", addSuffix);
+            //writer.SetBoolean("addSuffix", addSuffix);
             writer.SetBoolean("suppressWarnings", suppressWarnings);
             writer.SetString("results", String.Join(">JOIN<", Results));
+            writer.SetString("stderr", String.Join(">JOIN<", Stderrs));
             writer.SetString("commands", String.Join(">JOIN<", Commands));
 
 
@@ -178,21 +251,32 @@ namespace MantaRay
 
         public override void ClearCachedData()
         {
-            ((SSH_Worker2)BaseWorker).results.Clear();
-            ((SSH_Worker2)BaseWorker).stderr.Clear();
-            ((SSH_Worker2)BaseWorker).commands.Clear();
+            //((SSH_Worker2)BaseWorker).results.Clear();
+            //((SSH_Worker2)BaseWorker).stderr.Clear();
+            //((SSH_Worker2)BaseWorker).commands.Clear();
+            Results.Clear();
+            Stderrs.Clear();
+            Commands.Clear();
 
             base.ClearCachedData();
-            
+
+            //this.ExpireSolution(true);
+
+
 
         }
+
+        //protected override void AfterDone()
+        //{
+        //    if (!RunInput{ }
+        //}
 
 
         public class SSH_Worker2 : WorkerInstance
         {
 
-            public StringBuilder results = new StringBuilder();
-            public StringBuilder stderr = new StringBuilder();
+            public string results = String.Empty;
+            public string stderr = String.Empty;
             public List<string> commands = new List<string>();
 
             bool run = false;
@@ -207,7 +291,7 @@ namespace MantaRay
                 ((GH_ExecuteAsync)Parent).Commands.AddRange(commands.Distinct().Where(c => !((GH_ExecuteAsync)Parent).Commands.Contains(c)));
 
 
-                if (!run) { return; }
+
 
 
                 if (CancellationToken.IsCancellationRequested) { return; }
@@ -218,45 +302,49 @@ namespace MantaRay
                 int pid = -1;
                 IAsyncResult asyncResult = null;
 
-                string command = String.Join(";", commands).Replace("\r\n", "\n").AddGlobals();
-                Renci.SshNet.SshCommand cmd = null;
-                (asyncResult, cmd, pid) = SSH_Helper.ExecuteAsync(command, prependPrefix: ((GH_ExecuteAsync)Parent).addPrefix, ((GH_ExecuteAsync)Parent).addSuffix, HasZeroAreaPolygons);
-
-
-
-                // TODO Need to get pid through "beginexecute" instead of "execute" of SSH.
-                int p = 0;
-                while (true)
+                if (run)
                 {
-                    // Update progress bar as we run
-                    if (p++ % 10 == 0 )
-                    {
-                        ((GH_Template_Async_Extended)Parent).RunTime = ((GH_Template_Async_Extended)Parent).Stopwatch.Elapsed;
-                        Parent.Message = "Running for " + ((GH_Template_Async_Extended)Parent).RunTime.ToShortString();
-                        Parent.OnDisplayExpired(true);
-                    }
-                    
-                    // If the command finished
-                    if (WaitHandle.WaitAll(new[] { asyncResult.AsyncWaitHandle }, 100))
-                    {
-                        
-                        stderr.Append(cmd.Error);
-                        results.Append(cmd.Result);
-                        bool itsJustAWarning = results.ToString().Contains("warning");
-                        ran &= pid > 0 || itsJustAWarning || ((GH_ExecuteAsync)Parent).suppressWarnings;
 
-                        break;
-                    }
-                    
+                    string command = String.Join(";echo _JOIN_;", commands).Replace("\r\n", "\n").AddGlobals();
+                    Renci.SshNet.SshCommand cmd = null;
+                    (asyncResult, cmd, pid) = SSH_Helper.ExecuteAsync(command, prependPrefix: ((GH_ExecuteAsync)Parent).addPrefix, ((GH_ExecuteAsync)Parent).addSuffix, HasZeroAreaPolygons);
 
-                    // Cancelled
-                    if (CancellationToken.IsCancellationRequested)
+
+
+                    // TODO Need to get pid through "beginexecute" instead of "execute" of SSH.
+                    int p = 0;
+                    while (true)
                     {
-                        cmd.CancelAsync();
-                        ran = false;
-                        return;
-                    }
+                        // Update progress bar as we run
+                        if (p++ % 10 == 0)
+                        {
+                            ((GH_Template_Async_Extended)Parent).RunTime = ((GH_Template_Async_Extended)Parent).Stopwatch.Elapsed;
+                            Parent.Message = "Running for " + ((GH_Template_Async_Extended)Parent).RunTime.ToShortString() + "(Last: " + ((GH_ExecuteAsync)Parent).LastRun.ToShortString() + ")";
+                            Parent.OnDisplayExpired(true);
+                        }
 
+                        // If the command finished
+                        if (WaitHandle.WaitAll(new[] { asyncResult.AsyncWaitHandle }, 100))
+                        {
+
+                            stderr = string.IsNullOrEmpty(cmd.Error) ? null : cmd.Error;
+                            results = cmd.Result;
+                            bool itsJustAWarning = stderr?.ToString().Contains("warning") ?? false;
+                            ran = stderr == null || itsJustAWarning || ((GH_ExecuteAsync)Parent).suppressWarnings;
+
+                            break;
+                        }
+
+
+                        // Cancelled
+                        if (CancellationToken.IsCancellationRequested)
+                        {
+                            cmd.CancelAsync();
+                            ran = false;
+                            return;
+                        }
+
+                    }
                 }
 
                 //ran = false;
@@ -285,11 +373,17 @@ namespace MantaRay
 
             }
 
+
+
             bool HasZeroAreaPolygons(string errors)
             {
                 return !errors.StartsWith("oconv: warning - zero area");
             }
 
+            /// <summary>
+            /// This is a successful run! We hope.
+            /// </summary>
+            /// <param name="DA"></param>
             public override void SetData(IGH_DataAccess DA)
             {
                 if (CancellationToken.IsCancellationRequested)
@@ -305,21 +399,29 @@ namespace MantaRay
                     return;
                 }
 
+                // Saving to persistant data in component
+                ((GH_ExecuteAsync)Parent).Results[Id] = results;
+                ((GH_ExecuteAsync)Parent).Stderrs[Id] = stderr;
 
-                ((GH_ExecuteAsync)Parent).Results[Id] = results.ToString();
-                ((GH_ExecuteAsync)Parent).Stderrs[Id] = stderr.ToString();
-
-                DA.SetData(0, results.ToString());
-
-                DA.SetData(1, stderr.ToString());
-
-                var runOut = new GH_Structure<GH_Boolean>();
-                runOut.Append(new GH_Boolean(ran), new GH_Path(0));
-                Parent.Params.Output[2].ClearData();
-                DA.SetDataTree(2, runOut);
+                
 
 
-                Parent.AddRuntimeMessage(stderr.ToString().Contains("error") ? GH_RuntimeMessageLevel.Error : GH_RuntimeMessageLevel.Warning, stderr.ToString());
+                DA.SetDataList(0, results != null ? results.Split(new[] { "\n_JOIN_\n" }, StringSplitOptions.None) : new string[] { null });
+
+                DA.SetDataList(1, stderr != null ? stderr.Split(new[] { "\n_JOIN_\n" }, StringSplitOptions.None) : new string[] { null });
+
+                //Set only ONE bool output in "RAN"
+                SetOneBoolOutput(Parent, DA, 2, ran);
+                //var runOut = new GH_Structure<GH_Boolean>();
+                //runOut.Append(new GH_Boolean(ran), new GH_Path(0));
+                //Parent.Params.Output[2].ClearData();
+                //DA.SetDataTree(2, runOut);
+
+                if (stderr != null)
+                {
+                    Parent.AddRuntimeMessage(stderr.ToString().Contains("error") ? GH_RuntimeMessageLevel.Error : GH_RuntimeMessageLevel.Warning, stderr.ToString());
+
+                }
 
 
             }

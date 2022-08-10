@@ -1,5 +1,6 @@
 ﻿using GH_IO.Serialization;
 using Grasshopper.Kernel;
+using Grasshopper.Kernel.Data;
 using Grasshopper.Kernel.Types;
 using System;
 using System.Collections.Concurrent;
@@ -238,7 +239,16 @@ namespace MantaRay
 
         }
 
-        protected override void PostRunning()
+        public static void SetOneBoolOutput(GH_Component component, IGH_DataAccess DA, int param, bool result)
+        {
+            //Set only ONE bool output in "RAN"
+            var runOut = new GH_Structure<GH_Boolean>();
+            runOut.Append(new GH_Boolean(result), new GH_Path(0));
+            component.Params.Output[param].ClearData();
+            DA.SetDataTree(param, runOut);
+        }
+
+        protected override void PostRunning(IGH_DataAccess DA)
         {
 
             //Message = "Done";
@@ -295,7 +305,7 @@ namespace MantaRay
                 PhaseForColors = AestheticPhase.Running;
                 ((GH_ColorAttributes_Async)m_attributes).ColorSelected = new Grasshopper.GUI.Canvas.GH_PaletteStyle(Color.MediumVioletRed);
                 ((GH_ColorAttributes_Async)m_attributes).ColorUnselected = new Grasshopper.GUI.Canvas.GH_PaletteStyle(Color.Purple);
-                Message = "Running";
+                Message = "Started";
 
             }
             else
