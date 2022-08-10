@@ -6,8 +6,11 @@ using System.Threading.Tasks;
 
 namespace MantaRay
 {
-    internal interface IClearData
+    public interface IClearData
     {
+        /// <summary>
+        /// Here we clear persistant data such as results, runtimes etc.
+        /// </summary>
         void ClearCachedData();
     }
 }

@@ -19,12 +19,12 @@ namespace MantaRay
     /// </summary>
     public class GH_ColorAttributes_Async : GH_ComponentAttributes
     {
-        readonly GH_TemplateAsync component;
+        readonly GH_Template_Async component;
 
         public GH_ColorAttributes_Async(IGH_Component component)
           : base(component)
         {
-            this.component = component as GH_TemplateAsync;
+            this.component = component as GH_Template_Async;
 
             palette_normal_standard = GH_Skin.palette_normal_standard;
             palette_normal_selected = GH_Skin.palette_normal_selected;
@@ -109,30 +109,39 @@ namespace MantaRay
 
         private void DrawObjects(GH_Canvas canvas, Graphics graphics, GH_CanvasChannel channel)
         {
-            switch (component.PhaseForColors)
+            if (component != null && component is GH_Template_Async_Extended c)
             {
-                case GH_TemplateAsync.AestheticPhase.Running:
-                case GH_TemplateAsync.AestheticPhase.Reusing:
-                    // Swap out palette for normal, unselected components.
-                    GH_Skin.palette_normal_standard = ColorUnselected;
-                    GH_Skin.palette_hidden_standard = ColorUnselected;
-                    GH_Skin.palette_normal_selected = ColorSelected;
-                    GH_Skin.palette_hidden_selected = ColorSelected;
+                switch (c.PhaseForColors)
+                {
+                    case GH_Template_Async_Extended.AestheticPhase.Running:
+                    case GH_Template_Async_Extended.AestheticPhase.Reusing:
+                    case GH_Template_Async_Extended.AestheticPhase.Cancelled:
+                        // Swap out palette for normal, unselected components.
+                        GH_Skin.palette_normal_standard = ColorUnselected;
+                        GH_Skin.palette_hidden_standard = ColorUnselected;
+                        GH_Skin.palette_normal_selected = ColorSelected;
+                        GH_Skin.palette_hidden_selected = ColorSelected;
 
-                    base.Render(canvas, graphics, channel);
+                        base.Render(canvas, graphics, channel);
 
-                    // Put the original style back.
-                    GH_Skin.palette_normal_standard = palette_normal_standard;
-                    GH_Skin.palette_normal_selected = palette_normal_selected;
-                    GH_Skin.palette_hidden_standard = palette_hidden_standard;
-                    GH_Skin.palette_hidden_selected = palette_hidden_selected;
+                        // Put the original style back.
+                        GH_Skin.palette_normal_standard = palette_normal_standard;
+                        GH_Skin.palette_normal_selected = palette_normal_selected;
+                        GH_Skin.palette_hidden_standard = palette_hidden_standard;
+                        GH_Skin.palette_hidden_selected = palette_hidden_selected;
 
-                    break;
+                        break;
 
-                default:
-                    base.Render(canvas, graphics, channel);
-                    break;
+                    default:
+                        base.Render(canvas, graphics, channel);
+                        break;
+                }
 
+
+            }
+            else
+            {
+                base.Render(canvas, graphics, channel);
             }
 
         }
@@ -282,12 +291,12 @@ namespace MantaRay
                         penTypes |= PenWireTypes.True;
                     }
 
-                    if(source.Attributes.Selected || Owner.Attributes.Selected)
+                    if (source.Attributes.Selected || Owner.Attributes.Selected)
                     {
                         penTypes |= PenWireTypes.Selected;
                     }
 
-                    if(param.Access == GH_ParamAccess.tree && param.VolatileData.PathCount > 1)
+                    if ((param.Access == GH_ParamAccess.tree && param.VolatileData.PathCount > 1) || (param.DataMapping == GH_DataMapping.Graft))
                     {
                         penTypes |= PenWireTypes.Tree;
                     }

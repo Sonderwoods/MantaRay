@@ -111,9 +111,14 @@ namespace MantaRay
 
             Menu_AppendItem(menu, "Clear cached stdout", (s, e) => { ClearCachedData(); ExpireSolution(true); })
                 .ToolTipText = "Removes the data saved in the component.";
+            Menu_AppendItem(menu, "Clear cached data in ALL components", (s, e) => { GH_Template_SaveStrings.ClearAllCachedData(); ExpireSolution(true); })
+                .ToolTipText = "Removes the data saved in the component.";
         }
 
-        public void ClearCachedData()
+        /// <summary>
+        /// Here we reset all persistant data such as results, old runtimes etc.
+        /// </summary>
+        public virtual void ClearCachedData()
         {
             OldResults = new string[0];
         }

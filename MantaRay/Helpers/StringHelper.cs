@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.Contracts;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -55,6 +57,21 @@ namespace MantaRay
             if (string.IsNullOrEmpty(formatted)) formatted = "0 seconds";
 
             return formatted;
+        }
+
+        public static string ToShortString(this TimeSpan span)
+        {
+            double runTime = span.TotalMilliseconds;
+
+            if (runTime < 1000)
+                return $"{span.Milliseconds}ms";
+            if (runTime < 60000)
+                return string.Format("{0:0.0}s", runTime / 1000.0, CultureInfo.InvariantCulture);
+            if (runTime < 3600000)
+                return string.Format("{0:0.0}m", runTime / 600000.0, CultureInfo.InvariantCulture);
+            if (runTime < 86400000)
+                return string.Format("{0:0.0}h", runTime / 3600000.0, CultureInfo.InvariantCulture);
+            return string.Format("{0:0.0}d", runTime / 86400000.0, CultureInfo.InvariantCulture);
         }
     }
 }

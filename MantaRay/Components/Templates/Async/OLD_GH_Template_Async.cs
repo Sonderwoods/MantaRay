@@ -1,8 +1,12 @@
 ﻿using Grasshopper.Kernel;
+using Grasshopper.Kernel.Data;
+using Grasshopper.Kernel.Types;
+using MantaRay.Components;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Drawing;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -10,44 +14,71 @@ using Timer = System.Timers.Timer;
 
 namespace MantaRay
 {
+
+
     /// <summary>
     /// Inherit your component from this class to make all the async goodness available.
+    /// Source: Speckle! https://github.com/specklesystems/GrasshopperAsyncComponent
     /// </summary>
-    public abstract class GH_Template_Async : GH_Template_SaveStrings
+    public abstract class OLD_GH_TemplateAsync : GH_Template
     {
+        public enum AestheticPhase
+        {
+            Running,
+            Reusing,
+            NotRunning
+        }
+
+        public AestheticPhase PhaseForColors { get; set; } = OLD_GH_TemplateAsync.AestheticPhase.NotRunning;
+
+        Stopwatch stopwatch { get; set; } = new Stopwatch();
+
+        public List<string> inCommands { get; set; }
+
+        public string LogDescriptionDynamic { get; set; }
+        public string LogDescriptionStatic { get; set; }
+        public string LogName { get; set; }
+        public bool LogSave { get; set; }
+        public bool LogUseFixedDescription { get; set; }
+
+        public bool RunInput { get; set; } = true;
+        public double RunTime { get; set; }
+
         public override Guid ComponentGuid => throw new Exception("ComponentGuid should be overriden in any descendant of GH_AsyncComponent!");
 
         //List<(string, GH_RuntimeMessageLevel)> Errors;
 
-        protected Action<string, double> ReportProgress;
+        Action<string, double> ReportProgress;
 
         public ConcurrentDictionary<string, double> ProgressReports;
 
-        protected Action Done;
+        Action Done;
 
-        protected Timer DisplayProgressTimer;
+        Timer DisplayProgressTimer;
 
-        protected int State = 0;
+        int State = 0;
 
-        protected int SetData = 0;
+        int SetData = 0;
 
-        public List<WorkerInstance> Workers;
+        public List<OLD_WorkerInstance> Workers;
 
-        protected List<Task> Tasks;
+        List<Task> Tasks;
 
-        public List<CancellationTokenSource> CancellationSources;
+        public readonly List<CancellationTokenSource> CancellationSources;
+
+        public int Pids { get; set; } = -1; // for linux pids
 
         /// <summary>
         /// Set this property inside the constructor of your derived component. 
         /// </summary>
-        public WorkerInstance BaseWorker { get; set; }
+        public OLD_WorkerInstance BaseWorker { get; set; }
 
         /// <summary>
         /// Optional: if you have opinions on how the default system task scheduler should treat your workers, set it here.
         /// </summary>
         public TaskCreationOptions? TaskCreationOptions { get; set; } = null;
 
-        protected GH_Template_Async(string name, string nickname, string description, string subCategory) : base(name, nickname, description, subCategory)
+        protected OLD_GH_TemplateAsync(string name, string nickname, string description, string subCategory) : base(name, nickname, description, subCategory)
         {
 
             DisplayProgressTimer = new Timer(333) { AutoReset = false };
@@ -77,11 +108,22 @@ namespace MantaRay
                         ExpireSolution(true);
                     });
                 }
+                RunTime = stopwatch.ElapsedMilliseconds;
+                
+
+                if (LogSave)
+                {
+                    LogHelper logHelper = LogHelper.Default;
+                    logHelper.Add(LogName, LogUseFixedDescription ? LogDescriptionDynamic: LogDescriptionStatic + $" Done in {stopwatch.Elapsed.ToReadableString()}", InstanceGuid);
+                }
+
+                stopwatch.Reset();
+
             };
 
             ProgressReports = new ConcurrentDictionary<string, double>();
 
-            Workers = new List<WorkerInstance>();
+            Workers = new List<OLD_WorkerInstance>();
             CancellationSources = new List<CancellationTokenSource>();
             Tasks = new List<Task>();
         }
@@ -95,7 +137,16 @@ namespace MantaRay
 
             if (Workers.Count == 1)
             {
-                Message = ProgressReports.Values.Last().ToString("0.00%");
+                var progress = ProgressReports.Values.Last();
+                if (progress == 0)
+                {
+                    Message = "Running";
+                }
+                else
+                {
+                    Message = ProgressReports.Values.Last().ToString("0.00%");
+
+                }
             }
             else
             {
@@ -138,11 +189,11 @@ namespace MantaRay
 
         protected override void AfterSolveInstance()
         {
-            System.Diagnostics.Debug.WriteLine("After solve instance was called " + State + " ? " + Workers.Count);
+            Debug.WriteLine("After solve instance was called " + State + " ? " + Workers.Count);
             // We need to start all the tasks as close as possible to each other.
             if (State == 0 && Tasks.Count > 0 && SetData == 0)
             {
-                System.Diagnostics.Debug.WriteLine("After solve INVOKATIONM");
+                Debug.WriteLine("After solve INVOKATIONM");
                 foreach (var task in Tasks)
                 {
                     task.Start();
@@ -157,12 +208,61 @@ namespace MantaRay
             {
                 base.ExpireDownStreamObjects();
             }
+
+            else if (RunInput)
+            {
+                base.ExpireDownStreamObjects();
+            }
+
+        }
+
+        /// <summary>
+        /// To override in case you want to change messages, colors or anything else whenever the run is set to false
+        /// </summary>
+        /// <param name="DA"></param>
+        protected virtual void PerformIfInactive(IGH_DataAccess DA)
+        {
+
         }
 
         protected override void SolveInstance(IGH_DataAccess DA)
         {
-            //return;
-            if (State == 0) //State 0 == START RUNNING
+
+            RunInput = true;
+
+            IGH_Param runParam = this.Params.Input.Where(o => o.NickName == "Run" && o.Access == GH_ParamAccess.tree).FirstOrDefault();
+
+            if (runParam != null)
+            {
+                List<GH_Boolean> runInputs = DA.FetchTree<GH_Boolean>("Run").FlattenData();
+
+                if (runInputs.Count == 0 || !runInputs.All(x => x.Value == true))
+                {
+                    RunInput = false;
+                }
+            }
+
+            IGH_Param cmdParam = this.Params.Input.FirstOrDefault();
+
+            if (cmdParam != null)
+            {
+                inCommands = DA.FetchTree<GH_String>(0).FlattenData().Select(v => v.Value).ToList();
+
+           
+            }
+
+            if (!RunInput)
+            {
+                RequestCancellation();
+
+                PerformIfInactive(DA);
+
+                return;
+            }
+
+
+
+            if (State == 0 && RunInput) // Starting up a task
             {
                 if (BaseWorker == null)
                 {
@@ -180,14 +280,19 @@ namespace MantaRay
                 // Let the worker collect data.
                 currentWorker.GetData(DA, Params);
 
-                if (!PreRunning(DA))
-                    return;
+                if (currentWorker.SkipRun)
+                {
 
+                    return;
+                }
+                PreRunning();
+
+                
 
                 // Create the task
                 var tokenSource = new CancellationTokenSource();
                 currentWorker.CancellationToken = tokenSource.Token;
-                currentWorker.Id = DA.Iteration;
+                currentWorker.Id = $"Worker-{DA.Iteration}";
 
                 var currentRun = TaskCreationOptions != null
                   ? new Task(() => currentWorker.DoWork(ReportProgress, Done), tokenSource.Token, (TaskCreationOptions)TaskCreationOptions)
@@ -211,10 +316,11 @@ namespace MantaRay
 
             if (Workers.Count > 0)
             {
-                ClearCachedData(); // <-- to delete persistant data before overriding.
                 Interlocked.Decrement(ref State);
-                Workers[State].SetData(DA);
+                if (State < Workers.Count)
+                    Workers[State].SetData(DA);
             }
+
 
             if (State != 0)
             {
@@ -234,30 +340,50 @@ namespace MantaRay
             OnDisplayExpired(true);
         }
 
-        /// <summary>
-        /// Part of the SolveInstance fired just before the tasks start.
-        /// If it returns false, the task will be skipped!
-        /// </summary>
-        /// <param name="DA"></param>
-        /// <returns>Boolean. If false the tasks will be skipped!</returns>
-        protected virtual bool PreRunning(IGH_DataAccess DA) => true;
+        protected virtual void PreRunning()
+        {
+            stopwatch.Start();
+            PhaseForColors = AestheticPhase.Running;
+            ((GH_ColorAttributes_Async)m_attributes).ColorSelected = new Grasshopper.GUI.Canvas.GH_PaletteStyle(Color.MediumVioletRed);
+            ((GH_ColorAttributes_Async)m_attributes).ColorUnselected = new Grasshopper.GUI.Canvas.GH_PaletteStyle(Color.Purple);
 
-        /// <summary>
-        /// Part of the SolveInstance after a done job. This can be used to set color or Message
-        /// </summary>
+
+            if (LogSave)
+            {
+                LogHelper logHelper = LogHelper.Default;
+                logHelper.Add(LogName, LogUseFixedDescription ? LogDescriptionDynamic : LogDescriptionStatic + " Starting", InstanceGuid);
+            }
+        }
+
         protected virtual void PostRunning()
         {
+            if (RunInput)
+            {
+                Message = RunTimeFormatted();
+                //this.SetPrivateRuntimePropertyValue((int)RunTime);
 
-            Message = "Done";
+            }
+            else
+            {
+                Message = "Deactive";
+                //this.SetPrivateRuntimePropertyValue(0);
 
-          
+            }
+
+            PhaseForColors = AestheticPhase.NotRunning;
         }
 
-        public override void ClearCachedData()
+        private string RunTimeFormatted()
         {
-            OldResults = new string[Workers.Count];
+            if (RunTime > 1000 * 60 * 60)
+                return $"Done in {RunTime / 1000.0 / 60.0 / 60.0:0.0}h";
+            if (RunTime > 1000 * 60)
+                return $"Done in {RunTime / 1000.0 / 60.0:0.0}m";
+            else if (RunTime > 1000.0)
+                return $"Done in {RunTime / 1000.0:0.0}s";
+            else
+                return $"Done in {RunTime}ms";
         }
-
 
         public virtual void RequestCancellation()
         {
@@ -275,7 +401,19 @@ namespace MantaRay
             Interlocked.Exchange(ref SetData, 0);
             Message = "Cancelled";
             OnDisplayExpired(true);
+            
         }
 
+        public override void CreateAttributes()
+        {
+            //base.CreateAttributes();
+            m_attributes = new GH_ColorAttributes_Async(this);
+
+        }
+
+        public override TimeSpan ProcessorTime => new TimeSpan(0, 0, 0, 0, (int)RunTime);
+
     }
+
+
 }
