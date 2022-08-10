@@ -139,6 +139,12 @@ namespace MantaRay
             base.RunOnlyOnce(DA); // <-- empty
         }
 
+        protected override void AfterDone()
+        {
+            LogDescriptionDynamic = string.Join("\n", Commands);
+            base.AfterDone();
+        }
+
         protected override bool PreRunning(IGH_DataAccess DA)
         {
             base.PreRunning(DA);
@@ -194,7 +200,7 @@ namespace MantaRay
             }
             else
             {
-                Message = $"Ran in {RunTime.ToShortString()} (last was {LastRun.ToShortString()})";
+                Message = LastRun.TotalMilliseconds > 0? $"Ran in {RunTime.ToShortString()} (last was {LastRun.ToShortString()})" : $"Ran in {RunTime.ToShortString()}";
                 LastRun = RunTime;
             }
 
@@ -257,6 +263,7 @@ namespace MantaRay
             Results.Clear();
             Stderrs.Clear();
             Commands.Clear();
+            LastRun = new TimeSpan();
 
             base.ClearCachedData();
 

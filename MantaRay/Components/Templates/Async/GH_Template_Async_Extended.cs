@@ -72,10 +72,12 @@ namespace MantaRay
 
         protected virtual void AfterDone()
         {
-            if (HasLogAbilities() && LogSave)
+            if (HasLogAbilities() && LogSave && RunCount == 1)
             {
+                
                 LogHelper logHelper = LogHelper.Default;
-                logHelper.Add(LogName, LogUseFixedDescription ? LogDescriptionDynamic : LogDescriptionStatic + $" Done in {Stopwatch.Elapsed.ToReadableString()}", InstanceGuid);
+                //logHelper.Add(LogName, (LogUseFixedDescription ? LogDescriptionStatic : LogDescriptionDynamic) + $" Done in {Stopwatch.Elapsed.ToReadableString()}", InstanceGuid);
+                logHelper.Add(LogName, $"Done in {Stopwatch.Elapsed.ToReadableString()}", InstanceGuid);
             }
             if (Tasks.Count == 0)
             {
@@ -186,7 +188,7 @@ namespace MantaRay
                 Top = 185,
                 Width = 700,
                 Height = 340,
-                Text = LogDescriptionDynamic,
+                Text = LogUseFixedDescription ? LogDescriptionStatic : LogDescriptionDynamic,
                 Multiline = true,
                 AcceptsReturn = true,
                 ForeColor = Color.FromArgb(42, 48, 40),
@@ -212,7 +214,11 @@ namespace MantaRay
             if (result == DialogResult.OK)
             {
                 LogName = nameTextBox.Text;
-                LogDescriptionDynamic = descriptionTextBox.Text;
+                if (useDescriptionCheckBox.Checked)
+                {
+                    LogDescriptionStatic = descriptionTextBox.Text;
+
+                }
                 LogSave = checkBox.Checked;
                 LogUseFixedDescription = useDescriptionCheckBox.Checked;
 
@@ -268,8 +274,8 @@ namespace MantaRay
 
                 if (RunInput)
                 {
-                    Message ="Ran in " + RunTime.ToShortString();
-                    
+                    Message = "Ran in " + RunTime.ToShortString();
+
 
                 }
                 else
@@ -319,10 +325,10 @@ namespace MantaRay
 
 
 
-            if (HasLogAbilities() && LogSave)
+            if (HasLogAbilities() && LogSave && RunInput)
             {
                 LogHelper logHelper = LogHelper.Default;
-                logHelper.Add(LogName, LogUseFixedDescription ? LogDescriptionDynamic : LogDescriptionStatic + " Starting", InstanceGuid);
+                logHelper.Add($"{LogName} {RunCount - 1}", (LogUseFixedDescription ? LogDescriptionStatic : LogDescriptionDynamic) + " Starting", InstanceGuid);
             }
 
             return RunInput;
@@ -335,7 +341,7 @@ namespace MantaRay
             string s = string.Empty;
             bool logSave = false;
 
-            
+
 
             if (reader.TryGetString("description", ref s))
             {
@@ -362,11 +368,11 @@ namespace MantaRay
         {
 
             //writer.SetString("stdouts", String.Join(">JOIN<", ((SSH_Worker)BaseWorker).results.Select(r => r.Stdout)));
-            
+
             writer.SetString("description", LogDescriptionDynamic);
             writer.SetString("staticDescription", LogDescriptionStatic);
             writer.SetString("name", LogName);
-            
+
             writer.SetBoolean("fireLogs", LogSave);
 
 
