@@ -147,7 +147,10 @@ namespace MantaRay
 
         protected override bool PreRunning(IGH_DataAccess DA)
         {
+            
             base.PreRunning(DA);
+
+            this.Hidden = !RunInput;
 
             if (RunCount == 1 && RunInput)
             {
@@ -202,6 +205,7 @@ namespace MantaRay
             {
                 Message = LastRun.TotalMilliseconds > 0 ? $"Ran in {RunTime.ToShortString()} (last was {LastRun.ToShortString()})" : $"Ran in {RunTime.ToShortString()}";
                 LastRun = RunTime;
+                this.Hidden = false;
             }
 
 

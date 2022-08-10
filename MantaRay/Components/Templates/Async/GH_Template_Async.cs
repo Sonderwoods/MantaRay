@@ -40,6 +40,8 @@ namespace MantaRay
 
         public List<CancellationTokenSource> CancellationSources;
 
+        protected bool firstRun = false;
+
         /// <summary>
         /// Set this property inside the constructor of your derived component. 
         /// </summary>
@@ -156,10 +158,16 @@ namespace MantaRay
         protected override void ExpireDownStreamObjects()
         {
             // Prevents the flash of null data until the new solution is ready
-            if (SetData == 1)
+            if (SetData == 1 && !firstRun)
             {
                 base.ExpireDownStreamObjects();
+                firstRun = true;
             }
+        }
+
+        protected void ForceExpireDownStreamObjects()
+        {
+            base.ExpireDownStreamObjects();
         }
 
         /// <summary>

@@ -254,6 +254,17 @@ namespace MantaRay
             DA.SetDataTree(param, runOut);
         }
 
+        protected override void ExpireDownStreamObjects()
+        {
+            // Prevents the flash of null data until the new solution is ready
+            if (!firstRun && (SetData == 1 || (!RunInput && RunCount <= 1)))
+            {
+                base.ForceExpireDownStreamObjects();
+                
+            }
+            firstRun = false;
+        }
+
         protected override void PostRunning(IGH_DataAccess DA)
         {
 
