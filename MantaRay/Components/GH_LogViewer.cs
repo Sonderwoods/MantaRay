@@ -109,7 +109,10 @@ namespace MantaRay.Components
         private void LogHelper_LogUpdated(object sender, EventArgs e)
         {
             if (((LogHelper)sender).Name == logHelper.Name)
-                this.ExpireSolution(true);
+            {
+                Grasshopper.Instances.ActiveCanvas.Document.ScheduleSolution(5, x => this.ExpireSolution(true));
+            }
+            //this.ExpireSolution(true);
             else
                 ((LogHelper)sender).LogUpdated -= LogHelper_LogUpdated; //in case we missed some unsubscribtions
         }
