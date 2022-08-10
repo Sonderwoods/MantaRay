@@ -177,34 +177,34 @@ namespace MantaRay
                     Params.Output[0].ClearData();
                     Params.Output[1].ClearData();
                 }
-                if (Results.Count > RunCount -1)
+                if (Results.Count > RunCount - 1)
                 {
-                string[] splitResultsPerRun = Results[RunCount - 1] != null ? Results[RunCount - 1].Split(new[] { "\n_JOIN_\n" }, StringSplitOptions.None).Select(v => v.Trim()).ToArray() : new string[0];
-                DA.SetDataList(0, splitResultsPerRun);
+                    string[] splitResultsPerRun = Results[RunCount - 1] != null ? Results[RunCount - 1].Split(new[] { "\n_JOIN_\n" }, StringSplitOptions.None).Select(v => v.Trim('\n','\r')).ToArray() : new string[0];
+                    DA.SetDataList(0, splitResultsPerRun);
 
                 }
 
-                if(Stderrs.Count > RunCount - 1)
+                if (Stderrs.Count > RunCount - 1)
                 {
-                string[] splitErrPerRun = Stderrs[RunCount - 1] != null ? Stderrs[RunCount - 1].Split(new[] { "\n_JOIN_\n" }, StringSplitOptions.None).Select(v => v.Trim()).ToArray() : new string[0];
-                DA.SetDataList(1, splitErrPerRun);
+                    string[] splitErrPerRun = Stderrs[RunCount - 1] != null ? Stderrs[RunCount - 1].Split(new[] { "\n_JOIN_\n" }, StringSplitOptions.None).Select(v => v.Trim('\n', '\r')).ToArray() : new string[0];
+                    DA.SetDataList(1, splitErrPerRun);
 
                 }
 
                 //DA.SetDataList(0, Results);
                 //DA.SetDataList(1, Stderrs);
                 SetOneBoolOutput(this, DA, 2, false);
-      
+
                 Message = LastRun.TotalMilliseconds > 0 ? $"Cached  (last was {LastRun.ToShortString()})" : "Clean";
 
             }
             else
             {
-                Message = LastRun.TotalMilliseconds > 0? $"Ran in {RunTime.ToShortString()} (last was {LastRun.ToShortString()})" : $"Ran in {RunTime.ToShortString()}";
+                Message = LastRun.TotalMilliseconds > 0 ? $"Ran in {RunTime.ToShortString()} (last was {LastRun.ToShortString()})" : $"Ran in {RunTime.ToShortString()}";
                 LastRun = RunTime;
             }
 
-            
+
 
 
 
@@ -220,7 +220,7 @@ namespace MantaRay
             if (reader.TryGetDouble("lastRunTime", ref lastRun))
             {
                 LastRun = new TimeSpan(0, 0, 0, 0, (int)lastRun);
-                
+
             }
 
 
@@ -410,12 +410,12 @@ namespace MantaRay
                 ((GH_ExecuteAsync)Parent).Results[Id] = results;
                 ((GH_ExecuteAsync)Parent).Stderrs[Id] = stderr;
 
-                
 
 
-                DA.SetDataList(0, results != null ? results.Split(new[] { "\n_JOIN_\n" }, StringSplitOptions.None) : new string[] { null });
 
-                DA.SetDataList(1, stderr != null ? stderr.Split(new[] { "\n_JOIN_\n" }, StringSplitOptions.None) : new string[] { null });
+                DA.SetDataList(0, results != null ? results.Split(new[] { "\n_JOIN_\n" }, StringSplitOptions.None).Select(b => b.Trim('\n', '\r')) : new string[] { null });
+
+                DA.SetDataList(1, stderr != null ? stderr.Split(new[] { "\n_JOIN_\n" }, StringSplitOptions.None).Select(b => b.Trim('\n', '\r')) : new string[] { null });
 
                 //Set only ONE bool output in "RAN"
                 SetOneBoolOutput(Parent, DA, 2, ran);
