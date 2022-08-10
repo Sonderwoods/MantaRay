@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace MantaRay
 {
-    public class GH_IconHelper: GH_AssemblyPriority
+    public class GH_MantaRayIconHelper: GH_AssemblyPriority
     {
         public override GH_LoadingInstruction PriorityLoad()
         {
