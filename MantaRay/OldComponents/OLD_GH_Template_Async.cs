@@ -12,7 +12,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Timer = System.Timers.Timer;
 
-namespace MantaRay
+namespace MantaRay.OldComponents
 {
 
 
@@ -29,7 +29,7 @@ namespace MantaRay
             NotRunning
         }
 
-        public AestheticPhase PhaseForColors { get; set; } = OLD_GH_TemplateAsync.AestheticPhase.NotRunning;
+        public AestheticPhase PhaseForColors { get; set; } = AestheticPhase.NotRunning;
 
         Stopwatch stopwatch { get; set; } = new Stopwatch();
 
@@ -109,12 +109,12 @@ namespace MantaRay
                     });
                 }
                 RunTime = stopwatch.ElapsedMilliseconds;
-                
+
 
                 if (LogSave)
                 {
                     LogHelper logHelper = LogHelper.Default;
-                    logHelper.Add(LogName, LogUseFixedDescription ? LogDescriptionDynamic: LogDescriptionStatic + $" Done in {stopwatch.Elapsed.ToReadableString()}", InstanceGuid);
+                    logHelper.Add(LogName, LogUseFixedDescription ? LogDescriptionDynamic : LogDescriptionStatic + $" Done in {stopwatch.Elapsed.ToReadableString()}", InstanceGuid);
                 }
 
                 stopwatch.Reset();
@@ -230,7 +230,7 @@ namespace MantaRay
 
             RunInput = true;
 
-            IGH_Param runParam = this.Params.Input.Where(o => o.NickName == "Run" && o.Access == GH_ParamAccess.tree).FirstOrDefault();
+            IGH_Param runParam = Params.Input.Where(o => o.NickName == "Run" && o.Access == GH_ParamAccess.tree).FirstOrDefault();
 
             if (runParam != null)
             {
@@ -242,13 +242,13 @@ namespace MantaRay
                 }
             }
 
-            IGH_Param cmdParam = this.Params.Input.FirstOrDefault();
+            IGH_Param cmdParam = Params.Input.FirstOrDefault();
 
             if (cmdParam != null)
             {
                 inCommands = DA.FetchTree<GH_String>(0).FlattenData().Select(v => v.Value).ToList();
 
-           
+
             }
 
             if (!RunInput)
@@ -287,7 +287,7 @@ namespace MantaRay
                 }
                 PreRunning();
 
-                
+
 
                 // Create the task
                 var tokenSource = new CancellationTokenSource();
@@ -401,7 +401,7 @@ namespace MantaRay
             Interlocked.Exchange(ref SetData, 0);
             Message = "Cancelled";
             OnDisplayExpired(true);
-            
+
         }
 
         public override void CreateAttributes()

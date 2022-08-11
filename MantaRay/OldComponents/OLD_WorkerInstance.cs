@@ -6,7 +6,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace MantaRay
+namespace MantaRay.OldComponents
 {
 
     /// <summary>
@@ -47,7 +47,7 @@ namespace MantaRay
 
         /// <summary>
         /// This method is where the actual calculation/computation/heavy lifting should be done. 
-        /// <b>Make sure you always check as frequently as you can if <see cref="OLD_WorkerInstance.CancellationToken"/> is cancelled. For an example, see the <see cref="PrimeCalculatorWorker"/>.</b>
+        /// <b>Make sure you always check as frequently as you can if <see cref="CancellationToken"/> is cancelled. For an example, see the <see cref="PrimeCalculatorWorker"/>.</b>
         /// </summary>
         /// <param name="ReportProgress">Call this to report progress up to the parent component.</param>
         /// <param name="Done">Call this when everything is <b>done</b>. It will tell the parent component that you're ready to <see cref="SetData(IGH_DataAccess)"/>.</param>

@@ -13,7 +13,7 @@ using Grasshopper.Kernel.Data;
 using Grasshopper.Kernel.Types;
 using Rhino.Geometry;
 
-namespace MantaRay
+namespace MantaRay.OldComponents
 {
     [Obsolete]
     public class GH_ExecuteAsync_OLD : OLD_GH_TemplateAsync, IClearData
@@ -32,8 +32,8 @@ namespace MantaRay
             NickName = "Exec OLD";
             Name = "Exec OLD";
             Description += "OLD! Please use the new one from the taskbar";
-            
-            
+
+
 
         }
 
@@ -51,7 +51,7 @@ namespace MantaRay
         /// <summary>
         /// Registers all the input parameters for this component.
         /// </summary>
-        protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
+        protected override void RegisterInputParams(GH_InputParamManager pManager)
         {
             pManager.AddTextParameter("SSH Commands", "_SSH commands_", "SSH commands. Each item in list will be executed\n\n" +
                 "Do a grafted tree input to run in parallel. However there is no checks if this starts too many CPUs on the host\n" +
@@ -62,7 +62,7 @@ namespace MantaRay
         /// <summary>
         /// Registers all the output parameters for this component.
         /// </summary>
-        protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
+        protected override void RegisterOutputParams(GH_OutputParamManager pManager)
         {
             pManager.AddTextParameter("stdout", "stdout", "stdout", GH_ParamAccess.list);
             pManager.AddTextParameter("stderr", "stderr_", "stderr\nWill output any eventual errors or warnings", GH_ParamAccess.list);
@@ -79,7 +79,7 @@ namespace MantaRay
 
             var m = Menu_AppendItem(menu, "Set Log details...", (s, e) => { SetLogDetails(); }, true);
             m.ToolTipText = "Opens a dialog with settings for local logging";
-           
+
 
             Menu_AppendSeparator(menu);
 
@@ -249,7 +249,7 @@ namespace MantaRay
                 if (useDescriptionCheckBox.Checked)
                 {
                     descriptionTextBox.Enabled = true;
-                    if (!String.IsNullOrEmpty(LogDescriptionStatic))
+                    if (!string.IsNullOrEmpty(LogDescriptionStatic))
                     {
                         descriptionTextBox.Text = LogDescriptionStatic;
                     }
@@ -276,9 +276,9 @@ namespace MantaRay
 
             DA.SetData("Ran", false);
 
-            this.Hidden = true;
+            Hidden = true;
 
-            if (RunInput == false && savedResults.Any(s => !String.IsNullOrEmpty(s.Stdout.ToString())))
+            if (RunInput == false && savedResults.Any(s => !string.IsNullOrEmpty(s.Stdout.ToString())))
             {
                 AddRuntimeMessage(GH_RuntimeMessageLevel.Remark, "Using an old existing stdout\nThis can be convenient for opening old workflows and not running everything again.");
                 DA.SetDataList(0, savedResults.Select(r => r.Stdout.ToString()));
@@ -301,7 +301,7 @@ namespace MantaRay
         public override void RequestCancellation()
         {
             PhaseForColors = AestheticPhase.NotRunning;
-            this.Hidden = true;
+            Hidden = true;
             base.RequestCancellation();
         }
 
@@ -372,7 +372,7 @@ namespace MantaRay
 
                         int pid = -1;
 
-                        string command = String.Join(";", commands.Branches[i].Select(c => c.Value)).AddGlobals().Replace("\r\n", "\n");
+                        string command = string.Join(";", commands.Branches[i].Select(c => c.Value)).AddGlobals().Replace("\r\n", "\n");
 
                         pid = SSH_Helper.Execute(command, result.Log, result.Stdout, result.Stderr, prependPrefix: ((GH_ExecuteAsync_OLD)Parent).addPrefix, ((GH_ExecuteAsync_OLD)Parent).addSuffix, HasZeroAreaPolygons);
 
@@ -410,7 +410,7 @@ namespace MantaRay
 
                     Parent.Hidden = true;
 
-                    if (((GH_ExecuteAsync_OLD)Parent).savedResults.Any(s => !String.IsNullOrEmpty(s.Stdout.ToString())))
+                    if (((GH_ExecuteAsync_OLD)Parent).savedResults.Any(s => !string.IsNullOrEmpty(s.Stdout.ToString())))
                     {
                         results = ((GH_ExecuteAsync_OLD)Parent).savedResults;
                     }
@@ -482,7 +482,7 @@ namespace MantaRay
         {
 
             //writer.SetString("stdouts", String.Join(">JOIN<", ((SSH_Worker)BaseWorker).results.Select(r => r.Stdout)));
-            writer.SetString("stdouts", String.Join(">JOIN<", savedResults.Select(r => r.Stdout)));
+            writer.SetString("stdouts", string.Join(">JOIN<", savedResults.Select(r => r.Stdout)));
             writer.SetString("description", LogDescriptionDynamic);
             writer.SetString("staticDescription", LogDescriptionStatic);
             writer.SetString("name", LogName);
@@ -501,7 +501,7 @@ namespace MantaRay
 
         public override bool Read(GH_IReader reader)
         {
-            string s = String.Empty;
+            string s = string.Empty;
             bool logSave = false;
 
             if (reader.TryGetString("stdouts", ref s))
