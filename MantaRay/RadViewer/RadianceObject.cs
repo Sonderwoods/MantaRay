@@ -13,29 +13,13 @@ using Grasshopper.Kernel;
 namespace MantaRay.RadViewer
 {
 
-    public abstract class RadianceObject : IHasPreview
+    public abstract class RadianceObject
     {
         public string ModifierName;
         public string ObjectType;
         public string Name;
         public RadianceObject Modifier;
 
-        string IHasPreview.GetName()
-        {
-            return Name;
-        }
-
-        string IHasPreview.GetDescription()
-        {
-            return ((IHasPreview)Modifier).GetName();
-        }
-
-        abstract public bool HasPreviewMesh();
-        abstract public bool HasPreviewBrep();
-
-        public abstract void DrawPreviewMesh(IGH_PreviewArgs args);
-        public abstract void DrawPreviewBrep(IGH_PreviewArgs args);
-        public abstract BoundingBox? GetBoundingBox();
 
         public RadianceObject(string[] data)
         {
@@ -44,8 +28,13 @@ namespace MantaRay.RadViewer
             Name = data[2];
         }
 
+        public RadianceObject()
+        {
+
+        }
+
         [Pure]
-        public static RadianceObject ConvertToObject(string line)
+        public static RadianceObject FromString(string line)
         {
             const string rep_new_line_re = @"/\s\s+/g";
 

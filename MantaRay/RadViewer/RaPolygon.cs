@@ -1,4 +1,5 @@
 ﻿using Grasshopper.Kernel;
+using Grasshopper.Kernel.Types;
 using Rhino.Display;
 using Rhino.Geometry;
 using System;
@@ -155,7 +156,7 @@ namespace MantaRay.RadViewer
 
 
 
-        public override void DrawObject(IGH_PreviewArgs args, double alpha = 1.0)
+        public void DrawObject(IGH_PreviewArgs args, double alpha = 1.0)
         {
             double oldTrans = Material.Transparency;
             Material.Transparency = 1.0 - alpha;
@@ -163,23 +164,22 @@ namespace MantaRay.RadViewer
             Material.Transparency = oldTrans;
         }
 
-        public override void DrawPreviewMesh(IGH_PreviewArgs args)
+        public override void DrawPreview(IGH_PreviewArgs args, DisplayMaterial material)
         {
-            throw new NotImplementedException();
-            DrawObject(args, 1.0);
-        }
+            args.Display.DrawMeshShaded(Mesh, material);
 
-        public override void DrawPreviewBrep(IGH_PreviewArgs args)
-        {
-            throw new NotImplementedException();
-            DrawObject(args, 1.0);
         }
 
 
 
-        public override void DrawWires(IGH_PreviewArgs args)
+        public override void DrawWires(IGH_PreviewArgs args, int thickness = 1)
         {
             args.Display.DrawMeshWires(Mesh, System.Drawing.Color.Black, 1);
+        }
+
+        public override IGH_GeometricGoo GetGeometry(bool asMesh)
+        {
+            return new GH_Mesh(Mesh);
         }
 
         [Serializable]

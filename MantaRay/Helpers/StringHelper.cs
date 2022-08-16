@@ -11,6 +11,21 @@ namespace MantaRay
     public static class StringHelper
     {
 
+        public static bool HasLetters(this string line)
+        {
+            
+            for (int i = 0; i < line.Length; i++)
+            {
+
+                if (line[i] >= 'a' && line[i] <= 'z' || line[i] >= 'A' && line[i] <= 'Z')
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         /// <summary>
         /// https://stackoverflow.com/questions/842057/how-do-i-convert-a-timespan-to-a-formatted-string
         /// </summary>

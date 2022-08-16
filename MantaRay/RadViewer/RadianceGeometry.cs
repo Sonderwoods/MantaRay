@@ -1,4 +1,7 @@
 ﻿using Grasshopper.Kernel;
+using Grasshopper.Kernel.Types;
+using MantaRay.RadViewer.HeadsUpDisplay;
+using Rhino.Display;
 using Rhino.Geometry;
 using System;
 using System.Collections.Generic;
@@ -9,7 +12,7 @@ using System.Threading.Tasks;
 namespace MantaRay.RadViewer
 {
 
-    public abstract class RadianceGeometry : RadianceObject
+    public abstract class RadianceGeometry : RadianceObject, IHasPreview
     {
         public BoundingBox? BBox { get; set; }
         public Rhino.Display.DisplayMaterial Material { get; set; } = new Rhino.Display.DisplayMaterial(System.Drawing.Color.Gray);
@@ -19,17 +22,26 @@ namespace MantaRay.RadViewer
 
         }
 
+        public RadianceGeometry()
+        {
+
+        }
+
+       
 
 
-        public override BoundingBox? GetBoundingBox()
+
+        public virtual BoundingBox? GetBoundingBox()
         {
             return BBox;
         }
 
-        public override bool HasPreviewBrep() => true;
-        public override bool HasPreviewMesh() => true;
+        public virtual bool HasPreview() => true;
 
-        public abstract void DrawObject(IGH_PreviewArgs args, double alpha = 1.0);
-        public abstract void DrawWires(IGH_PreviewArgs args);
+        public virtual string GetName() => Name;
+        public virtual string GetDescription() => Modifier.Name;
+        public abstract void DrawPreview(IGH_PreviewArgs args, DisplayMaterial material);
+        public abstract void DrawWires(IGH_PreviewArgs args, int thickness = 1);
+        public abstract IGH_GeometricGoo GetGeometry(bool asMesh);
     }
 }

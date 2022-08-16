@@ -13,25 +13,35 @@ namespace MantaRay.RadViewer.HeadsUpDisplay
 
     public class HUD_Item
     {
-        public object Sender { get; set; }
+        /// <summary>
+        /// In our case this could be the radiance object. Hint Hint. But you can make your own objects too!
+        /// </summary>
+        public IHasPreview Value { get; set; }
         public HUD HUD { get; set; }
-        public string Name { get; set; }
-        public string Description { get; set; }
+        public string Name => Value.GetName();
+        public string Description => Value.GetDescription();
         public Rectangle Rectangle { get; set; }
-        public BoundingBox? Box { get; set; }
-        public Mesh Mesh
-        {
-            get => _mesh;
-            set
-            {
-                _mesh = value;
-                Box = _mesh.GetBoundingBox(false);
-            }
-        }
-        private Mesh _mesh;
+        public BoundingBox? Box => Value.GetBoundingBox();
+
         public Color Color { get; set; } = Color.White;
         public Dictionary<string, HUD_ContextMenuEventHandler> ContextMenuItems { get; set; } = new Dictionary<string, HUD_ContextMenuEventHandler>();
         public HUD_ContextMenuEventHandler OnLeftClick { get; set; }
+
+
+        public HUD_Item(IHasPreview value)
+        {
+            Value = value;
+        }
+
+        /// <summary>
+        /// Only use this instanciator if you can set the value manually!
+        /// </summary>
+        public HUD_Item()
+        {
+
+        }
+        
+
         public void ZoomToBox()
         {
             if (Box != null && Box.Value.IsValid)
@@ -42,6 +52,8 @@ namespace MantaRay.RadViewer.HeadsUpDisplay
             }
         }
 
+
+
         public override string ToString()
         {
             return Name;
@@ -49,45 +61,38 @@ namespace MantaRay.RadViewer.HeadsUpDisplay
 
         virtual public void DrawEdges(IGH_PreviewArgs args)
         {
-            if (Mesh != null && Mesh.IsValid)
-                args.Display.DrawMeshWires(Mesh, Color.Black);
+            Value.DrawWires(args, 1);
+            //if (Mesh != null && Mesh.IsValid)
+            //    args.Display.DrawMeshWires(Mesh, Color.Black);
         }
 
         virtual public void DrawMesh(IGH_PreviewArgs args, double alpha = 0.3, bool twoSided = false, bool grey = false)
         {
 
-
-
-
-            if (Mesh?.IsValid == true)
+            var material = new DisplayMaterial(grey ? Color.Gray : Color)
             {
-                if (Mesh.VertexColors.Count == 0)
-                {
+                Transparency = twoSided ? 0.0 : 1 - alpha,
+                Emission = grey ? Color.Gray : Color,
+                IsTwoSided = twoSided,
+                BackDiffuse = Color.Black,
+                BackEmission = Color.Black,
+                BackTransparency = twoSided ? 0.3 : 1 - alpha,
+            };
 
-                    args.Display.DrawMeshShaded(Mesh,
-                        new DisplayMaterial(grey ? Color.Gray : Color)
-                        {
-                            Transparency = twoSided ? 0.0 : 1 - alpha,
-                            Emission = grey ? Color.Gray : Color,
-                            IsTwoSided = twoSided,
-                                //IsTwoSided = true,
-                            BackDiffuse = Color.Black,
-                            BackEmission = Color.Black,
-                            BackTransparency = twoSided ? 0.3 : 1 - alpha,
-                        });
+            Value.DrawPreview(args, material);
 
 
-                }
-                else
-                {
-                    args.Display.DrawMeshFalseColors(Mesh);
-                }
-            }
         }
 
 
 
-        public virtual void Draw(ref System.Drawing.Point anchor, HUD HUD, DrawEventArgs args)
+        /// <summary>
+        /// This shows the box with name on... 
+        /// </summary>
+        /// <param name="anchor"></param>
+        /// <param name="HUD"></param>
+        /// <param name="args"></param>
+        public virtual void Draw2D(ref System.Drawing.Point anchor, HUD HUD, DrawEventArgs args)
         {
             HUD = HUD ?? this.HUD;
             if (HUD == null)
@@ -120,6 +125,12 @@ namespace MantaRay.RadViewer.HeadsUpDisplay
             anchor.Y += (int)((HUD.Height + 2) * HUD.Scale);
         }
 
+
+        /// <summary>
+        /// This draws the box showing the description
+        /// </summary>
+        /// <param name="HUD"></param>
+        /// <param name="args"></param>
         internal virtual void DrawDescription(HUD HUD, DrawEventArgs args)
         {
 
@@ -151,7 +162,14 @@ namespace MantaRay.RadViewer.HeadsUpDisplay
 
         }
 
+        /// <summary>
+        /// Used to pass right click menu on the item
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         public delegate void HUD_ContextMenuEventHandler(object sender, HUD_ItemEventArgs e);
+
+
         public class HUD_ItemEventArgs : EventArgs
         {
             public HUD_Item Item { get; set; }

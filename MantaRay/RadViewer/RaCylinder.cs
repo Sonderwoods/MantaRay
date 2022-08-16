@@ -1,4 +1,6 @@
 ﻿using Grasshopper.Kernel;
+using Grasshopper.Kernel.Types;
+using Rhino.Display;
 using Rhino.Geometry;
 using System;
 using System.Collections.Generic;
@@ -46,13 +48,28 @@ namespace MantaRay.RadViewer
 
         }
 
-        public override void DrawObject(IGH_PreviewArgs args, double alpha = 1.0)
+        public override void DrawPreview(IGH_PreviewArgs args, DisplayMaterial material)
         {
             if (cylinder.HasValue)
             {
-                args.Display.DrawCylinder(cylinder.Value, System.Drawing.Color.Black);
+                args.Display.DrawCylinder(cylinder.Value, material.Diffuse);
 
             }
+        }
+
+        public override IGH_GeometricGoo GetGeometry(bool asMesh)
+        {
+            if (cylinder.HasValue)
+            {
+                if (asMesh)
+                    return new GH_Mesh(Mesh.CreateFromCylinder(cylinder.Value, 20, 20));
+                else
+                    return new GH_Brep(Brep.CreateFromCylinder(cylinder.Value, true, true));
+            }
+            else
+                return null;
+            
+            
         }
 
     }

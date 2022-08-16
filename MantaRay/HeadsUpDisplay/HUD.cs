@@ -67,7 +67,7 @@ namespace MantaRay.RadViewer.HeadsUpDisplay
             {
                 foreach (var item in Items)
                 {
-                    item?.Draw(ref CurrentAnchor, this, args);
+                    item?.Draw2D(ref CurrentAnchor, this, args);
                 }
 
             }
@@ -78,7 +78,7 @@ namespace MantaRay.RadViewer.HeadsUpDisplay
 
             HighlightedItem?.DrawDescription(this, args);
 
-            CloseBtn?.Draw(ref CurrentAnchor, this, args);
+            CloseBtn?.Draw2D(ref CurrentAnchor, this, args);
 
 
         }

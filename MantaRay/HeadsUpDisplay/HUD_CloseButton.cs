@@ -6,23 +6,35 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Rhino.Display;
+using Grasshopper.Kernel;
+using Grasshopper.Kernel.Types;
 
 namespace MantaRay.RadViewer.HeadsUpDisplay
 {
 
     public class HUD_CloseButton : HUD_Item
     {
-
-        public HUD_CloseButton(HUD hud)
+        public class HUD_CloseButton_Value : IHasPreview
         {
+            public string Name { get; set; } = "X";
+            public string Description { get; set; } = "Click to hide\nRight click to remove";
+            public void DrawPreview(IGH_PreviewArgs args, DisplayMaterial material) { }
+            public void DrawWires(IGH_PreviewArgs args, int thickness = 1) { }
+            public IGH_GeometricGoo GetGeometry() => null;
+            public BoundingBox? GetBoundingBox() => null;
+            public string GetDescription() => Description;
+            public string GetName() => Name;
+            public bool HasPreview() => false;
+        }
+
+        public HUD_CloseButton(HUD hud): base(null)
+        {
+            Value = new HUD_CloseButton_Value();
             HUD = hud;
-            Description = "Click to hide\nRight click to remove";
             Color = Color.FromArgb(200, 255, 255, 255);
-            Name = "X";
             OnLeftClick = new HUD_ContextMenuEventHandler((e, args) =>
             {
                 HideCollapse(hud);
-
             });
 
             ContextMenuItems.Add("Remove", new HUD_ContextMenuEventHandler((e, args) =>
@@ -46,19 +58,16 @@ namespace MantaRay.RadViewer.HeadsUpDisplay
             if (_hud != null)
             {
 
-                _hud.CloseBtn.Name = _hud.Collapsed ? "X" : "+";
+                ((HUD_CloseButton_Value)_hud.CloseBtn.Value).Name = _hud.Collapsed ? "X" : "+";
                 _hud.Collapsed = !_hud.Collapsed;
-                _hud.CloseBtn.Description = _hud.Collapsed ? "Click to Expand\nRight click to remove" : "Click to hide\nRight click to remove";
+                ((HUD_CloseButton_Value)_hud.CloseBtn.Value).Description = _hud.Collapsed ? "Click to Expand\nRight click to remove" : "Click to hide\nRight click to remove";
                 Rhino.RhinoDoc.ActiveDoc.Views.ActiveView.Redraw();
             }
         }
         public int Size { get; set; } = 20;
 
 
-        public new Mesh Mesh { get => null; }
-
-
-        public override void Draw(ref System.Drawing.Point anchor, HUD HUD, DrawEventArgs args)
+        public override void Draw2D(ref System.Drawing.Point anchor, HUD HUD, DrawEventArgs args)
         {
             int fontSize = 10;
             bool isItemHighlighted = ReferenceEquals(HUD.HighlightedItem, this);

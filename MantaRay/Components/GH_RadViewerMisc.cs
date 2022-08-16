@@ -5,6 +5,7 @@ using MantaRay.RadViewer.HeadsUpDisplay;
 using Rhino.Display;
 using Rhino.Geometry;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
@@ -93,19 +94,25 @@ namespace MantaRay.Components
 
 
 
-            foreach (RaPolygon poly in objects.Where(o => o.Value is RaPolygon).Select(o => (RaPolygon)o.Value))
+            foreach (var obj in objects)
             {
-                try
-                {
-                    string desc = poly.Modifier is RadianceMaterial m ? m.MaterialDefinition : string.Empty;
-                    hud.Items.Add(new HUD_Item() { Name = poly.Name, Description = desc, Mesh = poly.Mesh, Color = poly.Material.Diffuse });
 
-                }
-                catch (Exception e)
-                {
-                    ErrorMsgs.Add("add hud: " + e.Message);
-                }
+                hud.Items.Add(new HUD_Item(obj.Value));
+                //try
+                //{
+
+                //    //string desc = poly.Modifier is RadianceMaterial m ? m.MaterialDefinition : string.Empty;
+                //    //hud.Items.Add(new HUD_Item() { Name = poly.Name, Description = desc, Mesh = poly.Mesh, Color = poly.Material.Diffuse });
+                    
+
+                //}
+                //catch (Exception e)
+                //{
+                //    ErrorMsgs.Add("add hud: " + e.Message);
+                //}
             }
+
+            
         }
 
 
@@ -136,7 +143,7 @@ namespace MantaRay.Components
 
 
 
-        public override BoundingBox ClippingBox => bb;
+        public override BoundingBox ClippingBox => bb.Value;
 
         public override void DrawViewportMeshes(IGH_PreviewArgs args)
         {
@@ -169,9 +176,10 @@ namespace MantaRay.Components
                 //foreach (var item in hud.Items)
                 //    item.DrawMesh(args, Transparent ? 0.9 : 1.0);
 
-                foreach (RadianceGeometry obj in objects.Where(o => o.Value is RadianceGeometry).Select(o => o.Value))
+                foreach (KeyValuePair<string, RadianceObjectCollection> pair in objects)
                 {
-                    obj.DrawObject(args, Transparent ? 0.9 : 1.0); //This one works with twosided option.
+                    pair.Value.DrawPreview(args, pair.Value.Material);
+                    //obj.DrawObject(args, Transparent ? 0.9 : 1.0); //This one works with twosided option.
                 }
             }
             //}
