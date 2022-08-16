@@ -70,13 +70,17 @@ namespace MantaRay
 
         }
 
+        /// <summary>
+        /// Called in the <see cref="DoDone"/> method of the <see cref="GH_Template_Async_Extended"/>
+        /// Remember to call base as it will set Log and RunTimes
+        /// </summary>
         protected virtual void AfterDone()
         {
             if (HasLogAbilities() && LogSave && RunCount == 1)
             {
-                
+
                 LogHelper logHelper = LogHelper.Default;
-                //logHelper.Add(LogName, (LogUseFixedDescription ? LogDescriptionStatic : LogDescriptionDynamic) + $" Done in {Stopwatch.Elapsed.ToReadableString()}", InstanceGuid);
+
                 logHelper.Add(LogName, $"Done in {Stopwatch.Elapsed.ToReadableString()}", InstanceGuid);
             }
             if (Tasks.Count == 0)
@@ -84,34 +88,34 @@ namespace MantaRay
                 RunTime = Stopwatch.Elapsed;
 
             }
-            //Stopwatch.Reset();
         }
 
+        /// <summary>
+        /// DoDone is the Done() Delegate fed into the <see cref="GH_Template_Async_Extended"/>.
+        /// </summary>
         protected virtual void DoDone()
         {
 
+            Interlocked.Increment(ref State);
+            if (State == Workers.Count && SetData == 0)
             {
-                Interlocked.Increment(ref State);
-                if (State == Workers.Count && SetData == 0)
+                Interlocked.Exchange(ref SetData, 1);
+
+                // We need to reverse the workers list to set the outputs in the same order as the inputs. 
+                Workers.Reverse();
+
+                Rhino.RhinoApp.InvokeOnUiThread((Action)delegate
                 {
-                    Interlocked.Exchange(ref SetData, 1);
+                    ExpireSolution(true);
+                });
 
-                    // We need to reverse the workers list to set the outputs in the same order as the inputs. 
-                    Workers.Reverse();
-
-                    Rhino.RhinoApp.InvokeOnUiThread((Action)delegate
-                    {
-                        ExpireSolution(true);
-                    });
-
-                    //RunTime = Stopwatch.ElapsedMilliseconds;
-                }
+            }
 
 
 
-                AfterDone();
+            AfterDone();
 
-            };
+
 
         }
 
@@ -260,7 +264,7 @@ namespace MantaRay
             if (!firstRun && (SetData == 1 || (!RunInput && RunCount <= 1)))
             {
                 base.ForceExpireDownStreamObjects();
-                
+
             }
             firstRun = false;
         }

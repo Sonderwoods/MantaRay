@@ -136,7 +136,7 @@ namespace MantaRay
             Commands.Clear();
             Stderrs.Clear();
 
-            base.RunOnlyOnce(DA); // <-- empty
+            //base.RunOnlyOnce(DA); // <-- empty
         }
 
         protected override void AfterDone()

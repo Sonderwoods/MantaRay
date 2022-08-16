@@ -11,18 +11,19 @@ using Timer = System.Timers.Timer;
 namespace MantaRay
 {
     /// <summary>
-    /// Inherit your component from this class to make all the async goodness available.
+    /// Inherit your component from this class to make all the async goodness available. (Based on the Speckle component)
     /// </summary>
     public abstract class GH_Template_Async : GH_Template_SaveStrings
     {
         public override Guid ComponentGuid => throw new Exception("ComponentGuid should be overriden in any descendant of GH_AsyncComponent!");
 
-        //List<(string, GH_RuntimeMessageLevel)> Errors;
-
         protected Action<string, double> ReportProgress;
 
         public ConcurrentDictionary<string, double> ProgressReports;
 
+        /// <summary>
+        /// Action to be called when the <see cref="WorkerInstance.DoWork(Action{string, double}, Action)"/> is done.
+        /// </summary>
         protected Action Done;
 
         protected Timer DisplayProgressTimer;
@@ -171,7 +172,7 @@ namespace MantaRay
         }
 
         /// <summary>
-        /// To clear lists etc, only running on the first iteration!
+        /// To clear lists etc, only running on the first iteration! No need to call base as it is empty in template
         /// </summary>
         /// <param name="DA"></param>
         protected virtual void RunOnlyOnce(IGH_DataAccess DA)
