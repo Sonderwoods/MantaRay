@@ -20,11 +20,12 @@ namespace MantaRay.RadViewer.HeadsUpDisplay
             public string Description { get; set; } = "Click to hide\nRight click to remove";
             public void DrawPreview(IGH_PreviewArgs args, DisplayMaterial material) { }
             public void DrawWires(IGH_PreviewArgs args, int thickness = 1) { }
-            public IGH_GeometricGoo GetGeometry() => null;
             public BoundingBox? GetBoundingBox() => null;
             public string GetDescription() => Description;
             public string GetName() => Name;
             public bool HasPreview() => false;
+            IEnumerable<GeometryBase> IHasPreview.GetGeometry() => null;
+
         }
 
         public HUD_CloseButton(HUD hud): base(null)

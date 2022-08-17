@@ -156,18 +156,23 @@ namespace MantaRay.RadViewer
 
 
 
-        public void DrawObject(IGH_PreviewArgs args, double alpha = 1.0)
-        {
-            double oldTrans = Material.Transparency;
-            Material.Transparency = 1.0 - alpha;
-            args.Display.DrawMeshShaded(Mesh, Material); //works with twosided
-            Material.Transparency = oldTrans;
-        }
+        //public void DrawObject(IGH_PreviewArgs args, double alpha = 1.0)
+        //{
+        //    double oldTrans = Material.Transparency;
+        //    Material.Transparency = 1.0 - alpha;
+        //    args.Display.DrawMeshShaded(Mesh, Material); //works with twosided
+        //    Material.Transparency = oldTrans;
+        //}
 
         public override void DrawPreview(IGH_PreviewArgs args, DisplayMaterial material)
         {
             args.Display.DrawMeshShaded(Mesh, material);
 
+        }
+
+        public override BoundingBox? GetBoundingBox()
+        {
+            return Mesh.GetBoundingBox(false);
         }
 
 
@@ -177,9 +182,9 @@ namespace MantaRay.RadViewer
             args.Display.DrawMeshWires(Mesh, System.Drawing.Color.Black, 1);
         }
 
-        public override IGH_GeometricGoo GetGeometry(bool asMesh)
+        public override IEnumerable<GeometryBase> GetGeometry()
         {
-            return new GH_Mesh(Mesh);
+            yield return Mesh;
         }
 
         [Serializable]

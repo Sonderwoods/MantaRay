@@ -17,6 +17,8 @@ using Rhino.Geometry;
 
 using MantaRay.RadViewer;
 using MantaRay.RadViewer.HeadsUpDisplay;
+using Grasshopper.Kernel.Data;
+using Grasshopper.Kernel.Types;
 
 namespace MantaRay.Components
 {
@@ -50,7 +52,7 @@ namespace MantaRay.Components
         readonly Dictionary<string, RadianceMaterial> modifiers = new Dictionary<string, RadianceMaterial>();
 
         BoundingBox? bb = null;
-        readonly Random rnd = new Random();
+        //readonly Random rnd = new Random();
         readonly List<Curve> failedCurves = new List<Curve>();
         readonly Dictionary<string, System.Drawing.Color> colors = new Dictionary<string, System.Drawing.Color>();
 
@@ -69,6 +71,7 @@ namespace MantaRay.Components
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
             pManager[pManager.AddTextParameter("RadFiles", "RadFiles", "Rad files", GH_ParamAccess.list)].Optional = true;
+            pManager[0].DataMapping = GH_DataMapping.Flatten;
 
         }
 
@@ -77,7 +80,7 @@ namespace MantaRay.Components
         /// </summary>
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
-            int p = pManager.AddGeometryParameter("Geo", "Geo", "Geo", GH_ParamAccess.list);
+            int p = pManager.AddGeometryParameter("Geo", "Geo", "Geo", GH_ParamAccess.tree);
             pManager.HideParameter(p);
             pManager.AddTextParameter("Names", "Names", "Names", GH_ParamAccess.list);
             pManager.AddTextParameter("ModifierNames", "ModifierNames", "Modifier names", GH_ParamAccess.list);
@@ -95,28 +98,40 @@ namespace MantaRay.Components
         protected override void SolveInstance(IGH_DataAccess DA)
         {
 
-            if (!isRunning)
-            {
-                DA.SetDataList(0, objects.OrderBy(o => o.Key).Select(o => o.Value.GetGeometry(false)));
-                DA.SetDataList(1, objects.OrderBy(o => o.Key).Select(o => o.Value.GetName()));
-                DA.SetDataList(2, objects.OrderBy(o => o.Key).Select(o => o.Value.ModifierName));
-                //DA.SetDataList(3, objects.OrderBy(o => o.Key).Select(o => (o.Value.Modifier)).Select(m => m is RadianceMaterial ? (m as RadianceMaterial).MaterialDefinition : null));
-                DA.SetDataList(4, failedCurves);
-                isRunning = true;
+            //if (!isRunning)
+            //{
+            //    GH_Structure<IGH_GeometricGoo> outGeo = new GH_Structure<IGH_GeometricGoo>();
 
-                this.Hidden = wasHidden;
+            //    int i = 0;
 
-                foreach (string msg in ErrorMsgs)
-                {
-                    AddRuntimeMessage(GH_RuntimeMessageLevel.Error, msg);
-                }
-                return;
-            }
+            //    foreach (IEnumerable<IGH_GeometricGoo> item in objects.OrderBy(o => o.Key).Select(o => o.Value.GetGeometry()))
+            //    {
+            //        GH_Path p = new GH_Path(i++);
+
+            //        outGeo.AppendRange(item, p);
+            //    }
+
+            //    DA.SetDataTree(0, outGeo);
+            //    DA.SetDataList(1, objects.OrderBy(o => o.Key).Select(o => o.Value.GetName()));
+            //    DA.SetDataList(2, objects.OrderBy(o => o.Key).Select(o => o.Value.ModifierName));
+            //    //DA.SetDataList(3, objects.OrderBy(o => o.Key).Select(o => (o.Value.Modifier)).Select(m => m is RadianceMaterial ? (m as RadianceMaterial).MaterialDefinition : null));
+            //    DA.SetDataList(4, failedCurves);
+            //    isRunning = true;
+
+            //    this.Hidden = wasHidden;
+
+            //    foreach (string msg in ErrorMsgs)
+            //    {
+            //        AddRuntimeMessage(GH_RuntimeMessageLevel.Error, msg);
+            //    }
+            //    return;
+            //}
 
 
             ErrorMsgs.Clear();
             objects.Clear();
             failedCurves.Clear();
+            modifiers.Clear();
 
 
 
@@ -169,7 +184,7 @@ namespace MantaRay.Components
             {
                 if (String.IsNullOrEmpty(radFile) || !File.Exists(radFile))
                 {
-                    AddRuntimeMessage(GH_RuntimeMessageLevel.Error, $"{radFile} not found.");
+                    AddRuntimeMessage(GH_RuntimeMessageLevel.Error, $"File \"{radFile}\" not found.");
                     continue;
                 }
 
@@ -269,6 +284,7 @@ namespace MantaRay.Components
 
                 if (c2++ % 10 == 0 && GH_Document.IsEscapeKeyDown())
                 {
+                    this.Locked = true;
                     radianceObjects.CompleteAdding();
                     GH_Document GHDocument = OnPingDocument();
                     GHDocument.RequestAbortSolution();
@@ -298,37 +314,47 @@ namespace MantaRay.Components
                     GHDocument.RequestAbortSolution();
                 }
 
-                try
+                //try
+                //{
+                switch (obj)
                 {
-                    switch (obj)
-                    {
-                        case IHasPreview previewableObject:
-                            if (!bb.HasValue || bb.HasValue && bb.Value.Min == bb.Value.Max)
-                                bb = previewableObject.GetBoundingBox();
-                            else if (previewableObject.GetBoundingBox() != null)
-                                bb?.Union(previewableObject.GetBoundingBox().Value);
+                    case IHasPreview previewableObject:
+                        if (!bb.HasValue || bb.HasValue && bb.Value.Min == bb.Value.Max)
+                            bb = previewableObject.GetBoundingBox();
+                        else if (previewableObject.GetBoundingBox() != null)
+                            bb?.Union(previewableObject.GetBoundingBox().Value);
 
-                            if (objects.ContainsKey(obj.ModifierName) && obj is RadianceGeometry g)
-                            {
-                                objects[obj.ModifierName].AddObject(g);
-                            }
+                        if (!objects.ContainsKey(obj.ModifierName))
+                        {
+                            var radObjects = new RadianceObjectCollection(obj.ModifierName);
+                            radObjects.AddObject((RadianceGeometry)obj);
+                            
+                            objects.Add(obj.ModifierName, radObjects);
+                        }
+                        else
+                        {
+                            objects[obj.ModifierName].AddObject((RadianceGeometry)obj);
+                        }
 
-                            break;
+                        break;
 
-                        case RadianceMaterial mat:
+                    case RadianceMaterial mat:
+                        if (!modifiers.ContainsKey(mat.Name))
+                        {
                             modifiers.Add(mat.Name, mat);
 
-                            break;
+                        }
 
-                        default:
+                        break;
 
-                            break;
-                    }
+                    default:
+                        throw new Exception("Unknown type");
                 }
-                catch (Exception e)
-                {
-                    ErrorMsgs.Add("Create objs: " + e.Message);
-                }
+                //}
+                //catch (Exception e)
+                //{
+                //    ErrorMsgs.Add("Create objs: " + e.Message);
+                //}
 
 
             }
@@ -341,41 +367,36 @@ namespace MantaRay.Components
                 obj.UpdateMesh();
             }
 
-            Debug.WriteLine("done updating meshes");
+            Debug.WriteLine("done updating meshes in polygons");
 
             HashSet<string> uniqueMissingModifiers = new HashSet<string>();
 
             //try
             //{
 
+            Debug.WriteLine("starting to map nested modifiers etc.");
+
             foreach (RadianceObjectCollection collection in objects.Values)
             {
-                foreach (var obj in collection.Objects)
+                var firstObj = collection.Objects.FirstOrDefault();
+
+                if (firstObj != null && modifiers.ContainsKey(((RadianceObject)firstObj).ModifierName))
                 {
+                    collection.Modifier = modifiers[((RadianceObject)firstObj).ModifierName];
 
-
-                    if (objects.ContainsKey(obj.Value.ModifierName) && obj.Value.ModifierName != objects[obj.Value.ModifierName].ModifierName)
+                    foreach (var obj in collection.Objects)
                     {
-                        obj.Value.Modifier = objects[obj.Value.ModifierName];
-                    }
-                    else if (objects.ContainsKey("Material_" + obj.Value.ModifierName))
-                    {
-                        obj.Value.Modifier = objects["Material_" + obj.Value.ModifierName];
-                    }
-                    else
-                    {
-                        if (uniqueMissingModifiers.Add(obj.Value.ModifierName) && obj.Value.ModifierName != "void")
-                            AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, $"Modifier not found: {obj.Value.ModifierName}. Refered to by {obj.Key}");
+                        ((RadianceObject)obj).Modifier = modifiers[((RadianceObject)firstObj).ModifierName];
                     }
                 }
-
+                else
+                {
+                    if (uniqueMissingModifiers.Add(((RadianceObject)firstObj).ModifierName) && ((RadianceObject)firstObj).ModifierName != "void")
+                        AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, $"Modifier not found: {((RadianceObject)firstObj).ModifierName}. Refered to by {firstObj.GetName()}");
+                }
             }
 
-            //}
-            //catch (Exception e)
-            //{
-            //    ErrorMsgs.Add("modifiers: " + e.Message);
-            //}
+
 
             Debug.WriteLine("done setting modifiers");
 
@@ -385,9 +406,53 @@ namespace MantaRay.Components
             isRunning = false;
             timeSpan = new TimeSpan(0, 0, 0, 0, (int)sw.ElapsedMilliseconds);
             sw.Stop();
-            this.ExpireSolution(true);
+            //this.ExpireSolution(true);
 
             //});
+
+
+
+            GH_Structure<IGH_GeometricGoo> outGeo = new GH_Structure<IGH_GeometricGoo>();
+
+            int i = 0;
+
+            foreach (IEnumerable<GeometryBase> item in objects.OrderBy(o => o.Key).Select(o => o.Value.GetGeometry()))
+            {
+                GH_Path p = new GH_Path(i++);
+
+                foreach (var obj in item)
+                {
+                    switch (obj)
+                    {
+                        case Mesh m:
+                            outGeo.Append(new GH_Mesh(m), p);
+                            break;
+                        case Brep b:
+                            outGeo.Append(new GH_Brep(b), p);
+                            break;
+                        default:
+                            throw new Exception("unknown type");
+                    }
+
+                }
+
+
+            }
+
+            DA.SetDataTree(0, outGeo);
+            DA.SetDataList(1, objects.OrderBy(o => o.Key).Select(o => o.Value.GetName()));
+            DA.SetDataList(2, objects.OrderBy(o => o.Key).Select(o => o.Value.ModifierName));
+            //DA.SetDataList(3, objects.OrderBy(o => o.Key).Select(o => (o.Value.Modifier)).Select(m => m is RadianceMaterial ? (m as RadianceMaterial).MaterialDefinition : null));
+            DA.SetDataList(4, failedCurves);
+            isRunning = true;
+
+            this.Hidden = wasHidden;
+
+            foreach (string msg in ErrorMsgs)
+            {
+                AddRuntimeMessage(GH_RuntimeMessageLevel.Error, msg);
+            }
+            return;
 
 
         }

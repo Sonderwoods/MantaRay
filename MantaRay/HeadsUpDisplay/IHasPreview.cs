@@ -48,6 +48,6 @@ namespace MantaRay.RadViewer.HeadsUpDisplay
         void DrawWires(IGH_PreviewArgs args, int thickness = 1);
         BoundingBox? GetBoundingBox();
 
-        IGH_GeometricGoo GetGeometry(bool asMesh); 
+        IEnumerable<GeometryBase> GetGeometry(); 
     }
 }

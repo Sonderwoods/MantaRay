@@ -33,7 +33,7 @@ namespace MantaRay.RadViewer
 
         public void AddObject(RadianceGeometry obj)
         {
-            if(obj is RaPolygon p && objects.OfType<RaPolygon>().Any())
+            if (obj is RaPolygon p && objects.OfType<RaPolygon>().Any())
             {
                 objects.OfType<RaPolygon>().First().AddTempMesh(p.Mesh);
             }
@@ -68,14 +68,19 @@ namespace MantaRay.RadViewer
             }
         }
 
-        public override IGH_GeometricGoo GetGeometry(bool _)
+        public override IEnumerable<GeometryBase> GetGeometry()
         {
-            Mesh m = new Mesh();
+
             foreach (var item in objects)
             {
-                m.Append(((GH_Mesh)item.GetGeometry(true)).Value);
+                foreach (var obj in item.GetGeometry())
+                {
+                    yield return obj;
+
+                }
+
             }
-            return null;
+
         }
     }
 }

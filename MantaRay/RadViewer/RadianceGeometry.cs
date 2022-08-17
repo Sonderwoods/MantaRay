@@ -39,9 +39,16 @@ namespace MantaRay.RadViewer
         public virtual bool HasPreview() => true;
 
         public virtual string GetName() => Name;
-        public virtual string GetDescription() => Modifier.Name;
+        public virtual string GetDescription()
+        {
+            if (Modifier != null && Modifier is RadianceMaterial m)
+            {
+                return m.MaterialDefinition ?? "No Modifiers found";
+            }
+             return "No Modifiers found";
+        }
         public abstract void DrawPreview(IGH_PreviewArgs args, DisplayMaterial material);
         public abstract void DrawWires(IGH_PreviewArgs args, int thickness = 1);
-        public abstract IGH_GeometricGoo GetGeometry(bool asMesh);
+        public abstract IEnumerable<GeometryBase> GetGeometry();
     }
 }

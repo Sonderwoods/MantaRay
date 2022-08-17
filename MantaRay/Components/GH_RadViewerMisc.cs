@@ -143,7 +143,7 @@ namespace MantaRay.Components
 
 
 
-        public override BoundingBox ClippingBox => bb.Value;
+        public override BoundingBox ClippingBox => bb ?? new BoundingBox(new[] { new Point3d(0, 0, 0) });
 
         public override void DrawViewportMeshes(IGH_PreviewArgs args)
         {

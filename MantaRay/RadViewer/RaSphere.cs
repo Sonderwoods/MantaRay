@@ -1,4 +1,5 @@
 ﻿using Grasshopper.Kernel;
+using Rhino.Display;
 using Rhino.Geometry;
 using System;
 using System.Collections.Generic;
@@ -36,10 +37,27 @@ namespace MantaRay.RadViewer
 
         }
 
-        public override void DrawObject(IGH_PreviewArgs args, double alpha = 1.0)
+        public override void DrawPreview(IGH_PreviewArgs args, DisplayMaterial material)
         {
             if (sphere != null)
-                args.Display.DrawSphere(sphere.Value, System.Drawing.Color.Black);
+                args.Display.DrawSphere(sphere.Value, material.Diffuse);
+        }
+
+        public override IEnumerable<GeometryBase> GetGeometry()
+        {
+            yield return Brep.CreateFromSphere(sphere.Value);
+        }
+
+        public override BoundingBox? GetBoundingBox()
+        {
+            BoundingBox b = new BoundingBox(new[] { sphere.Value.Center });
+            b.Inflate(sphere.Value.Diameter);
+            return b;
+        }
+
+        public override void DrawWires(IGH_PreviewArgs args, int thickness = 1)
+        {
+            args.Display.DrawSphere(sphere.Value, Material.Diffuse);
         }
 
 
