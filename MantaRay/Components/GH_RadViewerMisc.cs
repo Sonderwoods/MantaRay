@@ -214,6 +214,20 @@ namespace MantaRay.Components
             reader.TryGetBoolean("Polychromatic", ref Polychromatic);
             reader.TryGetBoolean("ShowEdges", ref ShowEdges);
             reader.TryGetBoolean("Transparent", ref Transparent);
+            colors.Clear();
+            Color color = default;
+            string colorName = string.Empty;
+            int i = 0;
+            while (true)
+            {
+                bool a = reader.TryGetString("ColorNames", i, ref colorName);
+                bool b= reader.TryGetDrawingColor("Colors", i++, ref color) ;
+                if (a && b)
+                    colors.Add(colorName, color);
+                else
+                    break;
+            }
+
             return base.Read(reader);
         }
 
@@ -223,6 +237,13 @@ namespace MantaRay.Components
             writer.SetBoolean("Polychromatic", Polychromatic);
             writer.SetBoolean("ShowEdges", ShowEdges);
             writer.SetBoolean("Transparent", Transparent);
+            int i = 0;
+            foreach (var item in colors)
+            {
+                writer.SetDrawingColor("Colors", i, item.Value);
+                writer.SetString("ColorNames", i++, item.Key);
+            }
+
             return base.Write(writer);
         }
 

@@ -81,7 +81,7 @@ namespace MantaRay.Components
         {
             int p = pManager.AddGeometryParameter("Geo", "Geo", "Geo", GH_ParamAccess.tree);
             pManager.HideParameter(p);
-            pManager.AddTextParameter("Names", "Names", "Names", GH_ParamAccess.list);
+            //pManager.AddTextParameter("Names", "Names", "Names", GH_ParamAccess.list);
             pManager.AddTextParameter("ModifierNames", "ModifierNames", "Modifier names", GH_ParamAccess.list);
             pManager.AddTextParameter("Modifiers", "Modifiers", "Modifiers", GH_ParamAccess.list);
             pManager.AddCurveParameter("FailedWireFrame", "FailedWireFrame", "fail", GH_ParamAccess.list);
@@ -413,9 +413,9 @@ namespace MantaRay.Components
 
             DA.SetDataTree(0, outGeo);
             DA.SetDataList(1, objects.OrderBy(o => o.Key).Select(o => o.Value.GetName()));
-            DA.SetDataList(2, objects.OrderBy(o => o.Key).Select(o => o.Value.ModifierName));
-            DA.SetDataList(3, objects.OrderBy(o => o.Key).Select(o => (o.Value.Modifier)).Select(m => m is RadianceMaterial ? (m as RadianceMaterial).MaterialDefinition : null));
-            DA.SetDataList(4, failedCurves);
+            //DA.SetDataList(2, objects.OrderBy(o => o.Key).Select(o => o.Value.ModifierName));
+            DA.SetDataList(2, objects.OrderBy(o => o.Key).Select(o => (o.Value.Modifier)).Select(m => m is RadianceMaterial ? (m as RadianceMaterial).MaterialDefinition : null));
+            DA.SetDataList(3, failedCurves);
   
 
             foreach (string msg in ErrorMsgs)
