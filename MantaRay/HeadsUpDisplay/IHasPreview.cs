@@ -38,7 +38,7 @@ namespace MantaRay.RadViewer.HeadsUpDisplay
         /// </summary>
         /// <param name="args"></param>
         /// <param name="alpha">Alpha 0..1</param>
-        void DrawPreview(IGH_PreviewArgs args, DisplayMaterial material, double? transparency = null);
+        void DrawPreview(IGH_PreviewArgs args, DisplayMaterial material = null, double? transparency = null);
 
         /// <summary>
         /// The Rhino wireframe draw method.

@@ -22,6 +22,9 @@ using Grasshopper.Kernel.Types;
 
 namespace MantaRay.Components
 {
+    /// <summary>
+    /// Partial class that contains the actual solve methods
+    /// </summary>
     public partial class GH_RadViewerSolve : GH_Template
     {
         /// <summary>
@@ -36,9 +39,6 @@ namespace MantaRay.Components
 
         }
 
-        public bool isRunning = true;
-        public bool wasHidden = false;
-
         public bool TwoSided = false;
         public bool ShowEdges = true;
         public bool Transparent = true;
@@ -52,16 +52,15 @@ namespace MantaRay.Components
         readonly Dictionary<string, RadianceMaterial> modifiers = new Dictionary<string, RadianceMaterial>();
 
         BoundingBox? bb = null;
-        //readonly Random rnd = new Random();
+
         readonly List<Curve> failedCurves = new List<Curve>();
         readonly Dictionary<string, System.Drawing.Color> colors = new Dictionary<string, System.Drawing.Color>();
 
         public List<string> ErrorMsgs = new List<string>();
 
-
         private HUD hud = new HUD();
 
-        TimeSpan timeSpan = default;
+        //TimeSpan timeSpan = default;
 
 
 
@@ -98,49 +97,14 @@ namespace MantaRay.Components
         protected override void SolveInstance(IGH_DataAccess DA)
         {
 
-            //if (!isRunning)
-            //{
-            //    GH_Structure<IGH_GeometricGoo> outGeo = new GH_Structure<IGH_GeometricGoo>();
-
-            //    int i = 0;
-
-            //    foreach (IEnumerable<IGH_GeometricGoo> item in objects.OrderBy(o => o.Key).Select(o => o.Value.GetGeometry()))
-            //    {
-            //        GH_Path p = new GH_Path(i++);
-
-            //        outGeo.AppendRange(item, p);
-            //    }
-
-            //    DA.SetDataTree(0, outGeo);
-            //    DA.SetDataList(1, objects.OrderBy(o => o.Key).Select(o => o.Value.GetName()));
-            //    DA.SetDataList(2, objects.OrderBy(o => o.Key).Select(o => o.Value.ModifierName));
-            //    //DA.SetDataList(3, objects.OrderBy(o => o.Key).Select(o => (o.Value.Modifier)).Select(m => m is RadianceMaterial ? (m as RadianceMaterial).MaterialDefinition : null));
-            //    DA.SetDataList(4, failedCurves);
-            //    isRunning = true;
-
-            //    this.Hidden = wasHidden;
-
-            //    foreach (string msg in ErrorMsgs)
-            //    {
-            //        AddRuntimeMessage(GH_RuntimeMessageLevel.Error, msg);
-            //    }
-            //    return;
-            //}
-
-
             ErrorMsgs.Clear();
             objects.Clear();
             failedCurves.Clear();
             modifiers.Clear();
+            //timeSpan = new TimeSpan(0);
 
-
-
-            //this.Locked = true;
-            timeSpan = new TimeSpan(0);
-            Stopwatch sw = new Stopwatch();
-            sw.Start();
-            wasHidden = this.Hidden;
-            this.Hidden = true;
+   
+      
 
             /*
              * The RAD viewer architecture is a setup im testing. I have not benchmarked it but it runs in several steps asynchronously.
@@ -170,209 +134,213 @@ namespace MantaRay.Components
 
             BlockingCollection<string> linesPerObject = new BlockingCollection<string>();
 
-
-
             List<string> radFiles = DA.FetchList<string>("RadFiles");
 
-            //var readLines = Task.Factory.StartNew(() =>
-            //{
-
-
-            if (radFiles == null & radFiles.Count == 0) return;
-
-            foreach (var radFile in radFiles)
+            var readLines = Task.Factory.StartNew(() =>
             {
-                if (String.IsNullOrEmpty(radFile) || !File.Exists(radFile))
+
+
+                if (radFiles == null & radFiles.Count == 0) return;
+
+                foreach (var radFile in radFiles)
                 {
-                    AddRuntimeMessage(GH_RuntimeMessageLevel.Error, $"File \"{radFile}\" not found.");
-                    continue;
-                }
-
-                StringBuilder currentObject = new StringBuilder(); // current object
-
-                int c1 = 0;
-
-                foreach (var line in File.ReadLines(radFile))
-                {
-
-                    if (line == String.Empty || line.StartsWith("#"))
-                        continue;
-
-                    if (c1++ % 10 == 0 && GH_Document.IsEscapeKeyDown())
+                    if (String.IsNullOrEmpty(radFile) || !File.Exists(radFile))
                     {
-                        linesPerObject.CompleteAdding();
+                        AddRuntimeMessage(GH_RuntimeMessageLevel.Error, $"File \"{radFile}\" not found.");
+                        continue;
+                    }
+
+                    StringBuilder currentObject = new StringBuilder(); // current object
+
+                    int c1 = 0;
+
+                    foreach (var line in File.ReadLines(radFile))
+                    {
+
+                        if (line == String.Empty || line.StartsWith("#"))
+                            continue;
+
+                        if (c1++ % 10 == 0 && GH_Document.IsEscapeKeyDown())
+                        {
+                            linesPerObject.CompleteAdding();
+                            GH_Document GHDocument = OnPingDocument();
+                            GHDocument.RequestAbortSolution();
+                            this.Locked = true;
+                        }
+
+
+                        if (line.HasLetters())
+                        {
+                            if (currentObject.Length > 0)
+                            {
+                                linesPerObject.Add(currentObject.ToString().Trim());
+                            }
+
+                            if (line.Contains("!xform") || line.Contains("-rx") || line.Contains("-f")) // external file?
+                            {
+                                AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, "We havent yet added the posibility to parse referenced files. So you may be missing some content!\n" +
+                                    $"The line that is left out is {line}");
+                                // TODO: Add linked objects
+                            }
+                            else
+                            {
+
+                                currentObject = new StringBuilder(line);
+                                currentObject.Append(" ");
+
+                            }
+
+                        }
+                        else // no words
+                        {
+                            currentObject.Append(line);
+                            currentObject.Append(" ");
+                        }
+
+                    }
+                    linesPerObject.Add(currentObject.ToString().Trim());
+
+
+                }
+                linesPerObject.CompleteAdding();
+            });
+
+            BlockingCollection<RadianceObject> radianceObjects = new BlockingCollection<RadianceObject>();
+
+            var processLines = Task.Factory.StartNew(() =>
+            {
+                Debug.WriteLine("starting processing lines");
+
+                int c2 = 0;
+
+                foreach (var line in linesPerObject.GetConsumingEnumerable())
+                {
+                    try
+                    {
+
+                        radianceObjects.Add(RadianceObject.FromString(line));
+
+                    }
+                    catch (RaPolygon.PolygonException ex)
+                    {
+                        failedCurves.AddRange(GetFailedLines(line));
+                        //radianceObjects.CompleteAdding();
+                        AddRuntimeMessage(GH_RuntimeMessageLevel.Remark, ex.Message.Substring(0, 100) + "\nCheck the FailedWireFrame output");
+                        //ErrorMsgs.Add(ex.Message);
+                        //throw ex;
+                    }
+                    catch (RaPolygon.SyntaxException e)
+                    {
+                        AddRuntimeMessage(GH_RuntimeMessageLevel.Remark, e.Message.Substring(0, 100) + "\nWrong syntax in rad file? Or unknown...");
+                        //ErrorMsgs.Add("SyntaxError: " + e.Message);
+
+                    }
+                    
+                    if (c2++ % 10 == 0 && GH_Document.IsEscapeKeyDown())
+                    {
+                        this.Locked = true;
+                        radianceObjects.CompleteAdding();
                         GH_Document GHDocument = OnPingDocument();
                         GHDocument.RequestAbortSolution();
                     }
 
+                }
+                radianceObjects.CompleteAdding();
 
-                    if (line.HasLetters())
+                Debug.WriteLine("done processing lines");
+
+
+
+
+
+
+                Debug.WriteLine("starting making objects");
+
+                foreach (var obj in radianceObjects.GetConsumingEnumerable())
+                {
+
+                    if (GH_Document.IsEscapeKeyDown())
                     {
-                        if (currentObject.Length > 0)
-                        {
-                            linesPerObject.Add(currentObject.ToString().Trim());
-                        }
-
-                        if (line.Contains("!xform") || line.Contains("-rx") || line.Contains("-f")) // external file?
-                        {
-                            AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, "We havent yet added the posibility to parse referenced files. So you may be missing some content!\n" +
-                                $"The line that is left out is {line}");
-                            // TODO: Add linked objects
-                        }
-                        else
-                        {
-
-                            currentObject = new StringBuilder(line);
-                            currentObject.Append(" ");
-
-                        }
-
-                    }
-                    else // no words
-                    {
-                        currentObject.Append(line);
-                        currentObject.Append(" ");
+                        GH_Document GHDocument = OnPingDocument();
+                        GHDocument.RequestAbortSolution();
                     }
 
+                    //try
+                    //{
+                    switch (obj)
+                    {
+                        case IHasPreview previewableObject:
+                            if (!bb.HasValue || bb.HasValue && bb.Value.Min == bb.Value.Max)
+                                bb = previewableObject.GetBoundingBox();
+                            else if (previewableObject.GetBoundingBox() != null)
+                                bb?.Union(previewableObject.GetBoundingBox().Value);
+
+                            if (!objects.ContainsKey(obj.ModifierName))
+                            {
+                                var radObjects = new RadianceObjectCollection(obj.ModifierName);
+                                radObjects.AddObject((RadianceGeometry)obj);
+
+                                objects.Add(obj.ModifierName, radObjects);
+                            }
+                            else
+                            {
+                                objects[obj.ModifierName].AddObject((RadianceGeometry)obj);
+                            }
+
+                            break;
+
+                        case RadianceMaterial mat:
+                            if (!modifiers.ContainsKey(mat.Name))
+                            {
+                                modifiers.Add(mat.Name, mat);
+
+                            }
+
+                            break;
+
+                        default:
+                            throw new Exception("Unknown type");
+                    }
+                    //}
+                    //catch (Exception e)
+                    //{
+                    //    ErrorMsgs.Add("Create objs: " + e.Message);
+                    //}
                 }
-                linesPerObject.Add(currentObject.ToString().Trim());
 
+            });
 
-            }
-            linesPerObject.CompleteAdding();
-            //});
-
-
-
-            BlockingCollection<RadianceObject> radianceObjects = new BlockingCollection<RadianceObject>();
-
-
-
-            //var processLines = Task.Factory.StartNew(() =>
-            //{
-            Debug.WriteLine("starting processing lines");
-
-
-            int c2 = 0;
-
-            foreach (var line in linesPerObject.GetConsumingEnumerable())
+            try
             {
-                try
-                {
-
-                    radianceObjects.Add(RadianceObject.FromString(line));
-
-                }
-                catch (RaPolygon.PolygonException ex)
-                {
-                    failedCurves.AddRange(GetFailedLines(line));
-                    //radianceObjects.CompleteAdding();
-                    AddRuntimeMessage(GH_RuntimeMessageLevel.Remark, ex.Message.Substring(0, 100) + "\nCheck the FailedWireFrame output");
-                    ErrorMsgs.Add(ex.Message);
-                    //throw ex;
-                }
-                catch (RaPolygon.SyntaxException e)
-                {
-                    ErrorMsgs.Add("SyntaxError: " + e.Message);
-
-                }
-                catch (Exception e)
-                {
-                    ErrorMsgs.Add("Other error: " + e.Message);
-
-                }
-
-                if (c2++ % 10 == 0 && GH_Document.IsEscapeKeyDown())
-                {
-                    this.Locked = true;
-                    radianceObjects.CompleteAdding();
-                    GH_Document GHDocument = OnPingDocument();
-                    GHDocument.RequestAbortSolution();
-                }
+                Task.WaitAll(readLines, processLines);
 
             }
-            radianceObjects.CompleteAdding();
-
-
-            Debug.WriteLine("done processing lines");
-
-
-
-
-
-
-            Debug.WriteLine("starting making objects");
-
-
-
-            foreach (var obj in radianceObjects.GetConsumingEnumerable())
+            catch (AggregateException ae)
             {
-
-                if (GH_Document.IsEscapeKeyDown())
+                foreach (var e in ae.InnerExceptions)
                 {
-                    GH_Document GHDocument = OnPingDocument();
-                    GHDocument.RequestAbortSolution();
+                    AddRuntimeMessage(GH_RuntimeMessageLevel.Error, e.Message);
                 }
-
-                //try
-                //{
-                switch (obj)
-                {
-                    case IHasPreview previewableObject:
-                        if (!bb.HasValue || bb.HasValue && bb.Value.Min == bb.Value.Max)
-                            bb = previewableObject.GetBoundingBox();
-                        else if (previewableObject.GetBoundingBox() != null)
-                            bb?.Union(previewableObject.GetBoundingBox().Value);
-
-                        if (!objects.ContainsKey(obj.ModifierName))
-                        {
-                            var radObjects = new RadianceObjectCollection(obj.ModifierName);
-                            radObjects.AddObject((RadianceGeometry)obj);
-                            
-                            objects.Add(obj.ModifierName, radObjects);
-                        }
-                        else
-                        {
-                            objects[obj.ModifierName].AddObject((RadianceGeometry)obj);
-                        }
-
-                        break;
-
-                    case RadianceMaterial mat:
-                        if (!modifiers.ContainsKey(mat.Name))
-                        {
-                            modifiers.Add(mat.Name, mat);
-
-                        }
-
-                        break;
-
-                    default:
-                        throw new Exception("Unknown type");
-                }
-                //}
-                //catch (Exception e)
-                //{
-                //    ErrorMsgs.Add("Create objs: " + e.Message);
-                //}
-
-
             }
+
 
             Debug.WriteLine("done making objects");
 
-
-            foreach (RadianceObjectCollection obj in objects.Values)
+            var updateMeshes = Task.Factory.StartNew(() =>
             {
-                obj.UpdateMesh();
-            }
+                foreach (RadianceObjectCollection obj in objects.Values)
+                {
+                    obj.UpdateMesh();
+                }
+
+            });
+
+
+
 
             Debug.WriteLine("done updating meshes in polygons");
 
             HashSet<string> uniqueMissingModifiers = new HashSet<string>();
-
-            //try
-            //{
 
             Debug.WriteLine("starting to map nested modifiers etc.");
 
@@ -399,17 +367,6 @@ namespace MantaRay.Components
 
 
             Debug.WriteLine("done setting modifiers");
-
-            SetupHUD();
-
-            //this.Locked = false;
-            isRunning = false;
-            timeSpan = new TimeSpan(0, 0, 0, 0, (int)sw.ElapsedMilliseconds);
-            sw.Stop();
-            //this.ExpireSolution(true);
-
-            //});
-
 
 
             GH_Structure<IGH_GeometricGoo> outGeo = new GH_Structure<IGH_GeometricGoo>();
@@ -439,14 +396,27 @@ namespace MantaRay.Components
 
             }
 
+            try
+            {
+                Task.WaitAll(updateMeshes);
+
+            }
+            catch (AggregateException ae)
+            {
+                foreach (var e in ae.InnerExceptions)
+                {
+                    AddRuntimeMessage(GH_RuntimeMessageLevel.Error, e.Message);
+                }
+            }
+
+            SetupHUD();
+
             DA.SetDataTree(0, outGeo);
             DA.SetDataList(1, objects.OrderBy(o => o.Key).Select(o => o.Value.GetName()));
             DA.SetDataList(2, objects.OrderBy(o => o.Key).Select(o => o.Value.ModifierName));
-            //DA.SetDataList(3, objects.OrderBy(o => o.Key).Select(o => (o.Value.Modifier)).Select(m => m is RadianceMaterial ? (m as RadianceMaterial).MaterialDefinition : null));
+            DA.SetDataList(3, objects.OrderBy(o => o.Key).Select(o => (o.Value.Modifier)).Select(m => m is RadianceMaterial ? (m as RadianceMaterial).MaterialDefinition : null));
             DA.SetDataList(4, failedCurves);
-            isRunning = true;
-
-            this.Hidden = wasHidden;
+  
 
             foreach (string msg in ErrorMsgs)
             {
@@ -456,10 +426,6 @@ namespace MantaRay.Components
 
 
         }
-
-
-
-
 
 
 

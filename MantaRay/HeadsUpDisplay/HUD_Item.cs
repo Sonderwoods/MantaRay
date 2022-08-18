@@ -40,7 +40,7 @@ namespace MantaRay.RadViewer.HeadsUpDisplay
         {
 
         }
-        
+
 
         public void ZoomToBox()
         {
@@ -48,39 +48,22 @@ namespace MantaRay.RadViewer.HeadsUpDisplay
             {
                 Rhino.RhinoDoc.ActiveDoc.Views.ActiveView.ActiveViewport.ZoomBoundingBox(Box.Value);
                 Rhino.RhinoDoc.ActiveDoc.Views.ActiveView.Redraw();
-
             }
         }
 
+        public override string ToString() => Name;
 
+        virtual public void DrawEdges(IGH_PreviewArgs args) => Value.DrawWires(args, 1);
+   
 
-        public override string ToString()
-        {
-            return Name;
-        }
-
-        virtual public void DrawEdges(IGH_PreviewArgs args)
-        {
-            Value.DrawWires(args, 1);
-            //if (Mesh != null && Mesh.IsValid)
-            //    args.Display.DrawMeshWires(Mesh, Color.Black);
-        }
-
-        virtual public void DrawMesh(IGH_PreviewArgs args, double alpha = 0.3, bool twoSided = false, bool grey = false)
+        virtual public void DrawMesh(IGH_PreviewArgs args, DisplayMaterial material = null, Color? colorOverride = null)
         {
 
-            var material = new DisplayMaterial(grey ? Color.Gray : Color)
-            {
-                Transparency = twoSided ? 0.0 : 1 - alpha,
-                Emission = grey ? Color.Gray : Color,
-                IsTwoSided = twoSided,
-                BackDiffuse = Color.Black,
-                BackEmission = Color.Black,
-                BackTransparency = twoSided ? 0.3 : 1 - alpha,
-            };
+            material = material ?? new DisplayMaterial(colorOverride ?? Color);
+            material.Diffuse = colorOverride ?? Color;
+            material.Emission = material.Diffuse;
 
             Value.DrawPreview(args, material);
-
 
         }
 
