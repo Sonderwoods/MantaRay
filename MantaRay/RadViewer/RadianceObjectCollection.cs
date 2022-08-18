@@ -18,7 +18,7 @@ namespace MantaRay.RadViewer
     {
 
 
-        private List<IHasPreview> objects = new List<IHasPreview>();
+        private readonly List<IHasPreview> objects = new List<IHasPreview>();
 
         public List<IHasPreview> Objects => objects;
 
@@ -52,7 +52,7 @@ namespace MantaRay.RadViewer
             }
         }
 
-        public override void DrawPreview(IGH_PreviewArgs args, DisplayMaterial material)
+        public override void DrawPreview(IGH_PreviewArgs args, DisplayMaterial material, double? transparency = null)
         {
             foreach (var obj in objects)
             {

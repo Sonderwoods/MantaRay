@@ -175,12 +175,13 @@ namespace MantaRay.Components
             {
                 //foreach (var item in hud.Items)
                 //    item.DrawMesh(args, Transparent ? 0.9 : 1.0);
-
-                foreach (KeyValuePair<string, RadianceObjectCollection> pair in objects)
-                {
-                    pair.Value.DrawPreview(args, pair.Value.Material);
-                    //obj.DrawObject(args, Transparent ? 0.9 : 1.0); //This one works with twosided option.
-                }
+                foreach (var item in hud.Items)
+                    item.DrawMesh(args, 0.2, grey: true);
+                //foreach (KeyValuePair<string, RadianceObjectCollection> pair in objects)
+                //{
+                //    pair.Value.DrawPreview(args, pair.Value.Material, 0.5);
+                //    //obj.DrawObject(args, Transparent ? 0.9 : 1.0); //This one works with twosided option.
+                //}
             }
             //}
             //else

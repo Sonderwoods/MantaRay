@@ -18,7 +18,7 @@ namespace MantaRay.RadViewer.HeadsUpDisplay
         {
             public string Name { get; set; } = "X";
             public string Description { get; set; } = "Click to hide\nRight click to remove";
-            public void DrawPreview(IGH_PreviewArgs args, DisplayMaterial material) { }
+            public void DrawPreview(IGH_PreviewArgs args, DisplayMaterial material, double? transpaceny = null) { }
             public void DrawWires(IGH_PreviewArgs args, int thickness = 1) { }
             public BoundingBox? GetBoundingBox() => null;
             public string GetDescription() => Description;

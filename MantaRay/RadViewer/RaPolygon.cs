@@ -164,9 +164,20 @@ namespace MantaRay.RadViewer
         //    Material.Transparency = oldTrans;
         //}
 
-        public override void DrawPreview(IGH_PreviewArgs args, DisplayMaterial material)
+        public override void DrawPreview(IGH_PreviewArgs args, DisplayMaterial material, double? transparency = null)
         {
-            args.Display.DrawMeshShaded(Mesh, material);
+            if (transparency != null)
+            {
+                double oldTrans = material.Transparency;
+                material.Transparency = transparency.Value;
+                args.Display.DrawMeshShaded(Mesh, material);
+                material.Transparency = oldTrans;
+            }
+            else
+            {
+                args.Display.DrawMeshShaded(Mesh, material);
+
+            }
 
         }
 

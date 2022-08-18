@@ -47,7 +47,7 @@ namespace MantaRay.RadViewer
             }
              return "No Modifiers found";
         }
-        public abstract void DrawPreview(IGH_PreviewArgs args, DisplayMaterial material);
+        public abstract void DrawPreview(IGH_PreviewArgs args, DisplayMaterial material, double? transparency = null);
         public abstract void DrawWires(IGH_PreviewArgs args, int thickness = 1);
         public abstract IEnumerable<GeometryBase> GetGeometry();
     }

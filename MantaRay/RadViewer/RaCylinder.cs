@@ -53,7 +53,7 @@ namespace MantaRay.RadViewer
 
         }
 
-        public override void DrawPreview(IGH_PreviewArgs args, DisplayMaterial material)
+        public override void DrawPreview(IGH_PreviewArgs args, DisplayMaterial material, double? transparency = null)
         {
             if (cylinder.HasValue)
             {
