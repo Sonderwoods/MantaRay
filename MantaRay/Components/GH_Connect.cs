@@ -200,7 +200,7 @@ namespace MantaRay.Components
                         var mb = MessageBox.Show("No SSH, try opening it with\nsudo service ssh start\n\nWant me to start it for you??" +
                             "\n\n\nI'll simply run the below bash command for you:\n\n" +
                             "C:\\windows\\system32\\cmd.exe\n\n" +
-                            $"/c \"bash -c \"echo {{_pw}} | sudo -S service ssh start\" \"");
+                            $"/c \"bash -c \"echo {{_pw}} | sudo -S service ssh start\" \"", "No SSH Found", MessageBoxButtons.YesNo);
 
                         if (mb == DialogResult.Yes)
                         {
