@@ -27,6 +27,8 @@ namespace MantaRay
             Cancelled
         }
 
+        Guid latestLogGuid = new Guid();
+
 
 
         public bool RunInput { get; set; } = false;
@@ -81,7 +83,8 @@ namespace MantaRay
 
                 LogHelper logHelper = LogHelper.Default;
 
-                logHelper.Add(LogName, $"Done in {Stopwatch.Elapsed.ToReadableString()}", InstanceGuid);
+                //logHelper.Add(LogName, $"Done in {Stopwatch.Elapsed.ToReadableString()}", InstanceGuid);
+                logHelper.FinishTask(latestLogGuid);
             }
             if (Tasks.Count == 0)
             {
@@ -343,7 +346,8 @@ namespace MantaRay
             if (HasLogAbilities() && LogSave && RunInput)
             {
                 LogHelper logHelper = LogHelper.Default;
-                logHelper.Add($"{LogName} {RunCount - 1}", (LogUseFixedDescription ? LogDescriptionStatic : LogDescriptionDynamic) + " Starting", InstanceGuid);
+                //logHelper.Add($"{LogName} {RunCount - 1}", (LogUseFixedDescription ? LogDescriptionStatic : LogDescriptionDynamic) + " Starting", InstanceGuid);
+                latestLogGuid = logHelper.AddTask($"{LogName} {RunCount - 1}", (LogUseFixedDescription ? LogDescriptionStatic : LogDescriptionDynamic), InstanceGuid);
             }
 
             return RunInput;

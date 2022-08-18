@@ -208,10 +208,6 @@ namespace MantaRay
                 this.Hidden = false;
             }
 
-
-
-
-
         }
 
         public override bool Read(GH_IReader reader)
@@ -297,13 +293,11 @@ namespace MantaRay
 
             public override void DoWork(Action<string, double> ReportProgress, Action Done)
             {
+
+                
                 Parent.Hidden = true;
 
                 ((GH_ExecuteAsync)Parent).Commands.AddRange(commands.Distinct().Where(c => !((GH_ExecuteAsync)Parent).Commands.Contains(c)));
-
-
-
-
 
                 if (CancellationToken.IsCancellationRequested) { return; }
 

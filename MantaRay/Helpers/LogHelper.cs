@@ -11,9 +11,10 @@ namespace MantaRay
     {
         public static Dictionary<string, LogHelper> AllLogSystems = new Dictionary<string, LogHelper>();
         readonly List<LogEntry> logMessages = new List<LogEntry>();
+        readonly Dictionary<Guid, LogEntry> currentTasks = new Dictionary<Guid, LogEntry>();
         public string Name;
-
-        object _lock = new object();
+        readonly object _logLock = new object();
+        readonly object _taskLock = new object();
 
         public event EventHandler LogUpdated;
 
@@ -34,6 +35,68 @@ namespace MantaRay
             }
         }
 
+
+        public List<string> GetCurrentTasks(int number = 10, string filter = null)
+        {
+            List<string> msgs = new List<string>(number);
+            IEnumerable<LogEntry> items;
+
+            if (!string.IsNullOrEmpty(filter))
+            {
+                items = currentTasks.Values.OrderByDescending(lo => lo.Timestamp)
+                    .Where(l => l.Name.Contains(filter) || l.Description.Contains(filter))
+                    .Take(number);
+            }
+            else
+            {
+                items = currentTasks.Values.OrderByDescending(lo => lo.Timestamp)
+                    .Take(number);
+            }
+
+            foreach (LogEntry l in items)
+            {
+                msgs.Add($"[{l.Timestamp:G}, {l.Name}, for {(DateTime.Now - l.Timestamp).ToReadableString()}]: {l.Description.Replace("\n", "        \n")}");
+            }
+
+
+            return msgs;
+        }
+
+        public Guid AddTask(string name, string description, Guid componentGuid = default, Guid guid = default)
+        {
+            if (guid == Guid.Empty)
+            {
+                guid = Guid.NewGuid();
+            }
+            lock (_taskLock)
+            {
+                currentTasks.Add(
+                    guid,
+                    new LogEntry()
+                    {
+                        Name = name,
+                        Description = description,
+                        ComponentGuid = componentGuid,
+                        Guid = guid,
+                        Timestamp = DateTime.Now
+                    });
+                    LogUpdated?.Invoke(this, new EventArgs());
+            }
+
+            return guid;
+
+        }
+
+        public void FinishTask(Guid guid)
+        {
+            lock (_taskLock)
+            {
+                var t = currentTasks[guid];
+                Add(t.Name, t.Description + $"\nFinished in {(DateTime.Now - t.Timestamp).ToReadableString()}", t.ComponentGuid);
+                currentTasks.Remove(guid);
+            }
+            LogUpdated?.Invoke(this, new EventArgs());
+        }
 
 
         public List<string> GetLatestLogs(int number = 10, string filter = null)
@@ -92,14 +155,14 @@ namespace MantaRay
 
         public void Add(string name, string description, Guid guid = default)
         {
-            lock (_lock)
+            lock (_logLock)
             {
                 logMessages.Add(
                 new LogEntry()
                 {
                     Name = name,
                     Description = description,
-                    Guid = guid,
+                    ComponentGuid = guid,
                     Timestamp = DateTime.Now
                 });
                 LogUpdated?.Invoke(this, new EventArgs());
@@ -119,6 +182,7 @@ namespace MantaRay
             public string Description;
             public DateTime Timestamp;
             public Guid Guid;
+            public Guid ComponentGuid;
         }
     }
 }
