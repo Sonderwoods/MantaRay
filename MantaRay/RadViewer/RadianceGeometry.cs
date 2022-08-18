@@ -14,7 +14,7 @@ namespace MantaRay.RadViewer
 
     public abstract class RadianceGeometry : RadianceObject, IHasPreview
     {
-        public BoundingBox? BBox { get; set; }
+        
         public Rhino.Display.DisplayMaterial Material { get; set; } = new Rhino.Display.DisplayMaterial(System.Drawing.Color.Gray);
 
         public RadianceGeometry(string[] data) : base(data)
@@ -27,15 +27,12 @@ namespace MantaRay.RadViewer
 
         }
 
-       
 
 
 
-        public virtual BoundingBox? GetBoundingBox()
-        {
-            return BBox;
-        }
 
+        public abstract BoundingBox? GetBoundingBox();
+    
         public virtual bool HasPreview() => true;
 
         public virtual string GetName() => Name;

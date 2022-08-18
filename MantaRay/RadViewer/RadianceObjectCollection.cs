@@ -82,5 +82,28 @@ namespace MantaRay.RadViewer
             }
 
         }
+
+        public override BoundingBox? GetBoundingBox()
+        {
+            var obj = objects.FirstOrDefault();
+
+            BoundingBox? bb = null;
+
+            if (obj == null || !obj.GetBoundingBox().HasValue)
+            {
+                return null;
+                
+            }
+            else
+            {
+                bb = obj.GetBoundingBox();
+            }
+            foreach (var item in objects.Skip(1).Where(i => i.GetBoundingBox().HasValue))
+            {
+                bb.Value.Union(item.GetBoundingBox().Value);
+            }
+
+            return bb;
+        }
     }
 }
