@@ -38,6 +38,7 @@ namespace MantaRay.Components
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
             pManager.AddTextParameter("Logs", "Logs", "Logs", GH_ParamAccess.list);
+            pManager.AddTextParameter("CurrentTasks", "CurrentTasks", "CurrentTasks", GH_ParamAccess.list);
         }
 
         /// <summary>
@@ -56,6 +57,7 @@ namespace MantaRay.Components
             logHelper.LogUpdated += LogHelper_LogUpdated;
 
             DA.SetDataList(0, logHelper.GetLatestLogs(DA.Fetch<int>("Number"), DA.Fetch<string>("Filter")));
+            DA.SetDataList(1, logHelper.GetCurrentTasks(DA.Fetch<int>("Number"), DA.Fetch<string>("Filter")));
         }
 
 
@@ -109,7 +111,10 @@ namespace MantaRay.Components
         private void LogHelper_LogUpdated(object sender, EventArgs e)
         {
             if (((LogHelper)sender).Name == logHelper.Name)
-                this.ExpireSolution(true);
+            {
+                Grasshopper.Instances.ActiveCanvas.Document.ScheduleSolution(5, x => this.ExpireSolution(true));
+            }
+            //this.ExpireSolution(true);
             else
                 ((LogHelper)sender).LogUpdated -= LogHelper_LogUpdated; //in case we missed some unsubscribtions
         }

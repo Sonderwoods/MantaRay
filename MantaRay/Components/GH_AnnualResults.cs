@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -60,6 +61,14 @@ namespace MantaRay.Components
             CheckIfRunOrUseOldResults(DA, 0); //template
             if (!CheckIfRunOrUseOldResults(DA, 1, OldNumberResults)) return; //template
 
+            if (!DA.Fetch<bool>("Run"))
+            {
+
+                DA.SetData("Ran", false);
+
+                return;
+            }
+
 
             string illFile = DA.Fetch<string>("illFile");
             List<string> headerLines = new List<string>(8);
@@ -67,21 +76,28 @@ namespace MantaRay.Components
             bool[] schedule = DA.FetchList<int>("schedule").AsParallel().AsOrdered().Select(s => s >= 1).ToArray();
             int headerRows = 0;
             int headerColumns = 0;
-            int readLinesCounter = 0;
+            int dataLineCount = 0;
 
             var readLines = Task.Factory.StartNew(() =>
             {
+
+                Stopwatch sw = new Stopwatch();
+                sw.Start();
                 bool begin = false;
-                
+
 
                 if (String.IsNullOrEmpty(illFile) || !File.Exists(illFile))
                     return;
 
+                int lineCount = 0;
+
                 foreach (var line in File.ReadLines(illFile))
                 {
+                    lineCount++;
+
                     if (!begin)
                     {
-                        if (line.Length == 0)
+                        if (line.Trim().Length == 0)
                             begin = true;
                         else
                         {
@@ -96,26 +112,29 @@ namespace MantaRay.Components
                     {
                         //if (counter == 0)
                         // pointCount = line.Split('\t').Length + 1;
-                        if (schedule[readLinesCounter]) //<<-- TO FILTER ROWS BY SCHEDULE
+                        if (dataLineCount >= schedule.Length)
+                            throw new System.IndexOutOfRangeException($"Somehow the ill file has more rows than your schedule!\nLast line was at {lineCount}: {line}") { Source = illFile };
+
+                        if (line.Trim().Length == 0)
+                            break; // avoid empty lines in end of ill file
+
+                        if (schedule[dataLineCount]) //<<-- TO FILTER ROWS BY SCHEDULE
                             linesPerHour.Add(line);
-                        Interlocked.Increment(ref readLinesCounter);
+                        Interlocked.Increment(ref dataLineCount);
 
                     }
 
                 }
-                
+
 
                 linesPerHour.CompleteAdding();
+#if DEBUG
+                AddRuntimeMessage(GH_RuntimeMessageLevel.Remark, $"Readlines took {sw.Elapsed.ToReadableString()}");
+#endif
+
             });
 
-            if (!DA.Fetch<bool>("Run"))
-            {
-
-                DA.SetData("Ran", false);
-                Task.WaitAll(readLines);
-                DA.SetDataList("Headers", headerLines);
-                return;
-            }
+            
 
 
             double max = DA.Fetch<double>("max");
@@ -171,17 +190,42 @@ namespace MantaRay.Components
 
             DA.SetData("Ran", true);
 
-            Task.WaitAll(readLines);
+            try
+            {
+                Task.WaitAll(readLines);
+            }
+            catch (AggregateException ae)
+            {
+                foreach (Exception e in ae.InnerExceptions)
+                {
+                    ae.Handle(ex =>
+                    {
+                        throw e;
+                    });
+                }
+            }
 
             OldResults = headerLines.ToArray();
             DA.SetDataList("Headers", OldResults);
 
-
-            Task.WaitAll(processLines);
-
-            if (headerRows != 0 && headerRows != readLinesCounter)
+            try
             {
-                AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, $"NROWS={headerRows}, but the file contained {readLinesCounter} lines.");
+                Task.WaitAll(processLines);
+            }
+            catch (AggregateException ae)
+            {
+                foreach (Exception e in ae.InnerExceptions)
+                {
+                    ae.Handle(ex =>
+                    {
+                        throw e;
+                    });
+                }
+            }
+
+            if (headerRows != 0 && headerRows != dataLineCount)
+            {
+                AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, $"NROWS={headerRows}, but the file contained {dataLineCount} lines.");
             }
 
             if (headerColumns != 0 && headerColumns != pointCount)
@@ -218,7 +262,7 @@ namespace MantaRay.Components
             {
                 writer.SetDouble("numbers", i, OldNumberResults[i]);
             }
-            
+
 
             return base.Write(writer);
         }

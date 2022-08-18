@@ -78,7 +78,7 @@ namespace MantaRay
 
         public static string ToLinuxPath(this string s)
         {
-            
+
             if (sftpClient == null)
                 throw new System.NullReferenceException("No Connection");
 
@@ -395,6 +395,96 @@ namespace MantaRay
             else
             {
                 return ConnectionDetails.NoClient;
+            }
+        }
+
+
+        /// <summary>
+        /// Executes the SSH Command
+        /// </summary>
+        /// <param name="command"></param>
+        /// <param name="log">stringbuilder for logs</param>
+        /// <param name="stdout">stringbuilder for stdout</param>
+        /// <param name="errors">stringbuilder for errors</param>
+        /// <param name="prependPrefix">whether we want to include the radiance "EXPORT" prefixes <see cref="ExportPrefixes"/></param>
+        /// <returns></returns>
+        public static (IAsyncResult, SshCommand, int) ExecuteAsync(string command, bool prependPrefix = true, bool appendSuffix = true, Func<string, bool> filter = null)
+        {
+            IAsyncResult asyncResult = null;
+
+            
+
+            int pid = -1;
+
+            if (CheckConnection() == ConnectionDetails.Connected)
+            {
+                DateTime startTime = DateTime.Now;
+
+                TryRunXlaunchIfNeeded(command);
+
+
+
+                command = command.Trim('\n');
+
+                int rand = rnd.Next(100000, 999999);
+
+                //saving the pid to a local file
+                SshCommand cmd = sshClient.CreateCommand((prependPrefix ? String.Join(";", ExportPrefixes) + ";" + command : command) + (appendSuffix ? $" & echo $! >~/temp{rand}.pid" : ""));
+
+                asyncResult = cmd.BeginExecute();
+
+                pid = GetPid(appendSuffix, rand);
+
+                return (asyncResult, cmd, pid);
+
+
+                
+
+
+
+            }
+            
+
+            return (asyncResult, null, pid);
+
+        }
+
+        public static void OnExecutionCompleted(SshCommand cmd, Func<string, bool> filter = null, StringBuilder stdout = null, StringBuilder errors = null)
+        {
+            
+            if (!string.IsNullOrEmpty(cmd.Error) && (filter == null || filter(cmd.Error)))
+            {
+                errors?.Append(cmd.Error);
+                errors?.Append("\n");
+            }
+
+            stdout?.Append(cmd.Result.Trim('\n', '\r'));
+
+            // Here we have to add a way to recompute the component
+
+        }
+
+        private static int GetPid(bool appendSuffix, int rand)
+        {
+            if (appendSuffix)
+            {
+                
+
+                var pidCmd = sshClient.CreateCommand($"cat  ~/temp{rand}.pid");
+                pidCmd.Execute();
+
+                
+                int pid =  -1;
+                int.TryParse(pidCmd.Result, out pid);
+
+                sshClient.CreateCommand($"rm ~/temp{rand}.pid").Execute(); // remove temp file again
+
+                return pid;
+
+            }
+            else
+            {
+                return -1;
             }
         }
 
