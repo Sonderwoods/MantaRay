@@ -37,7 +37,7 @@ namespace MantaRay
         }
 
 
-        public IEnumerable<string> GetCurrentTasks(int number = 10, string filter = null)
+        public IEnumerable<string> GetCurrentTasks(int number = 10, string nameFilter = null, string descFilter = null)
         {
             List<string> msgs = new List<string>(number);
 
@@ -54,14 +54,9 @@ namespace MantaRay
 
             }
 
-            IEnumerable<LogEntry> items = !string.IsNullOrEmpty(filter) ?
-
-                currentTasks.Values.OrderByDescending(lo => lo.Timestamp)
-                    .Where(l => l.Name.Contains(filter) || l.Description.Contains(filter))
-                    .Take(number) :
-
-                    currentTasks.Values.OrderByDescending(lo => lo.Timestamp)
-                    .Take(number);
+            var items = currentTasks.Values.OrderByDescending(lo => lo.Timestamp)
+                .Where(l => (nameFilter == null || l.Name.Contains(nameFilter)) && (descFilter == null || l.Description.Contains(descFilter)))
+                .Take(number);
 
 
             foreach (LogEntry l in items)
@@ -69,7 +64,7 @@ namespace MantaRay
                 yield return $"[{l.Timestamp:G}, {l.Name}, for {(DateTime.Now - l.Timestamp).ToReadableString()}]: {l.Description.Replace("\n", "        \n")}";
             }
 
-            
+
         }
 
         public Guid AddTask(string name, string description, Guid componentGuid = default, Guid guid = default)
@@ -111,36 +106,26 @@ namespace MantaRay
                 {
                     Debug.WriteLine($"Tried to remove {taskGuid} from currentTasks without luck");
                 }
-                
+
             }
             LogUpdated?.Invoke(this, new EventArgs());
         }
 
 
-        public List<string> GetLatestLogs(int number = 10, string filter = null)
+        public IEnumerable<string> GetLatestLogs(int number = 10, string nameFilter = null, string descFilter = null)
         {
             List<string> msgs = new List<string>(number);
             IEnumerable<LogEntry> items;
 
-            if (!string.IsNullOrEmpty(filter))
-            {
-                items = logMessages.OrderByDescending(lo => lo.Timestamp)
-                    .Where(l => l.Name.Contains(filter) || l.Description.Contains(filter))
-                    .Take(number);
-            }
-            else
-            {
-                items = logMessages.OrderByDescending(lo => lo.Timestamp)
-                    .Take(number);
-            }
+            items = logMessages.OrderByDescending(lo => lo.Timestamp)
+                .Where(l => (nameFilter == null || l.Name.Contains(nameFilter)) && (descFilter == null || l.Description.Contains(descFilter)))
+                .Take(number);
 
             foreach (LogEntry l in items)
             {
-                msgs.Add($"[{l.Timestamp:G}, {l.Name}]: {l.Description.Replace("\n", "        \n")}");
+                yield return $"[{l.Timestamp:G}, {l.Name}]: {l.Description.Replace("\n", "        \n")}";
             }
 
-
-            return msgs;
         }
 
 
