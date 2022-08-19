@@ -110,7 +110,7 @@ namespace MantaRay.Components
 
                 foreach (string item in missingInputs)
                 {
-                    AddRuntimeMessage(GH_RuntimeMessageLevel.Error, $"Missing \"{item}\"");
+                    AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, $"Missing \"{item}\"");
                 }
 
                 return;
