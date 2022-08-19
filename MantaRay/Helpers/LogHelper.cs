@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -36,30 +37,39 @@ namespace MantaRay
         }
 
 
-        public List<string> GetCurrentTasks(int number = 10, string filter = null)
+        public IEnumerable<string> GetCurrentTasks(int number = 10, string filter = null)
         {
             List<string> msgs = new List<string>(number);
-            IEnumerable<LogEntry> items;
 
-            if (!string.IsNullOrEmpty(filter))
+            foreach (var task in currentTasks.Keys.ToArray()) //toArray ensures a copy so we can edit the original dictionary
             {
-                items = currentTasks.Values.OrderByDescending(lo => lo.Timestamp)
+                GH_Template_Async comp = Grasshopper.Instances.ActiveCanvas.Document.Objects.OfType<GH_Template_Async>()
+                    .Where(o => o.InstanceGuid == currentTasks[task].ComponentGuid).FirstOrDefault();
+
+                if (comp == null || comp.Tasks.Count == 0)
+                {
+                    FinishTask(task, "Error or cancelled??");
+                    //currentTasks.Remove(task);
+                }
+
+            }
+
+            IEnumerable<LogEntry> items = !string.IsNullOrEmpty(filter) ?
+
+                currentTasks.Values.OrderByDescending(lo => lo.Timestamp)
                     .Where(l => l.Name.Contains(filter) || l.Description.Contains(filter))
+                    .Take(number) :
+
+                    currentTasks.Values.OrderByDescending(lo => lo.Timestamp)
                     .Take(number);
-            }
-            else
-            {
-                items = currentTasks.Values.OrderByDescending(lo => lo.Timestamp)
-                    .Take(number);
-            }
+
 
             foreach (LogEntry l in items)
             {
-                msgs.Add($"[{l.Timestamp:G}, {l.Name}, for {(DateTime.Now - l.Timestamp).ToReadableString()}]: {l.Description.Replace("\n", "        \n")}");
+                yield return $"[{l.Timestamp:G}, {l.Name}, for {(DateTime.Now - l.Timestamp).ToReadableString()}]: {l.Description.Replace("\n", "        \n")}";
             }
 
-
-            return msgs;
+            
         }
 
         public Guid AddTask(string name, string description, Guid componentGuid = default, Guid guid = default)
@@ -80,20 +90,28 @@ namespace MantaRay
                         Guid = guid,
                         Timestamp = DateTime.Now
                     });
-                    LogUpdated?.Invoke(this, new EventArgs());
+                LogUpdated?.Invoke(this, new EventArgs());
             }
 
             return guid;
 
         }
 
-        public void FinishTask(Guid guid)
+        public void FinishTask(Guid taskGuid, string status = "Finished")
         {
             lock (_taskLock)
             {
-                var t = currentTasks[guid];
-                Add(t.Name, t.Description + $"\nFinished in {(DateTime.Now - t.Timestamp).ToReadableString()}", t.ComponentGuid);
-                currentTasks.Remove(guid);
+                if (currentTasks.ContainsKey(taskGuid))
+                {
+                    var t = currentTasks[taskGuid];
+                    Add(t.Name, t.Description + $"\n{status} in {(DateTime.Now - t.Timestamp).ToReadableString()}", t.ComponentGuid);
+                    currentTasks.Remove(taskGuid);
+                }
+                else
+                {
+                    Debug.WriteLine($"Tried to remove {taskGuid} from currentTasks without luck");
+                }
+                
             }
             LogUpdated?.Invoke(this, new EventArgs());
         }

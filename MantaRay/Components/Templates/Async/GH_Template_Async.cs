@@ -37,7 +37,7 @@ namespace MantaRay
 
         public List<WorkerInstance> Workers;
 
-        protected List<Task> Tasks;
+        public List<Task> Tasks;
 
         public List<CancellationTokenSource> CancellationSources;
 

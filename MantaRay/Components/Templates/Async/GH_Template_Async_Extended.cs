@@ -29,6 +29,8 @@ namespace MantaRay
 
         Guid latestLogGuid = new Guid();
 
+        LogHelper logHelper = null;
+
 
 
         public bool RunInput { get; set; } = false;
@@ -49,7 +51,7 @@ namespace MantaRay
 
         protected GH_Template_Async_Extended(string name, string nickname, string description, string subCategory) : base(name, nickname, description, subCategory)
         {
-
+            logHelper = LogHelper.Default;
             DisplayProgressTimer = new Timer(333) { AutoReset = false };
             DisplayProgressTimer.Elapsed += DisplayProgress;
 
@@ -81,7 +83,7 @@ namespace MantaRay
             if (HasLogAbilities() && LogSave && RunCount == 1)
             {
 
-                LogHelper logHelper = LogHelper.Default;
+                
 
                 //logHelper.Add(LogName, $"Done in {Stopwatch.Elapsed.ToReadableString()}", InstanceGuid);
                 logHelper.FinishTask(latestLogGuid);
@@ -281,10 +283,11 @@ namespace MantaRay
 
             if (Workers.Any(w => w.CancellationToken.IsCancellationRequested))
             {
-                AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Cancelled");
+                //AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Cancelled");
                 PhaseForColors = AestheticPhase.Cancelled;
                 ((GH_ColorAttributes_Async)m_attributes).ColorSelected = new Grasshopper.GUI.Canvas.GH_PaletteStyle(Color.DarkRed);
                 ((GH_ColorAttributes_Async)m_attributes).ColorUnselected = new Grasshopper.GUI.Canvas.GH_PaletteStyle(Color.DarkOrchid);
+                logHelper.FinishTask(latestLogGuid, "Cancelled");
             }
             else
             {
@@ -345,7 +348,7 @@ namespace MantaRay
 
             if (HasLogAbilities() && LogSave && RunInput)
             {
-                LogHelper logHelper = LogHelper.Default;
+                
                 //logHelper.Add($"{LogName} {RunCount - 1}", (LogUseFixedDescription ? LogDescriptionStatic : LogDescriptionDynamic) + " Starting", InstanceGuid);
                 latestLogGuid = logHelper.AddTask($"{LogName} {RunCount - 1}", (LogUseFixedDescription ? LogDescriptionStatic : LogDescriptionDynamic), InstanceGuid);
             }
