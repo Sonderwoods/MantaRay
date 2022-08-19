@@ -1,7 +1,10 @@
 ﻿using GH_IO.Serialization;
+using Grasshopper.GUI;
+using Grasshopper.GUI.Canvas;
 using Grasshopper.Kernel;
 using Grasshopper.Kernel.Data;
 using Grasshopper.Kernel.Types;
+using MantaRay.Components.Templates;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -13,7 +16,7 @@ using System.Windows.Forms;
 
 namespace MantaRay
 {
-    public class GH_ExecuteAsync : GH_Template_Async_Extended
+    public class GH_ExecuteAsync : GH_Template_Async_Extended, IHasDoubleClick
     {
         public override Guid ComponentGuid { get => new Guid("22C612B2-2C57-47CE-B2FE-E10621F18933"); }
 
@@ -271,6 +274,12 @@ namespace MantaRay
 
 
 
+        }
+
+        public GH_ObjectResponse OnDoubleClick(GH_Canvas sender, GH_CanvasMouseEvent e)
+        {
+            SetLogDetails();
+            return GH_ObjectResponse.Handled;
         }
 
         //protected override void AfterDone()

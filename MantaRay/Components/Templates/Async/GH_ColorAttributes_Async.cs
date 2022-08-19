@@ -1,8 +1,10 @@
-﻿using Grasshopper.GUI.Canvas;
+﻿using Grasshopper.GUI;
+using Grasshopper.GUI.Canvas;
 using Grasshopper.Kernel;
 using Grasshopper.Kernel.Attributes;
 using Grasshopper.Kernel.Parameters;
 using Grasshopper.Kernel.Types;
+using MantaRay.Components.Templates;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -17,14 +19,16 @@ namespace MantaRay
     /// This class sets colors for the grasshopper components
     /// https://discourse.mcneel.com/t/change-the-color-of-the-custom-component/56435/2
     /// </summary>
-    public class GH_ColorAttributes_Async : GH_ComponentAttributes
+    public class GH_ColorAttributes_Async : GH_DoubleClickAttributes
     {
         readonly GH_Template_Async component;
+        readonly IHasDoubleClick doubleClickComponent;
 
         public GH_ColorAttributes_Async(IGH_Component component)
           : base(component)
         {
             this.component = component as GH_Template_Async;
+            this.doubleClickComponent = component as IHasDoubleClick;
 
             palette_normal_standard = GH_Skin.palette_normal_standard;
             palette_normal_selected = GH_Skin.palette_normal_selected;
@@ -313,6 +317,7 @@ namespace MantaRay
             }
 
         }
+
 
     }
 

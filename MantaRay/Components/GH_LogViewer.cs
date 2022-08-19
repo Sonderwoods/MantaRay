@@ -2,13 +2,16 @@
 using System.Collections.Generic;
 using System.Windows.Forms;
 using GH_IO.Serialization;
+using Grasshopper.GUI;
+using Grasshopper.GUI.Canvas;
 using Grasshopper.Kernel;
 using MantaRay.Components;
+using MantaRay.Components.Templates;
 using Rhino.Geometry;
 
 namespace MantaRay.Components
 {
-    public class GH_LogViewer : GH_Template
+    public class GH_LogViewer : GH_Template, IHasDoubleClick
     {
         /// <summary>
         /// Initializes a new instance of the GH_LogViewer class.
@@ -29,7 +32,8 @@ namespace MantaRay.Components
         {
             pManager[pManager.AddTextParameter("Name", "Name", "Name", GH_ParamAccess.item, "")].Optional = true;
             pManager[pManager.AddIntegerParameter("Number", "Number", "Number", GH_ParamAccess.item, 10)].Optional = true;
-            pManager[pManager.AddTextParameter("Filter", "Filter", "Filter", GH_ParamAccess.item, "")].Optional = true;
+            pManager[pManager.AddTextParameter("NameFilter", "NameFilter", "NameFilter", GH_ParamAccess.item, "")].Optional = true;
+            pManager[pManager.AddTextParameter("DescFilter", "DescFilter", "Description filter (typically the commands etc)", GH_ParamAccess.item, "")].Optional = true;
         }
 
         /// <summary>
@@ -37,8 +41,8 @@ namespace MantaRay.Components
         /// </summary>
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
-            pManager.AddTextParameter("Logs", "Logs", "Logs", GH_ParamAccess.list);
             pManager.AddTextParameter("CurrentTasks", "CurrentTasks", "CurrentTasks", GH_ParamAccess.list);
+            pManager.AddTextParameter("Logs", "Logs", "Logs", GH_ParamAccess.list);
         }
 
         /// <summary>
@@ -56,8 +60,8 @@ namespace MantaRay.Components
 
             logHelper.LogUpdated += LogHelper_LogUpdated;
 
-            DA.SetDataList(0, logHelper.GetLatestLogs(DA.Fetch<int>("Number"), DA.Fetch<string>("Filter")));
-            DA.SetDataList(1, logHelper.GetCurrentTasks(DA.Fetch<int>("Number"), DA.Fetch<string>("Filter")));
+            DA.SetDataList(0, logHelper.GetCurrentTasks(DA.Fetch<int>("Number"), DA.Fetch<string>("NameFilter"), DA.Fetch<string>("DescFilter")));
+            DA.SetDataList(1, logHelper.GetLatestLogs(DA.Fetch<int>("Number"), DA.Fetch<string>("NameFilter"), DA.Fetch<string>("DescFilter")));
         }
 
 
@@ -107,6 +111,8 @@ namespace MantaRay.Components
             base.RemovedFromDocument(document);
 
         }
+
+        
 
         private void LogHelper_LogUpdated(object sender, EventArgs e)
         {
@@ -161,6 +167,20 @@ namespace MantaRay.Components
 
             return base.Write(writer);
         }
+
+        public GH_ObjectResponse OnDoubleClick(GH_Canvas sender, GH_CanvasMouseEvent e)
+        {
+            this.ExpireSolution(true);
+            return GH_ObjectResponse.Handled;
+        }
+
+        public override void CreateAttributes()
+        {
+            //base.CreateAttributes();
+            m_attributes = new GH_DoubleClickAttributes(this);
+
+        }
+
 
 
         /// <summary>
