@@ -133,3 +133,8 @@ Check out the issues on my todo list [here](https://github.com/Sonderwoods/Grass
       ssh <mylinuxusername>@127.0.0.1
 
 If it prompts you for your password you should be good!
+
+### UPDATE 2022-08-20 TO GET RVU WORKING! WOHOO
+
+Follow the guide here: https://mohamad-wael.medium.com/wsl-gui-applications-using-x11-4c6ec575f98b
+(Found it here https://discourse.radiance-online.org/t/linux-subsystem-on-windows-ubuntu/5009/11 )
