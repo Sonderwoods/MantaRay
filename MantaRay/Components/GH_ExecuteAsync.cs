@@ -24,7 +24,7 @@ namespace MantaRay
 
         public override GH_Exposure Exposure => GH_Exposure.primary;
 
-        public GH_ExecuteAsync() : base("Execute SSH", "ExecuteSSH", "ExecuteAsync2", "Use me to execute a SSH Command")
+        public GH_ExecuteAsync() : base("Execute SSH", "ExecuteSSH", "Use me to execute a SSH Command", "1 SSH")
         {
             BaseWorker = new SSH_Worker2(this);
             RunTime = new TimeSpan(0, 0, 0, 0, (int)LastRun.TotalMilliseconds);
@@ -340,7 +340,7 @@ namespace MantaRay
                         // If the command finished
                         if (WaitHandle.WaitAll(new[] { asyncResult.AsyncWaitHandle }, 100))
                         {
-
+                            // TODO: eventually use SshCommand.EndExecute
                             stderr = string.IsNullOrEmpty(cmd.Error) ? null : cmd.Error;
                             results = cmd.Result;
                             bool itsJustAWarning = stderr?.ToString().Contains("warning") ?? false;
@@ -355,7 +355,8 @@ namespace MantaRay
                         {
                             cmd.CancelAsync();
                             ran = false;
-                            return;
+                            break;
+                            //return;
                         }
 
                     }

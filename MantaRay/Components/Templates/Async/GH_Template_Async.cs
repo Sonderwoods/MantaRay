@@ -255,6 +255,8 @@ namespace MantaRay
                 return;
             }
 
+            PostRunning(DA);
+            
             CancellationSources.Clear();
             Workers.Clear();
             ProgressReports.Clear();
@@ -262,7 +264,7 @@ namespace MantaRay
 
             Interlocked.Exchange(ref SetData, 0);
 
-            PostRunning(DA);
+            
 
 
             OnDisplayExpired(true);

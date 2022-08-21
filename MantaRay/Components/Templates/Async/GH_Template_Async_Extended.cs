@@ -93,6 +93,7 @@ namespace MantaRay
                 RunTime = Stopwatch.Elapsed;
 
             }
+
         }
 
         /// <summary>
@@ -129,6 +130,15 @@ namespace MantaRay
             base.ClearCachedData();
             RunTime = default;
             // Here is the place we would clear saved variables
+        }
+
+        public override void RequestCancellation()
+        {
+            PhaseForColors = AestheticPhase.Cancelled;
+            ((GH_ColorAttributes_Async)m_attributes).ColorSelected = new Grasshopper.GUI.Canvas.GH_PaletteStyle(Color.Firebrick);
+            ((GH_ColorAttributes_Async)m_attributes).ColorUnselected = new Grasshopper.GUI.Canvas.GH_PaletteStyle(Color.DarkRed);
+            logHelper.FinishTask(latestLogGuid, "Cancelled");
+            base.RequestCancellation();
         }
 
         public virtual void SetLogDetails()
@@ -281,16 +291,16 @@ namespace MantaRay
             //RunTime = Stopwatch.Elapsed;
 
 
-            if (Workers.Any(w => w.CancellationToken.IsCancellationRequested))
-            {
-                //AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Cancelled");
-                PhaseForColors = AestheticPhase.Cancelled;
-                ((GH_ColorAttributes_Async)m_attributes).ColorSelected = new Grasshopper.GUI.Canvas.GH_PaletteStyle(Color.DarkRed);
-                ((GH_ColorAttributes_Async)m_attributes).ColorUnselected = new Grasshopper.GUI.Canvas.GH_PaletteStyle(Color.DarkOrchid);
-                logHelper.FinishTask(latestLogGuid, "Cancelled");
-            }
-            else
-            {
+            //if (Workers.Any(w => w.CancellationToken.IsCancellationRequested))
+            //{
+            //    //AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Cancelled");
+            //    PhaseForColors = AestheticPhase.Cancelled;
+            //    ((GH_ColorAttributes_Async)m_attributes).ColorSelected = new Grasshopper.GUI.Canvas.GH_PaletteStyle(Color.DarkRed);
+            //    ((GH_ColorAttributes_Async)m_attributes).ColorUnselected = new Grasshopper.GUI.Canvas.GH_PaletteStyle(Color.DarkOrchid);
+            //    logHelper.FinishTask(latestLogGuid, "Cancelled");
+            //}
+            //else
+            //{
                 PhaseForColors = AestheticPhase.NotRunning;
 
                 if (RunInput)
@@ -304,7 +314,7 @@ namespace MantaRay
                     Message = "Deactive";
 
                 }
-            }
+            //}
 
             //base.PostRunning();
         }
