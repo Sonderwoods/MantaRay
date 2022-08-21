@@ -23,13 +23,15 @@ namespace MantaRay.RadViewer
 
         public RaPolygon(string[] data) : base(data)
         {
-            IEnumerable<string> dataNoHeader = data.Skip(6); // skip header
+            int skip = 6;
+            IEnumerable<string> dataNoHeader = data.Skip(skip); // skip header
 
             int i = 0;
             double d1 = -1;
             double d2 = -1;
+            int dataCount = data.Length - skip;
 
-            if (dataNoHeader.Count() <= 12)
+            if (dataCount == 9 || dataCount == 12)
             {
                 Mesh = new Mesh();
 
@@ -49,11 +51,9 @@ namespace MantaRay.RadViewer
 
                     }
 
-
-
                 }
 
-                if (Mesh.Vertices.Count == 4)
+                if (dataCount == 12)
                 {
                     Mesh.Faces.AddFace(0, 1, 2, 3);
                 }
@@ -61,8 +61,9 @@ namespace MantaRay.RadViewer
                 {
                     Mesh.Faces.AddFace(0, 1, 2);
                 }
+
             }
-            else // Large polygon. more heavy also as it involves a step through BREPs.
+            else if (dataCount > 12) // Large polygon. more heavy also as it involves a step through BREPs.
             {
                 List<Point3d> ptList2 = new List<Point3d>();
 
@@ -84,6 +85,7 @@ namespace MantaRay.RadViewer
 
 
                 }
+                
                 if (ptList2[0] != ptList2[ptList2.Count - 1])
                 {
                     ptList2.Add(ptList2[0]);
@@ -115,6 +117,10 @@ namespace MantaRay.RadViewer
 
 
 
+            }
+            else
+            {
+                throw new SyntaxException("Not really the format of a face. Vertices were < 12 but not 9.");
             }
 
 
