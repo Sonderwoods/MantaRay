@@ -5,13 +5,14 @@ using System.Text;
 using Grasshopper.Kernel;
 using Grasshopper.Kernel.Data;
 using Grasshopper.Kernel.Types;
-using MantaRay.Components;
 using Rhino.Geometry;
 
-namespace MantaRay.Components
+namespace MantaRay.OldComponents
 {
+    [Obsolete]
     public class GH_ParseResults : GH_Template
     {
+        public override GH_Exposure Exposure => GH_Exposure.hidden;
         /// <summary>
         /// Initializes a new instance of the GH_ParseResults class.
         /// </summary>
@@ -25,7 +26,7 @@ namespace MantaRay.Components
         /// <summary>
         /// Registers all the input parameters for this component.
         /// </summary>
-        protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
+        protected override void RegisterInputParams(GH_InputParamManager pManager)
         {
             pManager.AddTextParameter("Ill file path", "Ill files", "Ill files. Can be linux or windows path", GH_ParamAccess.item);
             pManager[pManager.AddIntegerParameter("schedule[8760 x 0-1]", "schedule[8760 x 0-1]", "Schedule of 1s and 0s for each hour of the year to include", GH_ParamAccess.list, new List<int>())].Optional = true;
@@ -35,7 +36,7 @@ namespace MantaRay.Components
         /// <summary>
         /// Registers all the output parameters for this component.
         /// </summary>
-        protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
+        protected override void RegisterOutputParams(GH_OutputParamManager pManager)
         {
             pManager.AddTextParameter("Results", "Results", "Results per point", GH_ParamAccess.list);
             pManager.AddTextParameter("Run", "Run", "Run", GH_ParamAccess.tree);
@@ -67,7 +68,7 @@ namespace MantaRay.Components
 
             }
 
-            
+
 
 
         }
