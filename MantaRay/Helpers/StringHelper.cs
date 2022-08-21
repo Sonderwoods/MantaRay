@@ -17,7 +17,7 @@ namespace MantaRay
             for (int i = 0; i < line.Length; i++)
             {
 
-                if (line[i] >= 'a' && line[i] <= 'z' || line[i] >= 'A' && line[i] <= 'Z')
+                if (line[i] != 'e' && line[i] != 'E' && (line[i] >= 'a' && line[i] <= 'z' || line[i] >= 'A' && line[i] <= 'Z'))
                 {
                     return true;
                 }
@@ -84,7 +84,7 @@ namespace MantaRay
             if (runTime < 60000)
                 return string.Format("{0:0.0}s", runTime / 1000.0, CultureInfo.InvariantCulture);
             if (runTime < 3600000)
-                return string.Format("{0:0.0}m", runTime / 600000.0, CultureInfo.InvariantCulture);
+                return string.Format("{0:0.0}m", runTime / 60000.0, CultureInfo.InvariantCulture);
             if (runTime < 86400000)
                 return string.Format("{0:0.0}h", runTime / 3600000.0, CultureInfo.InvariantCulture);
             return string.Format("{0:0.0}d", runTime / 86400000.0, CultureInfo.InvariantCulture);
