@@ -133,14 +133,14 @@ namespace MantaRay
 
         }
 
-        protected override void RunOnlyOnce(IGH_DataAccess DA)
-        {
-            Results.Clear();
-            Commands.Clear();
-            Stderrs.Clear();
+        //protected override void RunOnlyOnce(IGH_DataAccess DA)
+        //{
+        //    Results.Clear();
+        //    Commands.Clear();
+        //    Stderrs.Clear();
 
-            //base.RunOnlyOnce(DA); // <-- empty
-        }
+        //    //base.RunOnlyOnce(DA); // <-- empty
+        //}
 
         protected override void AfterDone()
         {
