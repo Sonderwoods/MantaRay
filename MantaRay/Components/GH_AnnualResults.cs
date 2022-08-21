@@ -22,7 +22,7 @@ namespace MantaRay.Components
         public GH_AnnualResults()
           : base("AnnualResults", "AnnualResults",
               "Read Ill files...",
-              "2 Radiance")
+              "3 Results")
         {
         }
 
