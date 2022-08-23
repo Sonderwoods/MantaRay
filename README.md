@@ -3,7 +3,7 @@ An educational tool to work directly with [Radiance](https://www.radiance-online
 This allows you to utilize all the linux native Radiance commands including the GUI tools such as rvu, bsdfviewer etc.
 
 ![Sonderwoods_manta_ray_seen_from_below_glare_god_rays_underwater_a63c5bd4-4bca-432e-8d58-a25a728cfd6c](https://user-images.githubusercontent.com/19936679/182221211-7914b007-f84c-4cac-996d-4aab8a3b796d.png | width=600)
-![Mantaray]<img src="https://user-images.githubusercontent.com/19936679/182221211-7914b007-f84c-4cac-996d-4aab8a3b796d.png" width="400" height="790">
+<img src="https://user-images.githubusercontent.com/19936679/182221211-7914b007-f84c-4cac-996d-4aab8a3b796d.png" width="400" height="790">
 
 ### Presentation video
 Please see the presentation video of the tool at the Radiance Workshop
