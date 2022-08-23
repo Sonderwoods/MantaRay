@@ -12,7 +12,7 @@ Please see the presentation video of the tool at the Radiance Workshop
 
 ## Components:
 #### SSH Connect
-![radianceConnect](https://user-images.githubusercontent.com/19936679/168886070-7af082d4-ba57-417e-a5ff-9d93269a21de.gif)
+![radianceConnect]<img src="https://user-images.githubusercontent.com/19936679/168886070-7af082d4-ba57-417e-a5ff-9d93269a21de.gif" width="500">()
 - Connects to a SSH. Can embed password in GH script (internalize) or will prompt on execution.
 - Will automatically run _bash sudo service ssh start_ if it's not already running (will ask before so)
 - Will keep password even if you say recompute all. To set up a new selection set it to false and then true.
