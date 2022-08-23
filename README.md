@@ -64,7 +64,8 @@ Async SSH Components in place (based on the [speckle async](https://github.com/s
 #### ManPages
 <img src="https://user-images.githubusercontent.com/19936679/179314601-eb0dc6d2-f30a-4bd6-bdc4-8a021f8c2f39.gif" width="700">
 - ManPages show the help files relevant to your promt
-- They are live loaded from https://floyd.lbl.gov/radiance/ 
+- They are live loaded from https://floyd.lbl.gov/radiance/
+-  
 
 ## Disclaimer:
 This is a personal project that I wrote during my paternity leave and it comes with absolutely no warranties.
