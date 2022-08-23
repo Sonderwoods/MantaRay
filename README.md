@@ -8,7 +8,7 @@ Please see the presentation video of the tool at the Radiance Workshop
 
 https://io.linkarkitektur.com/en/news/radiance-workshop-mantaray
 
-![Sonderwoods_manta_ray_seen_from_below_glare_god_rays_underwater_a63c5bd4-4bca-432e-8d58-a25a728cfd6c](https://user-images.githubusercontent.com/19936679/182221211-7914b007-f84c-4cac-996d-4aab8a3b796d.png)
+![Sonderwoods_manta_ray_seen_from_below_glare_god_rays_underwater_a63c5bd4-4bca-432e-8d58-a25a728cfd6c | width=600](https://user-images.githubusercontent.com/19936679/182221211-7914b007-f84c-4cac-996d-4aab8a3b796d.png)
 
 
 In pure Linux fashion the Grasshopper components will pipe the results to the next component.
