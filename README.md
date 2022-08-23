@@ -13,9 +13,10 @@ Please see the presentation video of the tool at the Radiance Workshop
 ## Components:
 #### SSH Connect
 <img src="https://user-images.githubusercontent.com/19936679/168886070-7af082d4-ba57-417e-a5ff-9d93269a21de.gif" width="700">
-- Connects to a SSH. Can embed password in GH script (internalize) or will prompt on execution.
-- Will automatically run _bash sudo service ssh start_ if it's not already running (will ask before so)
-- Will keep password even if you say recompute all. To set up a new selection set it to false and then true.
+
+* Connects to a SSH. Can embed password in GH script (internalize) or will prompt on execution.
+* Will automatically run _bash sudo service ssh start_ if it's not already running (will ask before so)
+* Will keep password even if you say recompute all. To set up a new selection set it to false and then true.
 
 #### RadViewer
 <img src="https://user-images.githubusercontent.com/19936679/173672403-4fa20162-f701-47da-ac44-49b408e8f994.gif" width="700">
