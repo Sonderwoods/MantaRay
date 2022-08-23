@@ -1,5 +1,3 @@
-<img src="https://user-images.githubusercontent.com/19936679/186103750-e250ed8f-4a7c-4555-b9a3-5c9970e7bdef.png" width="701">
-
 ## Project MantaRay (GrasshopperRadianceLinuxConnector)
 An educational tool to work directly with [Radiance](https://www.radiance-online.org/) through [Grasshopper](https://www.grasshopper3d.com/).
 This allows you to utilize all the linux native Radiance commands including the GUI tools such as rvu, piping etc.
@@ -94,6 +92,8 @@ I was reading up on radiance and found the need for a lightweight connection fro
 
 ## Todo:
 Check out the issues on my todo list [here](https://github.com/Sonderwoods/GrasshopperRadianceLinuxConnector/issues).
+
+<img src="https://user-images.githubusercontent.com/19936679/186103750-e250ed8f-4a7c-4555-b9a3-5c9970e7bdef.png" width="701">
 
 - - - -
 
