@@ -1,8 +1,11 @@
+![mantaray_cut_resize](https://user-images.githubusercontent.com/19936679/186103750-e250ed8f-4a7c-4555-b9a3-5c9970e7bdef.png)
+
 ## Project MantaRay (GrasshopperRadianceLinuxConnector)
 An educational tool to work directly with [Radiance](https://www.radiance-online.org/) through [Grasshopper](https://www.grasshopper3d.com/).
 This allows you to utilize all the linux native Radiance commands including the GUI tools such as rvu, bsdfviewer etc.
 
-<img src="https://user-images.githubusercontent.com/19936679/182221211-7914b007-f84c-4cac-996d-4aab8a3b796d.png" width="500" height="500">
+
+
 
 ### Presentation video
 Please see the presentation video of the tool at the Radiance Workshop
