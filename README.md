@@ -2,13 +2,16 @@
 An educational tool to work directly with [Radiance](https://www.radiance-online.org/) through [Grasshopper](https://www.grasshopper3d.com/).
 This allows you to utilize all the linux native Radiance commands including the GUI tools such as rvu, bsdfviewer etc.
 
+![Sonderwoods_manta_ray_seen_from_below_glare_god_rays_underwater_a63c5bd4-4bca-432e-8d58-a25a728cfd6c](https://user-images.githubusercontent.com/19936679/182221211-7914b007-f84c-4cac-996d-4aab8a3b796d.png | width=600)
+
+
 ### Presentation video
 Please see the presentation video of the tool at the Radiance Workshop
 [![image](https://user-images.githubusercontent.com/19936679/186097837-5032c7a8-709b-4dbf-b448-849580896e37.png)](https://io.linkarkitektur.com/en/news/radiance-workshop-mantaray)
 
 https://io.linkarkitektur.com/en/news/radiance-workshop-mantaray
 
-![Sonderwoods_manta_ray_seen_from_below_glare_god_rays_underwater_a63c5bd4-4bca-432e-8d58-a25a728cfd6c](https://user-images.githubusercontent.com/19936679/182221211-7914b007-f84c-4cac-996d-4aab8a3b796d.png)
+
 
 
 In pure Linux fashion the Grasshopper components will pipe the results to the next component.
