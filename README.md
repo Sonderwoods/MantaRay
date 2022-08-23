@@ -8,7 +8,7 @@ This allows you to utilize all the linux native Radiance commands including the 
 Please see the presentation video of the tool at the Radiance Workshop
 [![image](https://user-images.githubusercontent.com/19936679/186097837-5032c7a8-709b-4dbf-b448-849580896e37.png)](https://io.linkarkitektur.com/en/news/radiance-workshop-mantaray)
 
-
+- - - -
 
 ## Components:
 #### SSH Connect
@@ -18,9 +18,10 @@ Please see the presentation video of the tool at the Radiance Workshop
 * Will automatically run _bash sudo service ssh start_ if it's not already running (will ask before so)
 * Will keep password even if you say recompute all. To set up a new selection set it to false and then true.
 
+- - - -
+
 #### RadViewer
 <img src="https://user-images.githubusercontent.com/19936679/173672403-4fa20162-f701-47da-ac44-49b408e8f994.gif" width="700">
-
 
 
 <img src="https://user-images.githubusercontent.com/19936679/168884796-fea8f5e5-f919-4222-81e4-dd676ce3794f.gif" width="700">
@@ -30,11 +31,15 @@ Please see the presentation video of the tool at the Radiance Workshop
 - Todo: Legend for the colors
 - Todo (Optional): Clickable objects to get modifiers
 
+- - - -
+
 #### Mesh2obj (and obj2rad)
 <img src="https://user-images.githubusercontent.com/19936679/158892631-188c4ab0-b364-4b0c-820a-eff9101058e2.png" width="700">
 
 - Runs in parallel and is fast
 - Orients normals (vertice order in radiance) to match rhino mesh normals
+
+- - - -
 
 
 #### Setup Globals (and Apply Globals)
@@ -43,6 +48,8 @@ Please see the presentation video of the tool at the Radiance Workshop
 - A place to set your variables and reuse them, ie project folder etc.
 - Can also be used for local replacements in the ssh command
 - Only one Setup Globals component can be placed at the canvas at the same time (otherwise see screenshot)
+
+- - - -
 
 #### Execute Async
 <img src="https://user-images.githubusercontent.com/19936679/168891590-600b9434-834d-4f06-8166-10fa62cdab09.gif" width="700">
@@ -60,6 +67,8 @@ Please see the presentation video of the tool at the Radiance Workshop
 Async SSH Components in place (based on the [speckle async](https://github.com/specklesystems/GrasshopperAsyncComponent))
 <img src="https://user-images.githubusercontent.com/19936679/166122160-9a706a61-eaa1-48cb-a5a4-6f95681a83a0.gif" width="700">
 
+- - - -
+
 
 #### CreateView
 <img src="https://user-images.githubusercontent.com/19936679/169893709-d9d29494-6bf3-48ca-b690-c583e038e1c1.png" width="700">
@@ -68,11 +77,15 @@ Async SSH Components in place (based on the [speckle async](https://github.com/s
 - Outputs the data for a viewfile. Can be echoed into a .vf file.
 - Previews your camera in Rhino viewport in red. Green if the component is selected.
 
+- - - -
+
 #### ManPages
 <img src="https://user-images.githubusercontent.com/19936679/179314601-eb0dc6d2-f30a-4bd6-bdc4-8a021f8c2f39.gif" width="700">
 
 - ManPages show the help files relevant to your promt
 - They are live loaded from https://floyd.lbl.gov/radiance/
+
+- - - -
 
 ## Disclaimer:
 This is a personal project that I wrote during my paternity leave and it comes with absolutely no warranties.
@@ -82,7 +95,7 @@ I was reading up on radiance and found the need for a lightweight connection fro
 ## Todo:
 Check out the issues on my todo list [here](https://github.com/Sonderwoods/GrasshopperRadianceLinuxConnector/issues).
 
-
+- - - -
 
 ## Preparations
 
