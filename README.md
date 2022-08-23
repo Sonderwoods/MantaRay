@@ -103,8 +103,10 @@ Check out the issues on my todo list [here](https://github.com/Sonderwoods/Grass
 
 (I'll see if I can make a youtube vid at some point)
 
-* Start enabling WSL and installing Radiance and XLaunch as per [this link](https://www.mattiabressanelli.com/engineering/linux-radiance-on-windows-with-wsl-and-x11/).
+* Start enabling WSL and installing Radiance ~~and XLaunch as per~~ [this link](https://www.mattiabressanelli.com/engineering/linux-radiance-on-windows-with-wsl-and-x11/).
   Don't make your username too long and dont make your password too complex. Do not make the PW the same as your windows user.
+  UPDATED - USE THIS GUIDE FOR XLAUNCH: https://mohamad-wael.medium.com/wsl-gui-applications-using-x11-4c6ec575f98b
+  (Found it here https://discourse.radiance-online.org/t/linux-subsystem-on-windows-ubuntu/5009/11 )
 
 * Install CShell using 
 
@@ -155,7 +157,4 @@ Check out the issues on my todo list [here](https://github.com/Sonderwoods/Grass
 
 If it prompts you for your password you should be good!
 
-### UPDATE 2022-08-20 TO GET RVU WORKING! WOHOO
 
-Follow the guide here: https://mohamad-wael.medium.com/wsl-gui-applications-using-x11-4c6ec575f98b
-(Found it here https://discourse.radiance-online.org/t/linux-subsystem-on-windows-ubuntu/5009/11 )
