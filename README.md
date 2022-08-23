@@ -2,24 +2,11 @@
 
 ## Project MantaRay (GrasshopperRadianceLinuxConnector)
 An educational tool to work directly with [Radiance](https://www.radiance-online.org/) through [Grasshopper](https://www.grasshopper3d.com/).
-This allows you to utilize all the linux native Radiance commands including the GUI tools such as rvu, bsdfviewer etc.
-
-
-
+This allows you to utilize all the linux native Radiance commands including the GUI tools such as rvu, piping etc.
 
 ### Presentation video
 Please see the presentation video of the tool at the Radiance Workshop
 [![image](https://user-images.githubusercontent.com/19936679/186097837-5032c7a8-709b-4dbf-b448-849580896e37.png)](https://io.linkarkitektur.com/en/news/radiance-workshop-mantaray)
-
-https://io.linkarkitektur.com/en/news/radiance-workshop-mantaray
-
-
-
-
-In pure Linux fashion the Grasshopper components will pipe the results to the next component.
-
-Async SSH Components in place (based on the [speckle async](https://github.com/specklesystems/GrasshopperAsyncComponent))
-![radianceasync](https://user-images.githubusercontent.com/19936679/166122160-9a706a61-eaa1-48cb-a5a4-6f95681a83a0.gif)
 
 
 
@@ -62,6 +49,11 @@ Async SSH Components in place (based on the [speckle async](https://github.com/s
 - To avoid this behavior, you can graft several inputs into the same component instead.
 - Access to ImageMagick and the meta functions in linux only Radiance
 ![image](https://user-images.githubusercontent.com/19936679/159573035-72523b98-e2ad-40d1-ae82-ecc9f5068288.png)
+
+
+Async SSH Components in place (based on the [speckle async](https://github.com/specklesystems/GrasshopperAsyncComponent))
+![radianceasync](https://user-images.githubusercontent.com/19936679/166122160-9a706a61-eaa1-48cb-a5a4-6f95681a83a0.gif)
+
 
 #### CreateView
 ![image](https://user-images.githubusercontent.com/19936679/169893709-d9d29494-6bf3-48ca-b690-c583e038e1c1.png)
