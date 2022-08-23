@@ -32,12 +32,14 @@ Please see the presentation video of the tool at the Radiance Workshop
 
 #### Mesh2obj (and obj2rad)
 <img src="https://user-images.githubusercontent.com/19936679/158892631-188c4ab0-b364-4b0c-820a-eff9101058e2.png" width="700">
+
 - Runs in parallel and is fast
 - Orients normals (vertice order in radiance) to match rhino mesh normals
 
 
 #### Setup Globals (and Apply Globals)
 <img src="https://user-images.githubusercontent.com/19936679/168888836-58a91cee-17a5-409a-92de-a700d684b3af.png" width="700">
+
 - A place to set your variables and reuse them, ie project folder etc.
 - Can also be used for local replacements in the ssh command
 - Only one Setup Globals component can be placed at the canvas at the same time (otherwise see screenshot)
@@ -61,15 +63,16 @@ Async SSH Components in place (based on the [speckle async](https://github.com/s
 
 #### CreateView
 <img src="https://user-images.githubusercontent.com/19936679/169893709-d9d29494-6bf3-48ca-b690-c583e038e1c1.png" width="700">
+
 - Input a perspective named view from Rhino or use the active viewport
 - Outputs the data for a viewfile. Can be echoed into a .vf file.
 - Previews your camera in Rhino viewport in red. Green if the component is selected.
 
 #### ManPages
 <img src="https://user-images.githubusercontent.com/19936679/179314601-eb0dc6d2-f30a-4bd6-bdc4-8a021f8c2f39.gif" width="700">
+
 - ManPages show the help files relevant to your promt
 - They are live loaded from https://floyd.lbl.gov/radiance/
--  
 
 ## Disclaimer:
 This is a personal project that I wrote during my paternity leave and it comes with absolutely no warranties.
