@@ -24,6 +24,7 @@ Please see the presentation video of the tool at the Radiance Workshop
 
 
 <img src="https://user-images.githubusercontent.com/19936679/168884796-fea8f5e5-f919-4222-81e4-dd676ce3794f.gif" width="700">
+
 - Super fast parsing of multiple rad files
 - Preview of random colors (Todo: Match color of radiance material)
 - Todo: Legend for the colors
@@ -43,12 +44,14 @@ Please see the presentation video of the tool at the Radiance Workshop
 
 #### Execute Async
 <img src="https://user-images.githubusercontent.com/19936679/168891590-600b9434-834d-4f06-8166-10fa62cdab09.gif" width="700">
+
 - The component that does the magic.
 - Reuses outputs and saves them on your canvas. This means that when reopening grasshopper, you don't have to run all commands again if the temporary files are still there.
 - Runs asyncronously, which means it does not block the grasshopper UI while it's running.
 - Two components next to each other depending on the same inputs will both run in parallel and first trigger the downstream components when both are finished (use the RAN output as it becomes true when finished).
 - To avoid this behavior, you can graft several inputs into the same component instead.
 - Access to ImageMagick and the meta functions in linux only Radiance
+
 <img src="https://user-images.githubusercontent.com/19936679/159573035-72523b98-e2ad-40d1-ae82-ecc9f5068288.png" width="700">
 
 
