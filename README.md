@@ -1,4 +1,4 @@
-![mantaray_cut_resize](https://user-images.githubusercontent.com/19936679/186103750-e250ed8f-4a7c-4555-b9a3-5c9970e7bdef.png)
+<img src="https://user-images.githubusercontent.com/19936679/186103750-e250ed8f-4a7c-4555-b9a3-5c9970e7bdef.png" width="701">
 
 ## Project MantaRay (GrasshopperRadianceLinuxConnector)
 An educational tool to work directly with [Radiance](https://www.radiance-online.org/) through [Grasshopper](https://www.grasshopper3d.com/).
@@ -12,57 +12,57 @@ Please see the presentation video of the tool at the Radiance Workshop
 
 ## Components:
 #### SSH Connect
-<img src="https://user-images.githubusercontent.com/19936679/168886070-7af082d4-ba57-417e-a5ff-9d93269a21de.gif" width="500">
+<img src="https://user-images.githubusercontent.com/19936679/168886070-7af082d4-ba57-417e-a5ff-9d93269a21de.gif" width="700">
 - Connects to a SSH. Can embed password in GH script (internalize) or will prompt on execution.
 - Will automatically run _bash sudo service ssh start_ if it's not already running (will ask before so)
 - Will keep password even if you say recompute all. To set up a new selection set it to false and then true.
 
 #### RadViewer
-<img src="https://user-images.githubusercontent.com/19936679/173672403-4fa20162-f701-47da-ac44-49b408e8f994.gif" width="500">
+<img src="https://user-images.githubusercontent.com/19936679/173672403-4fa20162-f701-47da-ac44-49b408e8f994.gif" width="700">
 
 
 
-<img src="https://user-images.githubusercontent.com/19936679/168884796-fea8f5e5-f919-4222-81e4-dd676ce3794f.gif" width="500">
+<img src="https://user-images.githubusercontent.com/19936679/168884796-fea8f5e5-f919-4222-81e4-dd676ce3794f.gif" width="700">
 - Super fast parsing of multiple rad files
 - Preview of random colors (Todo: Match color of radiance material)
 - Todo: Legend for the colors
 - Todo (Optional): Clickable objects to get modifiers
 
 #### Mesh2obj (and obj2rad)
-<img src="https://user-images.githubusercontent.com/19936679/158892631-188c4ab0-b364-4b0c-820a-eff9101058e2.png" width="500">
+<img src="https://user-images.githubusercontent.com/19936679/158892631-188c4ab0-b364-4b0c-820a-eff9101058e2.png" width="700">
 - Runs in parallel and is fast
 - Orients normals (vertice order in radiance) to match rhino mesh normals
 
 
 #### Setup Globals (and Apply Globals)
-<img src="https://user-images.githubusercontent.com/19936679/168888836-58a91cee-17a5-409a-92de-a700d684b3af.png" width="500">
+<img src="https://user-images.githubusercontent.com/19936679/168888836-58a91cee-17a5-409a-92de-a700d684b3af.png" width="700">
 - A place to set your variables and reuse them, ie project folder etc.
 - Can also be used for local replacements in the ssh command
 - Only one Setup Globals component can be placed at the canvas at the same time (otherwise see screenshot)
 
 #### Execute Async
-<img src="https://user-images.githubusercontent.com/19936679/168891590-600b9434-834d-4f06-8166-10fa62cdab09.gif" width="500">
+<img src="https://user-images.githubusercontent.com/19936679/168891590-600b9434-834d-4f06-8166-10fa62cdab09.gif" width="700">
 - The component that does the magic.
 - Reuses outputs and saves them on your canvas. This means that when reopening grasshopper, you don't have to run all commands again if the temporary files are still there.
 - Runs asyncronously, which means it does not block the grasshopper UI while it's running.
 - Two components next to each other depending on the same inputs will both run in parallel and first trigger the downstream components when both are finished (use the RAN output as it becomes true when finished).
 - To avoid this behavior, you can graft several inputs into the same component instead.
 - Access to ImageMagick and the meta functions in linux only Radiance
-<img src="https://user-images.githubusercontent.com/19936679/159573035-72523b98-e2ad-40d1-ae82-ecc9f5068288.png" width="500">
+<img src="https://user-images.githubusercontent.com/19936679/159573035-72523b98-e2ad-40d1-ae82-ecc9f5068288.png" width="700">
 
 
 Async SSH Components in place (based on the [speckle async](https://github.com/specklesystems/GrasshopperAsyncComponent))
-<img src="https://user-images.githubusercontent.com/19936679/166122160-9a706a61-eaa1-48cb-a5a4-6f95681a83a0.gif" width="500">
+<img src="https://user-images.githubusercontent.com/19936679/166122160-9a706a61-eaa1-48cb-a5a4-6f95681a83a0.gif" width="700">
 
 
 #### CreateView
-<img src="https://user-images.githubusercontent.com/19936679/169893709-d9d29494-6bf3-48ca-b690-c583e038e1c1.png" width="500">
+<img src="https://user-images.githubusercontent.com/19936679/169893709-d9d29494-6bf3-48ca-b690-c583e038e1c1.png" width="700">
 - Input a perspective named view from Rhino or use the active viewport
 - Outputs the data for a viewfile. Can be echoed into a .vf file.
 - Previews your camera in Rhino viewport in red. Green if the component is selected.
 
 #### ManPages
-<img src="https://user-images.githubusercontent.com/19936679/179314601-eb0dc6d2-f30a-4bd6-bdc4-8a021f8c2f39.gif" width="500">
+<img src="https://user-images.githubusercontent.com/19936679/179314601-eb0dc6d2-f30a-4bd6-bdc4-8a021f8c2f39.gif" width="700">
 - ManPages show the help files relevant to your promt
 - They are live loaded from https://floyd.lbl.gov/radiance/ 
 
