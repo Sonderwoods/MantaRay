@@ -17,12 +17,12 @@ using Rhino.Geometry;
 namespace MantaRay.Components
 {
     [Obsolete]
-    public class GH_ExecuteAsync : OLD_GH_TemplateAsync, IClearData
+    public class GH_ExecuteAsync_OBSOLETE : GH_Template_Async_OBSOLETE, IClearData
     {
         /// <summary>
         /// Initializes a new instance of the GH_Execute class.
         /// </summary>
-        public GH_ExecuteAsync()
+        public GH_ExecuteAsync_OBSOLETE()
           : base("Execute SSH Async", "Execute SSH Async",
               "Use me to execute a SSH Command",
               "1 SSH")
@@ -64,9 +64,9 @@ namespace MantaRay.Components
         {
             pManager.AddTextParameter("stdout", "stdout", "stdout", GH_ParamAccess.list);
             pManager.AddTextParameter("stderr", "stderr_", "stderr\nWill output any eventual errors or warnings", GH_ParamAccess.list);
-            //pManager.AddTextParameter("log", "log", "log", GH_ParamAccess.list);
-            //pManager.AddIntegerParameter("Pid", "Pid", "Linux process id. Can be used to kill the task if it takes too long. " +
-            //    "Simply write in a bash prompt: kill <id>", GH_ParamAccess.item);
+            pManager.AddTextParameter("_", "_", "log", GH_ParamAccess.list);
+            pManager.AddIntegerParameter("_", "_", "Linux process id. Can be used to kill the task if it takes too long. " +
+                "Simply write in a bash prompt: kill <id>", GH_ParamAccess.item);
             pManager.AddBooleanParameter("Ran", "Ran", "Ran without any stderr. If you want it to output true even with errors, " +
                 "right click on the component and enable suppress warnings.", GH_ParamAccess.tree); //always keep ran as the last parameter
         }
@@ -341,6 +341,16 @@ namespace MantaRay.Components
 
             public override void DoWork(Action<string, double> ReportProgress, Action Done)
             {
+                GH_ExecuteAsync_OBSOLETE comp = Parent as GH_ExecuteAsync_OBSOLETE;
+                if (comp != null)
+                {
+                    Parent.Params.Output[2].NickName = "_";
+                    Parent.Params.Output[2].Name = "_";
+                    Parent.Params.Output[3].NickName = "_";
+                    Parent.Params.Output[3].Name = "_";
+                    Parent.Params.Output[4].NickName = "Ran";
+                    Parent.Params.Output[4].Name = "Ran";
+                }
 
 
                 bool HasZeroAreaPolygons(string errors)
@@ -372,14 +382,14 @@ namespace MantaRay.Components
 
                         string command = string.Join(";", commands.Branches[i].Select(c => c.Value)).AddGlobals().Replace("\r\n", "\n");
 
-                        pid = SSH_Helper.Execute(command, result.Log, result.Stdout, result.Stderr, prependPrefix: ((GH_ExecuteAsync)Parent).addPrefix, ((GH_ExecuteAsync)Parent).addSuffix, HasZeroAreaPolygons);
+                        pid = SSH_Helper.Execute(command, result.Log, result.Stdout, result.Stderr, prependPrefix: ((GH_ExecuteAsync_OBSOLETE)Parent).addPrefix, ((GH_ExecuteAsync_OBSOLETE)Parent).addSuffix, HasZeroAreaPolygons);
 
 
                         // TODO Need to get pid through "beginexecute" instead of "execute" of SSH.
 
                         bool itsJustAWarning = result.Stderr.ToString().Contains("warning");
 
-                        result.Success = pid > 0 || itsJustAWarning || ((GH_ExecuteAsync)Parent).suppressWarnings;
+                        result.Success = pid > 0 || itsJustAWarning || ((GH_ExecuteAsync_OBSOLETE)Parent).suppressWarnings;
 
                         if (result.Success)
                         {
@@ -397,8 +407,8 @@ namespace MantaRay.Components
                     });
 
 
-                    ((GH_ExecuteAsync)Parent).LogDescriptionDynamic = string.Join("\n", cmds);
-                    ((GH_ExecuteAsync)Parent).savedResults = results;
+                    ((GH_ExecuteAsync_OBSOLETE)Parent).LogDescriptionDynamic = string.Join("\n", cmds);
+                    ((GH_ExecuteAsync_OBSOLETE)Parent).savedResults = results;
 
 
                 }
@@ -408,9 +418,9 @@ namespace MantaRay.Components
 
                     Parent.Hidden = true;
 
-                    if (((GH_ExecuteAsync)Parent).savedResults.Any(s => !string.IsNullOrEmpty(s.Stdout.ToString())))
+                    if (((GH_ExecuteAsync_OBSOLETE)Parent).savedResults.Any(s => !string.IsNullOrEmpty(s.Stdout.ToString())))
                     {
-                        results = ((GH_ExecuteAsync)Parent).savedResults;
+                        results = ((GH_ExecuteAsync_OBSOLETE)Parent).savedResults;
                     }
 
                 }
@@ -433,7 +443,7 @@ namespace MantaRay.Components
                 //SkipRun = ((GH_ExecuteAsync)Parent).FirstRun || !run;  // was AND
                 SkipRun = !run;
 
-                ((GH_ExecuteAsync)Parent).FirstRun = false;
+                ((GH_ExecuteAsync_OBSOLETE)Parent).FirstRun = false;
 
             }
 
