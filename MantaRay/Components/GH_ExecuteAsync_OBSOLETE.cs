@@ -11,17 +11,18 @@ using Grasshopper.Documentation;
 using Grasshopper.Kernel;
 using Grasshopper.Kernel.Data;
 using Grasshopper.Kernel.Types;
+using MantaRay.OldComponents;
 using Rhino.Geometry;
 
-namespace MantaRay.OldComponents
+namespace MantaRay.Components
 {
     [Obsolete]
-    public class GH_ExecuteAsync_OLD : OLD_GH_TemplateAsync, IClearData
+    public class GH_ExecuteAsync : OLD_GH_TemplateAsync, IClearData
     {
         /// <summary>
         /// Initializes a new instance of the GH_Execute class.
         /// </summary>
-        public GH_ExecuteAsync_OLD()
+        public GH_ExecuteAsync()
           : base("Execute SSH Async", "Execute SSH Async",
               "Use me to execute a SSH Command",
               "1 SSH")
@@ -29,15 +30,12 @@ namespace MantaRay.OldComponents
 
             BaseWorker = new SSH_Worker(this);
             Hidden = true;
-            NickName = "Exec OLD";
-            Name = "Exec OLD";
-            Description += "OLD! Please use the new one from the taskbar";
+
 
 
 
         }
 
-        public override GH_Exposure Exposure => GH_Exposure.hidden;
 
         public string[] commands = new string[0];
         public bool addPrefix = true;
@@ -66,9 +64,9 @@ namespace MantaRay.OldComponents
         {
             pManager.AddTextParameter("stdout", "stdout", "stdout", GH_ParamAccess.list);
             pManager.AddTextParameter("stderr", "stderr_", "stderr\nWill output any eventual errors or warnings", GH_ParamAccess.list);
-            pManager.AddTextParameter("log", "log", "log", GH_ParamAccess.list);
-            pManager.AddIntegerParameter("Pid", "Pid", "Linux process id. Can be used to kill the task if it takes too long. " +
-                "Simply write in a bash prompt: kill <id>", GH_ParamAccess.item);
+            //pManager.AddTextParameter("log", "log", "log", GH_ParamAccess.list);
+            //pManager.AddIntegerParameter("Pid", "Pid", "Linux process id. Can be used to kill the task if it takes too long. " +
+            //    "Simply write in a bash prompt: kill <id>", GH_ParamAccess.item);
             pManager.AddBooleanParameter("Ran", "Ran", "Ran without any stderr. If you want it to output true even with errors, " +
                 "right click on the component and enable suppress warnings.", GH_ParamAccess.tree); //always keep ran as the last parameter
         }
@@ -374,14 +372,14 @@ namespace MantaRay.OldComponents
 
                         string command = string.Join(";", commands.Branches[i].Select(c => c.Value)).AddGlobals().Replace("\r\n", "\n");
 
-                        pid = SSH_Helper.Execute(command, result.Log, result.Stdout, result.Stderr, prependPrefix: ((GH_ExecuteAsync_OLD)Parent).addPrefix, ((GH_ExecuteAsync_OLD)Parent).addSuffix, HasZeroAreaPolygons);
+                        pid = SSH_Helper.Execute(command, result.Log, result.Stdout, result.Stderr, prependPrefix: ((GH_ExecuteAsync)Parent).addPrefix, ((GH_ExecuteAsync)Parent).addSuffix, HasZeroAreaPolygons);
 
 
                         // TODO Need to get pid through "beginexecute" instead of "execute" of SSH.
 
                         bool itsJustAWarning = result.Stderr.ToString().Contains("warning");
 
-                        result.Success = pid > 0 || itsJustAWarning || ((GH_ExecuteAsync_OLD)Parent).suppressWarnings;
+                        result.Success = pid > 0 || itsJustAWarning || ((GH_ExecuteAsync)Parent).suppressWarnings;
 
                         if (result.Success)
                         {
@@ -399,8 +397,8 @@ namespace MantaRay.OldComponents
                     });
 
 
-                    ((GH_ExecuteAsync_OLD)Parent).LogDescriptionDynamic = string.Join("\n", cmds);
-                    ((GH_ExecuteAsync_OLD)Parent).savedResults = results;
+                    ((GH_ExecuteAsync)Parent).LogDescriptionDynamic = string.Join("\n", cmds);
+                    ((GH_ExecuteAsync)Parent).savedResults = results;
 
 
                 }
@@ -410,9 +408,9 @@ namespace MantaRay.OldComponents
 
                     Parent.Hidden = true;
 
-                    if (((GH_ExecuteAsync_OLD)Parent).savedResults.Any(s => !string.IsNullOrEmpty(s.Stdout.ToString())))
+                    if (((GH_ExecuteAsync)Parent).savedResults.Any(s => !string.IsNullOrEmpty(s.Stdout.ToString())))
                     {
-                        results = ((GH_ExecuteAsync_OLD)Parent).savedResults;
+                        results = ((GH_ExecuteAsync)Parent).savedResults;
                     }
 
                 }
@@ -435,7 +433,7 @@ namespace MantaRay.OldComponents
                 //SkipRun = ((GH_ExecuteAsync)Parent).FirstRun || !run;  // was AND
                 SkipRun = !run;
 
-                ((GH_ExecuteAsync_OLD)Parent).FirstRun = false;
+                ((GH_ExecuteAsync)Parent).FirstRun = false;
 
             }
 
@@ -459,9 +457,9 @@ namespace MantaRay.OldComponents
 
                 DA.SetDataList(1, results.Select(r => r.Stderr.ToString()));
 
-                DA.SetDataList(2, results.Select(r => r.Log.ToString()));
+                //DA.SetDataList(2, results.Select(r => r.Log.ToString()));
 
-                DA.SetDataList(3, results.Select(r => r.Pid));
+                //DA.SetDataList(3, results.Select(r => r.Pid));
 
                 var runOut = new GH_Structure<GH_Boolean>();
                 runOut.Append(new GH_Boolean(ran), new GH_Path(0));
