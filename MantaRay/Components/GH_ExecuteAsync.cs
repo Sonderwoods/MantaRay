@@ -16,6 +16,8 @@ using System.Windows.Forms;
 
 namespace MantaRay
 {
+
+    //TODO: Get outputs while running -> https://www.linuxfixes.com/2022/04/solved-sshnet-real-time-command-output.html
     public class GH_ExecuteAsync : GH_Template_Async_Extended, IHasDoubleClick
     {
         public override Guid ComponentGuid { get => new Guid("22C612B2-2C57-47CE-B2FE-E10621F18933"); }
