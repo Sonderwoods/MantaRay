@@ -145,12 +145,12 @@ namespace MantaRay
 
 
             }
-            else if (component != null && component is OLD_GH_TemplateAsync o)
+            else if (component != null && component is GH_Template_Async_OBSOLETE o)
             {
                 switch (o.PhaseForColors)
                 {
-                    case OLD_GH_TemplateAsync.AestheticPhase.Running:
-                    case OLD_GH_TemplateAsync.AestheticPhase.Reusing:
+                    case GH_Template_Async_OBSOLETE.AestheticPhase.Running:
+                    case GH_Template_Async_OBSOLETE.AestheticPhase.Reusing:
                         // Swap out palette for normal, unselected components.
                         GH_Skin.palette_normal_standard = ColorUnselected;
                         GH_Skin.palette_hidden_standard = ColorUnselected;
