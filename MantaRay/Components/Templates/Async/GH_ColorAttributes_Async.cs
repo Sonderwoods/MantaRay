@@ -5,6 +5,7 @@ using Grasshopper.Kernel.Attributes;
 using Grasshopper.Kernel.Parameters;
 using Grasshopper.Kernel.Types;
 using MantaRay.Components.Templates;
+using MantaRay.OldComponents;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -21,13 +22,14 @@ namespace MantaRay
     /// </summary>
     public class GH_ColorAttributes_Async : GH_DoubleClickAttributes
     {
-        readonly GH_Template_Async component;
+        readonly IGH_Component component;
+        //readonly GH_Template_Async component;
         readonly IHasDoubleClick doubleClickComponent;
 
         public GH_ColorAttributes_Async(IGH_Component component)
           : base(component)
         {
-            this.component = component as GH_Template_Async;
+            this.component = component;
             this.doubleClickComponent = component as IHasDoubleClick;
 
             palette_normal_standard = GH_Skin.palette_normal_standard;
@@ -120,6 +122,35 @@ namespace MantaRay
                     case GH_Template_Async_Extended.AestheticPhase.Running:
                     case GH_Template_Async_Extended.AestheticPhase.Reusing:
                     case GH_Template_Async_Extended.AestheticPhase.Cancelled:
+                        // Swap out palette for normal, unselected components.
+                        GH_Skin.palette_normal_standard = ColorUnselected;
+                        GH_Skin.palette_hidden_standard = ColorUnselected;
+                        GH_Skin.palette_normal_selected = ColorSelected;
+                        GH_Skin.palette_hidden_selected = ColorSelected;
+
+                        base.Render(canvas, graphics, channel);
+
+                        // Put the original style back.
+                        GH_Skin.palette_normal_standard = palette_normal_standard;
+                        GH_Skin.palette_normal_selected = palette_normal_selected;
+                        GH_Skin.palette_hidden_standard = palette_hidden_standard;
+                        GH_Skin.palette_hidden_selected = palette_hidden_selected;
+
+                        break;
+
+                    default:
+                        base.Render(canvas, graphics, channel);
+                        break;
+                }
+
+
+            }
+            else if (component != null && component is OLD_GH_TemplateAsync o)
+            {
+                switch (o.PhaseForColors)
+                {
+                    case OLD_GH_TemplateAsync.AestheticPhase.Running:
+                    case OLD_GH_TemplateAsync.AestheticPhase.Reusing:
                         // Swap out palette for normal, unselected components.
                         GH_Skin.palette_normal_standard = ColorUnselected;
                         GH_Skin.palette_hidden_standard = ColorUnselected;
@@ -300,7 +331,7 @@ namespace MantaRay
                         penTypes |= PenWireTypes.Selected;
                     }
 
-                    if ((param.Access == GH_ParamAccess.tree && param.VolatileData.PathCount > 1) || (param.DataMapping == GH_DataMapping.Graft))
+                    if ((/*param.Access ==  GH_ParamAccess.tree && */ param.VolatileData.PathCount > 1) || (param.DataMapping == GH_DataMapping.Graft))
                     {
                         penTypes |= PenWireTypes.Tree;
                     }
