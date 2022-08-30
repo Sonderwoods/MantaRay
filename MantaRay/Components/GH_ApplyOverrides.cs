@@ -110,7 +110,7 @@ namespace MantaRay.Components
 
                 foreach (string item in missingInputs)
                 {
-                    AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, $"Missing \"{item}\"");
+                    AddRuntimeMessage(GH_RuntimeMessageLevel.Error, $"Missing \"{item}\"");
                 }
 
                 return;
@@ -129,12 +129,12 @@ namespace MantaRay.Components
                 {
                     if (values[Math.Min(i, valuesCount - 1)] == null)
                     {
-                        AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, $"Null item at key {keys[Math.Min(i, keysCount - 1)]} - missing a value???");
+                        AddRuntimeMessage(GH_RuntimeMessageLevel.Error, $"Null item at key {keys[Math.Min(i, keysCount - 1)]} - missing a value???");
 
                     }
                     if (locals.ContainsKey(keys[Math.Min(i, keysCount - 1)]))
                     {
-                        AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, $"Key {keys[Math.Min(i, keysCount - 1)]} (in the Keys list) already exists. Overwritten to {values[Math.Min(i, valuesCount - 1)]}");
+                        AddRuntimeMessage(GH_RuntimeMessageLevel.Error, $"Key {keys[Math.Min(i, keysCount - 1)]} (in the Keys list) already exists. Overwritten to {values[Math.Min(i, valuesCount - 1)]}");
                     }
 
                     locals[keys[Math.Min(i, keysCount - 1)]] = values[Math.Min(i, valuesCount - 1)];
@@ -156,7 +156,7 @@ namespace MantaRay.Components
                 {
                     if (locals.ContainsKey(input.NickName))
                     {
-                        AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, $"Key {input.NickName} (in the dynamic parameters) already exists. Overwritten to {s.Value}");
+                        AddRuntimeMessage(GH_RuntimeMessageLevel.Error, $"Key {input.NickName} (in the dynamic parameters) already exists. Overwritten to {s.Value}");
                     }
 
 
@@ -188,7 +188,10 @@ namespace MantaRay.Components
             //as array instead of IEnumerable, otherwise the misingInputs is not updated before the check below.
             string[] outputs = inputs.Select(i => i.AddGlobals(locals, missingKeys: missingInputs)).ToArray();
 
-            missingInputs.ForEach(item => AddRuntimeMessage(GH_RuntimeMessageLevel.Error, $"Missing \"{item}\""));
+            //extra round to fix nested keys (inside a value)!
+            outputs = outputs.Select(i => i.AddGlobals(locals, missingKeys: missingInputs)).ToArray();
+
+            missingInputs.ForEach(item => AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, $"Missing \"{item}\""));
 
             if (RuntimeMessages(GH_RuntimeMessageLevel.Error).Count == 0)
             {
