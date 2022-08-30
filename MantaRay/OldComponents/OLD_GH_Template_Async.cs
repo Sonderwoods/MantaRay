@@ -20,7 +20,7 @@ namespace MantaRay.OldComponents
     /// Inherit your component from this class to make all the async goodness available.
     /// Source: Speckle! https://github.com/specklesystems/GrasshopperAsyncComponent
     /// </summary>
-    public abstract class OLD_GH_TemplateAsync : GH_Template
+    public abstract class GH_Template_Async_OBSOLETE : GH_Template
     {
         public enum AestheticPhase
         {
@@ -78,7 +78,7 @@ namespace MantaRay.OldComponents
         /// </summary>
         public TaskCreationOptions? TaskCreationOptions { get; set; } = null;
 
-        protected OLD_GH_TemplateAsync(string name, string nickname, string description, string subCategory) : base(name, nickname, description, subCategory)
+        protected GH_Template_Async_OBSOLETE(string name, string nickname, string description, string subCategory) : base(name, nickname, description, subCategory)
         {
 
             DisplayProgressTimer = new Timer(333) { AutoReset = false };
@@ -236,7 +236,7 @@ namespace MantaRay.OldComponents
             {
                 List<GH_Boolean> runInputs = DA.FetchTree<GH_Boolean>("Run").FlattenData();
 
-                if (runInputs.Count == 0 || !runInputs.All(x => x.Value == true))
+                if (runInputs.Count == 0 || !runInputs.All(x => x != null && x.Value == true))
                 {
                     RunInput = false;
                 }
