@@ -20,11 +20,13 @@ namespace MantaRay
     {
         public override Guid ComponentGuid { get => new Guid("22C612B2-2C57-47CE-B2FE-E10621F18933"); }
 
+        const string JOIN = "\n_JOIN_\n";
+
         protected override System.Drawing.Bitmap Icon => Resources.Resources.Ra_Ra_Icon;
 
         public override GH_Exposure Exposure => GH_Exposure.primary;
 
-        public GH_ExecuteAsync() : base("Execute SSH", "ExecuteSSH", "Use me to execute a SSH Command", "1 SSH")
+        public GH_ExecuteAsync() : base("Execute SSH WIP", "ExecuteSSH WIP", "WORK IN PROGRESS; Use me to execute a SSH Command", "1 SSH")
         {
             BaseWorker = new SSH_Worker2(this);
             RunTime = new TimeSpan(0, 0, 0, 0, (int)LastRun.TotalMilliseconds);
@@ -50,8 +52,8 @@ namespace MantaRay
 
         protected override void RegisterOutputParams(GH_OutputParamManager pManager)
         {
-            pManager.AddTextParameter("stdout", "stdout", "stdout", GH_ParamAccess.item);
-            pManager.AddTextParameter("stderr", "stderr_", "stderr\nWill output any eventual errors or warnings", GH_ParamAccess.item);
+            pManager.AddTextParameter("stdout", "stdout", "stdout", GH_ParamAccess.list);
+            pManager.AddTextParameter("stderr", "stderr_", "stderr\nWill output any eventual errors or warnings", GH_ParamAccess.list);
             pManager.AddBooleanParameter("Ran", "Ran", "Ran without any stderr. If you want it to output true even with errors, " +
                 "right click on the component and enable suppress warnings.", GH_ParamAccess.tree); //always keep ran as the last parameter
         }
@@ -59,6 +61,14 @@ namespace MantaRay
         public override void AppendAdditionalMenuItems(ToolStripDropDown menu)
         {
             base.AppendAdditionalMenuItems(menu);
+
+
+            Menu_AppendSeparator(menu);
+
+            var rr = Menu_AppendItem(menu, "Rerun", (s, e) => { ExpireSolution(true); }, true);
+            rr.ToolTipText = "Expire the component";
+
+
             Menu_AppendSeparator(menu);
 
 
@@ -185,14 +195,14 @@ namespace MantaRay
                 }
                 if (Results.Count > RunCount - 1)
                 {
-                    string[] splitResultsPerRun = Results[RunCount - 1] != null ? Results[RunCount - 1].Split(new[] { "\n_JOIN_\n" }, StringSplitOptions.None).Select(v => v.Trim('\n','\r')).ToArray() : new string[0];
+                    string[] splitResultsPerRun = Results[RunCount - 1] != null ? Results[RunCount - 1].Split(new[] { JOIN }, StringSplitOptions.None).Select(v => v.Trim('\n','\r')).ToArray() : new string[0];
                     DA.SetDataList(0, splitResultsPerRun);
 
                 }
 
                 if (Stderrs.Count > RunCount - 1)
                 {
-                    string[] splitErrPerRun = Stderrs[RunCount - 1] != null ? Stderrs[RunCount - 1].Split(new[] { "\n_JOIN_\n" }, StringSplitOptions.None).Select(v => v.Trim('\n', '\r')).ToArray() : new string[0];
+                    string[] splitErrPerRun = Stderrs[RunCount - 1] != null ? Stderrs[RunCount - 1].Split(new[] { JOIN }, StringSplitOptions.None).Select(v => v.Trim('\n', '\r')).ToArray() : new string[0];
                     DA.SetDataList(1, splitErrPerRun);
 
                 }
@@ -201,7 +211,16 @@ namespace MantaRay
                 //DA.SetDataList(1, Stderrs);
                 SetOneBoolOutput(this, DA, 2, false);
 
+
+
                 Message = LastRun.TotalMilliseconds > 0 ? $"Cached  (last was {LastRun.ToShortString()})" : "Clean";
+
+                if (LastRun.TotalMilliseconds > 0)
+                {
+                    PhaseForColors = AestheticPhase.Reusing;
+                    ((GH_ColorAttributes_Async)m_attributes).ColorSelected = new Grasshopper.GUI.Canvas.GH_PaletteStyle(Color.FromArgb(76, 128, 122));
+                    ((GH_ColorAttributes_Async)m_attributes).ColorUnselected = new Grasshopper.GUI.Canvas.GH_PaletteStyle(Color.FromArgb(95, 115, 113));
+                }
 
             }
             else
@@ -247,9 +266,9 @@ namespace MantaRay
             writer.SetBoolean("addPrefix", addPrefix);
             //writer.SetBoolean("addSuffix", addSuffix);
             writer.SetBoolean("suppressWarnings", suppressWarnings);
-            writer.SetString("results", String.Join(">JOIN<", Results));
-            writer.SetString("stderr", String.Join(">JOIN<", Stderrs));
-            writer.SetString("commands", String.Join(">JOIN<", Commands));
+            writer.SetString("results", String.Join(">JOIN<", Results).Replace(">JOIN<", String.Empty));
+            writer.SetString("stderr", String.Join(">JOIN<", Stderrs).Replace(">JOIN<", String.Empty));
+            writer.SetString("commands", String.Join(">JOIN<", Commands).Replace(">JOIN<", String.Empty));
 
 
             return base.Write(writer);
@@ -419,11 +438,11 @@ namespace MantaRay
                 ((GH_ExecuteAsync)Parent).Stderrs[Id] = stderr;
 
 
+                
 
+                DA.SetDataList(0, results != null && !String.Equals(results, JOIN) ? results.Split(new[] { JOIN }, StringSplitOptions.None).Select(b => b.Trim('\n', '\r')) : new string[] { null });
 
-                DA.SetDataList(0, results != null ? results.Split(new[] { "\n_JOIN_\n" }, StringSplitOptions.None).Select(b => b.Trim('\n', '\r')) : new string[] { null });
-
-                DA.SetDataList(1, stderr != null ? stderr.Split(new[] { "\n_JOIN_\n" }, StringSplitOptions.None).Select(b => b.Trim('\n', '\r')) : new string[] { null });
+                DA.SetDataList(1, stderr != null ? stderr.Split(new[] { JOIN }, StringSplitOptions.None).Select(b => b.Trim('\n', '\r')) : new string[] { null });
 
                 //Set only ONE bool output in "RAN"
                 SetOneBoolOutput(Parent, DA, 2, ran);
