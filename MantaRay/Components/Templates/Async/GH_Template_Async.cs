@@ -192,12 +192,15 @@ namespace MantaRay
                 //{
                 //    RunOnlyOnce(DA);
                 //}
-
-                foreach (var source in CancellationSources)
+                if (RunCount == 1)
                 {
-                    source.Cancel();
+                    foreach (var source in CancellationSources)
+                    {
+                        source.Cancel();
+                    }
+                    CancellationSources.Clear();
                 }
-                CancellationSources.Clear();
+                
 
 
                 if (BaseWorker == null)
