@@ -53,6 +53,7 @@ namespace MantaRay
 
         public static string AddGlobals(this string s, Dictionary<string, string> locals = null, List<string> missingKeys = null)
         {
+            
 
             if (locals != null)
             {
@@ -64,11 +65,12 @@ namespace MantaRay
 
                 }
 
-                return regexAdvanced.Replace(s, new MatchEvaluator((v) => Replacers(v, _locals, missingKeys)));
+                return regexAdvanced.Replace(s.Replace('−', '-'), new MatchEvaluator((v) => Replacers(v, _locals, missingKeys)));
+                //Replacing '-' unicode with the default ascii '-'. The unicode one was found in gensky documentation.
             }
             else
             {
-                return regexAdvanced.Replace(s, new MatchEvaluator((v) => Replacers(v, null, missingKeys)));
+                return regexAdvanced.Replace(s.Replace('−', '-'), new MatchEvaluator((v) => Replacers(v, null, missingKeys)));
             }
 
 
