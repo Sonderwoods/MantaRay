@@ -59,6 +59,7 @@ namespace MantaRay.Components
             logHelper = LogHelper.GetLogHelper(DA.Fetch<string>("Name"));
 
             logHelper.LogUpdated += LogHelper_LogUpdated;
+            Message = "Updated " + DateTime.Now.ToLongTimeString();
 
             DA.SetDataList(0, logHelper.GetCurrentTasks(DA.Fetch<int>("Number"), DA.Fetch<string>("NameFilter"), DA.Fetch<string>("DescFilter")));
             DA.SetDataList(1, logHelper.GetLatestLogs(DA.Fetch<int>("Number"), DA.Fetch<string>("NameFilter"), DA.Fetch<string>("DescFilter")));
