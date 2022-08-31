@@ -162,7 +162,7 @@ namespace MantaRay
 
         protected override bool PreRunning(IGH_DataAccess DA)
         {
-            
+
             base.PreRunning(DA);
 
             this.Hidden = !RunInput;
@@ -197,7 +197,7 @@ namespace MantaRay
                 }
                 if (Results.Count > RunCount - 1)
                 {
-                    string[] splitResultsPerRun = Results[RunCount - 1] != null ? Results[RunCount - 1].Split(new[] { JOIN }, StringSplitOptions.None).Select(v => v.Trim('\n','\r')).ToArray() : new string[0];
+                    string[] splitResultsPerRun = Results[RunCount - 1] != null ? Results[RunCount - 1].Split(new[] { JOIN }, StringSplitOptions.None).Select(v => v.Trim('\n', '\r')).ToArray() : new string[0];
                     DA.SetDataList(0, splitResultsPerRun);
 
                 }
@@ -324,7 +324,7 @@ namespace MantaRay
             public override void DoWork(Action<string, double> ReportProgress, Action Done)
             {
 
-                
+
                 Parent.Hidden = true;
 
                 ((GH_ExecuteAsync)Parent).Commands.AddRange(commands.Distinct().Where(c => !((GH_ExecuteAsync)Parent).Commands.Contains(c)));
@@ -347,11 +347,13 @@ namespace MantaRay
 
 
                     // TODO Need to get pid through "beginexecute" instead of "execute" of SSH.
-                    int p = 0;
+                    int counter = 0;
+                    int intervalForRefreshing = 100; //ms in each loop below.
+                    int waitingForNewConnection = 5; // max iterations after checkconnection fails before throwing cancellation (this will give 1000ms to reconnect before changing context)
                     while (true)
                     {
                         // Update progress bar as we run
-                        if (p++ % 10 == 0)
+                        if (counter++ % 10 == 0)
                         {
                             ((GH_Template_Async_Extended)Parent).RunTime = ((GH_Template_Async_Extended)Parent).Stopwatch.Elapsed;
                             Parent.Message = "Running for " + ((GH_Template_Async_Extended)Parent).RunTime.ToShortString() + "(Last: " + ((GH_ExecuteAsync)Parent).LastRun.ToShortString() + ")";
@@ -359,7 +361,7 @@ namespace MantaRay
                         }
 
                         // If the command finished
-                        if (WaitHandle.WaitAll(new[] { asyncResult.AsyncWaitHandle }, 100))
+                        if (WaitHandle.WaitAll(new[] { asyncResult.AsyncWaitHandle }, intervalForRefreshing))
                         {
                             // TODO: eventually use SshCommand.EndExecute
                             stderr = string.IsNullOrEmpty(cmd.Error) ? null : cmd.Error;
@@ -368,6 +370,16 @@ namespace MantaRay
                             ran = stderr == null || itsJustAWarning || ((GH_ExecuteAsync)Parent).suppressWarnings;
 
                             break;
+                        }
+
+                        if (SSH_Helper.CheckConnection() != SSH_Helper.ConnectionDetails.Connected && waitingForNewConnection-- == 0)
+                        {
+                            ((GH_ExecuteAsync)Parent).RequestCancellation();
+                            //ran = false;
+                            //break;
+
+                            // TODO: Make an error that we lost the connection?
+
                         }
 
 
@@ -440,7 +452,7 @@ namespace MantaRay
                 ((GH_ExecuteAsync)Parent).Stderrs[Id] = stderr;
 
 
-                
+
 
                 DA.SetDataList(0, results != null && !String.Equals(results, JOIN) ? results.Split(new[] { JOIN }, StringSplitOptions.None).Select(b => b.Trim('\n', '\r')) : new string[] { null });
 

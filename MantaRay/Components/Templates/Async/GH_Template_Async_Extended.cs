@@ -276,7 +276,7 @@ namespace MantaRay
         protected override void ExpireDownStreamObjects()
         {
             // Prevents the flash of null data until the new solution is ready
-            if (!firstRun && (SetData == 1 || (!RunInput && RunCount <= 1)))
+            if (!firstRun && (SetData == 1 || (!RunInput && RunCount == 1 || RunCount == -1)))
             {
                 base.ForceExpireDownStreamObjects();
 
