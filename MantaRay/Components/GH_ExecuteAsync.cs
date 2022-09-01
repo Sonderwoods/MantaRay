@@ -224,9 +224,12 @@ namespace MantaRay
                     ((GH_ColorAttributes_Async)m_attributes).ColorUnselected = new Grasshopper.GUI.Canvas.GH_PaletteStyle(Color.FromArgb(95, 115, 113));
                 }
 
+                
+
             }
             else
             {
+                DA.SetData(this.Params.Output.Count - 1, false);
                 Message = LastRun.TotalMilliseconds > 0 ? $"Ran in {RunTime.ToShortString()} (last was {LastRun.ToShortString()})" : $"Ran in {RunTime.ToShortString()}";
                 LastRun = RunTime;
                 this.Hidden = false;
