@@ -11,10 +11,9 @@ using Grasshopper.Documentation;
 using Grasshopper.Kernel;
 using Grasshopper.Kernel.Data;
 using Grasshopper.Kernel.Types;
-using MantaRay.OldComponents;
 using Rhino.Geometry;
 
-namespace MantaRay.Components
+namespace MantaRay.OldComponents
 {
     [Obsolete]
     public class GH_ExecuteAsync_OBSOLETE : GH_Template_Async_OBSOLETE, IClearData
