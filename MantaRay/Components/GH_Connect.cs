@@ -26,6 +26,7 @@ namespace MantaRay.Components
         }
 
         private string _pw;
+        private string _usr;
 
         /// <summary>
         /// Registers all the input parameters for this component.
@@ -40,6 +41,10 @@ namespace MantaRay.Components
             pManager[pManager.AddTextParameter("password", "password", "password. Leave empty to prompt.", GH_ParamAccess.item, "_prompt")].Optional = true;
             pManager[pManager.AddIntegerParameter("_port", "_port", "_port", GH_ParamAccess.item, 22)].Optional = true;
             pManager[pManager.AddBooleanParameter("connect", "connect", "connect", GH_ParamAccess.item, false)].Optional = true;
+            pManager[pManager.AddTextParameter("prefixes", "Prefixes", "Prefixes can be used to set paths etc. This 'CAN' be executed on all components where 'use prefix' is set.\n" +
+                "i added the prefixes because depending on the SSH setup then the paths may or may not be set up correctly\n" +
+                "\n\nOn our local setup i added the file '/etc/profile' and added my paths to that.\n" +
+                "In that case you enter to prefixes:   '. /etc/profile'", GH_ParamAccess.item, "")].Optional = true;
         }
 
         /// <summary>
@@ -48,6 +53,7 @@ namespace MantaRay.Components
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
             pManager.AddTextParameter("status", "status", "status", GH_ParamAccess.item);
+            pManager.AddGenericParameter("prefixes", "prefixes", "Show the current prefixes. If you remove the prefix input, then this will output the default prefix!", GH_ParamAccess.item);
             pManager.AddTextParameter("Run", "Run", "Run", GH_ParamAccess.tree);
         }
 
@@ -96,18 +102,26 @@ namespace MantaRay.Components
             string ip = DA.Fetch<string>("ip");
             int port = DA.Fetch<int>("_port");
             bool run = DA.Fetch<bool>("connect");
+            string prefixes = DA.Fetch<string>("prefixes");
 
             StringBuilder sb = new StringBuilder();
 
             if (run)
             {
+                if (string.IsNullOrEmpty(_usr))
+                    _usr = username;
 
                 if (password == "_prompt") //Default saved in the component
                 {
                     if (_pw == null)
                     {
-                        if (GetPassword(username + "@" + ip, out string pw))
+                        if (GetCredentials(username, ip, out string newUsername, out string pw))
+                        {
                             _pw = pw;
+                            username = newUsername;
+
+                        }
+                        
                         else
                             run = false;
                     }
@@ -149,6 +163,10 @@ namespace MantaRay.Components
                     }
 
                 );
+
+                SSH_Helper.ExportPrefixes = string.IsNullOrEmpty(prefixes) ? SSH_Helper.ExportPrefixesDefault : prefixes;
+
+
                 Stopwatch stopwatch = new Stopwatch();
                 //Connect SSH
                 SSH_Helper.SshClient = new SshClient(ConnNfo);
@@ -185,8 +203,11 @@ namespace MantaRay.Components
                     var mb = MessageBox.Show("Wrong SSH Password? Try again?", "Wrong SSH Password? Try again?", MessageBoxButtons.RetryCancel);
                     if (mb == DialogResult.Retry)
                     {
-                        if (GetPassword(username + "@" + ip, out string pw))
+                        if (GetCredentials(_usr, ip, out string newUsername, out string pw))
+                        {
+                            username = newUsername;
                             _pw = pw;
+                        }
                         this.ExpireSolution(true);
                     }
                 }
@@ -268,6 +289,7 @@ namespace MantaRay.Components
             //the run output
             var runTree = new GH_Structure<GH_Boolean>();
             runTree.Append(new GH_Boolean(SSH_Helper.CheckConnection() == SSH_Helper.ConnectionDetails.Connected));
+            DA.SetData(1, SSH_Helper.ExportPrefixes);
             Params.Output[Params.Output.Count - 1].ClearData();
             DA.SetDataTree(Params.Output.Count - 1, runTree);
 
@@ -328,7 +350,7 @@ namespace MantaRay.Components
             get { return new Guid("1B57442F-E5FE-4462-9EB0-564497CB076D"); }
         }
 
-        private bool GetPassword(string username, out string password)
+        private bool GetCredentials(string username, string ip, out string outUsername, out string password)
         {
 
             Font redFont = new Font("Arial", 18.0f,
@@ -354,8 +376,21 @@ namespace MantaRay.Components
             };
             
             
-            Label label = new Label() { Left = 50, Top = 45, Width=340, Height = 60, Text = $"Connecting to SSH\nInsert password for '{username}':" };
-            TextBox passwordTextBox = new TextBox() { Left = 50, Top = 105, Width = 340, Height = 30, Text = "",
+            Label label = new Label() { Left = 50, Top = 45, Width=340, Height = 28,
+                Text = $"Connecting to SSH on {ip}:" };
+
+
+            TextBox usernameTextBox = new TextBox() { Left = 50, Top = 75, Width = 340, Height = 28,
+                Text = string.IsNullOrEmpty(_usr) ? "username" : _usr,
+                ForeColor = Color.FromArgb(88, 100, 84),
+                Font = redFont,
+                BackColor = Color.FromArgb(148, 180, 140),
+                Margin = new Padding(2)
+            };
+
+
+            TextBox passwordTextBox = new TextBox() { Left = 50, Top = 125, Width = 340, Height = 28,
+                Text = "",
                 ForeColor = Color.FromArgb(88, 100, 84),
                 PasswordChar = '*',
                 Font = redFont,
@@ -364,25 +399,29 @@ namespace MantaRay.Components
             };
             
 
-            Button connectButton = new Button() { Text = "Connect", Left = 50, Width = 120, Top = 160, Height = 40, DialogResult = DialogResult.OK };
-            Button cancel = new Button() { Text = "Cancel", Left = 270, Width = 120, Top = 160, Height = 40, DialogResult = DialogResult.Cancel };
+            Button connectButton = new Button() { Text = "Connect", Left = 50, Width = 120, Top = 190, Height = 40, DialogResult = DialogResult.OK };
+            Button cancel = new Button() { Text = "Cancel", Left = 270, Width = 120, Top = 190, Height = 40, DialogResult = DialogResult.Cancel };
 
 
             Label label2 = new Label() { Font = smallFont, Left = 50, Top = 270, Width=340, Height = 60, Text = $"Part of the {ConstantsHelper.ProjectName} plugin\n" +
                 "(C) Mathias Sønderskov Schaltz 2022" };
-            prompt.Controls.AddRange(new Control[] { label, passwordTextBox, connectButton, cancel, label2 });
+            prompt.Controls.AddRange(new Control[] { label, usernameTextBox, passwordTextBox, connectButton, cancel, label2 });
 
             prompt.AcceptButton = connectButton;
+            
 
             DialogResult result = prompt.ShowDialog();
 
             if (result == DialogResult.OK)
             {
                 password = passwordTextBox.Text;
+                _usr = usernameTextBox.Text;
+                outUsername = usernameTextBox.Text;
                 return true;
             }
             else
             {
+                outUsername = usernameTextBox.Text;
                 password = null;
                 return false;
 
