@@ -107,7 +107,7 @@ namespace MantaRay.Components
                                 headerColumns = int.Parse(line.Split('=')[1]);
                                 if(headerColumns == 8760)
                                 {
-                                    throw new Exception("Looks like you need to transpose your matrix first! We have 8760 cols and I need 8760 rows.\n" +
+                                    throw new IndexOutOfRangeException("Looks like you need to transpose your matrix first! We have 8760 cols and I need 8760 rows.\n" +
                                         "Use \"rcollate -t input.ill > output.ill\" to perform the task.");
                                 }
                             }
