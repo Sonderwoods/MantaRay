@@ -48,7 +48,7 @@ namespace MantaRay
 
                 if (comp == null || comp.Tasks.Count == 0)
                 {
-                    FinishTask(task, "Error or cancelled??");
+                    TryFinishTask(task, "Error or cancelled??");
                     //currentTasks.Remove(task);
                 }
 
@@ -61,7 +61,7 @@ namespace MantaRay
 
             foreach (LogEntry l in items)
             {
-                yield return $"[{l.Timestamp:G}, {l.Name}, for {(DateTime.Now - l.Timestamp).ToReadableString()}]: {l.Description.Replace("\n", "        \n")}";
+                yield return $"[{l.Timestamp:G}, {l.Name}, for {(DateTime.Now - l.Timestamp).ToReadableString()}]:\n{l.Description.Replace("\n", "        \n")}";
             }
 
 
@@ -92,23 +92,26 @@ namespace MantaRay
 
         }
 
-        public void FinishTask(Guid taskGuid, string status = "Finished")
+        public bool TryFinishTask(Guid taskGuid, string status = "Finished")
         {
-            lock (_taskLock)
+
+            if (currentTasks.ContainsKey(taskGuid))
             {
-                if (currentTasks.ContainsKey(taskGuid))
+                lock (_taskLock)
                 {
                     var t = currentTasks[taskGuid];
                     Add(t.Name, t.Description + $"\n{status} in {(DateTime.Now - t.Timestamp).ToReadableString()}", t.ComponentGuid);
                     currentTasks.Remove(taskGuid);
+                    LogUpdated?.Invoke(this, new EventArgs());
+                    return true;
                 }
-                else
-                {
-                    Debug.WriteLine($"Tried to remove {taskGuid} from currentTasks without luck");
-                }
-
             }
-            LogUpdated?.Invoke(this, new EventArgs());
+            else
+            {
+                Debug.WriteLine($"Tried to remove {taskGuid} from currentTasks without luck");
+                return false;
+            }
+
         }
 
 
@@ -123,7 +126,7 @@ namespace MantaRay
 
             foreach (LogEntry l in items)
             {
-                yield return $"[{l.Timestamp:G}, {l.Name}]: {l.Description.Replace("\n", "        \n")}";
+                yield return $"[{l.Timestamp:G}, {l.Name}]:\n{l.Description.Replace("\n", "        \n")}";
             }
 
         }

@@ -80,13 +80,11 @@ namespace MantaRay
         /// </summary>
         protected virtual void AfterDone()
         {
-            if (HasLogAbilities() && LogSave && RunCount == 1)
+            if (HasLogAbilities() && LogSave)
             {
 
-                
-
                 //logHelper.Add(LogName, $"Done in {Stopwatch.Elapsed.ToReadableString()}", InstanceGuid);
-                logHelper.FinishTask(latestLogGuid);
+                logHelper.TryFinishTask(latestLogGuid);
             }
             if (Tasks.Count == 0)
             {
@@ -137,7 +135,7 @@ namespace MantaRay
             PhaseForColors = AestheticPhase.Cancelled;
             ((GH_ColorAttributes_Async)m_attributes).ColorSelected = new Grasshopper.GUI.Canvas.GH_PaletteStyle(Color.Firebrick);
             ((GH_ColorAttributes_Async)m_attributes).ColorUnselected = new Grasshopper.GUI.Canvas.GH_PaletteStyle(Color.DarkRed);
-            logHelper.FinishTask(latestLogGuid, "Cancelled");
+            logHelper.TryFinishTask(latestLogGuid, "Cancelled");
             base.RequestCancellation();
         }
 
@@ -356,11 +354,11 @@ namespace MantaRay
 
 
 
-            if (HasLogAbilities() && LogSave && RunInput)
+            if (HasLogAbilities() && LogSave && RunInput && RunCount == this.Params.Input[0].VolatileData.PathCount - 1)
             {
                 
                 //logHelper.Add($"{LogName} {RunCount - 1}", (LogUseFixedDescription ? LogDescriptionStatic : LogDescriptionDynamic) + " Starting", InstanceGuid);
-                latestLogGuid = logHelper.AddTask($"{LogName} {RunCount - 1}", (LogUseFixedDescription ? LogDescriptionStatic : LogDescriptionDynamic), InstanceGuid);
+                latestLogGuid = logHelper.AddTask($"{LogName}", (LogUseFixedDescription ? LogDescriptionStatic : LogDescriptionDynamic), InstanceGuid);
             }
 
             return RunInput;
