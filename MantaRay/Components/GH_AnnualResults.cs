@@ -267,7 +267,7 @@ namespace MantaRay.Components
 
         public override bool Write(GH_IWriter writer)
         {
-            writer.RemoveChunk("numbers");
+            //writer.RemoveChunk("numbers");
             for (int i = 0; i < OldNumberResults.Length; i++)
             {
                 writer.SetDouble("numbers", i, OldNumberResults[i]);
