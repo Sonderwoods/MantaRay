@@ -37,7 +37,7 @@ namespace MantaRay
 
         public List<WorkerInstance> Workers;
 
-        protected List<Task> Tasks;
+        public List<Task> Tasks;
 
         public List<CancellationTokenSource> CancellationSources;
 
@@ -171,14 +171,14 @@ namespace MantaRay
             base.ExpireDownStreamObjects();
         }
 
-        /// <summary>
-        /// To clear lists etc, only running on the first iteration! No need to call base as it is empty in template
-        /// </summary>
-        /// <param name="DA"></param>
-        protected virtual void RunOnlyOnce(IGH_DataAccess DA)
-        {
+        ///// <summary>
+        ///// To clear lists etc, only running on the first iteration! No need to call base as it is empty in template
+        ///// </summary>
+        ///// <param name="DA"></param>
+        //protected virtual void RunOnlyOnce(IGH_DataAccess DA)
+        //{
 
-        }
+        //}
 
         protected override void SolveInstance(IGH_DataAccess DA)
         {
@@ -188,10 +188,19 @@ namespace MantaRay
             //return;
             if (State == 0) //State 0 == START RUNNING
             {
-                if (RunCount == 0)
+                //if (RunCount == 1)
+                //{
+                //    RunOnlyOnce(DA);
+                //}
+                if (RunCount == 1)
                 {
-                    RunOnlyOnce(DA);
+                    foreach (var source in CancellationSources)
+                    {
+                        source.Cancel();
+                    }
+                    CancellationSources.Clear();
                 }
+                
 
 
                 if (BaseWorker == null)
@@ -255,14 +264,16 @@ namespace MantaRay
                 return;
             }
 
-            CancellationSources.Clear();
+            PostRunning(DA);
+            
+            //CancellationSources.Clear();
             Workers.Clear();
             ProgressReports.Clear();
             Tasks.Clear();
 
             Interlocked.Exchange(ref SetData, 0);
 
-            PostRunning(DA);
+            
 
 
             OnDisplayExpired(true);

@@ -51,14 +51,14 @@ namespace MantaRay.Components
         readonly Dictionary<string, RadianceObjectCollection> objects = new Dictionary<string, RadianceObjectCollection>();
         readonly Dictionary<string, RadianceMaterial> modifiers = new Dictionary<string, RadianceMaterial>();
 
-        BoundingBox? bb = null;
+        BoundingBox? bb { get; set; } = null;
 
         readonly List<Curve> failedCurves = new List<Curve>();
         readonly Dictionary<string, System.Drawing.Color> colors = new Dictionary<string, System.Drawing.Color>();
 
         public List<string> ErrorMsgs = new List<string>();
 
-        private HUD hud = new HUD();
+        private HUD hud = null;
 
         //TimeSpan timeSpan = default;
 
@@ -101,6 +101,7 @@ namespace MantaRay.Components
             objects.Clear();
             failedCurves.Clear();
             modifiers.Clear();
+            bb = null;
             //timeSpan = new TimeSpan(0);
 
    
@@ -270,10 +271,10 @@ namespace MantaRay.Components
                     switch (obj)
                     {
                         case IHasPreview previewableObject:
-                            if (!bb.HasValue || bb.HasValue && bb.Value.Min == bb.Value.Max)
+                            if (!bb.HasValue)
                                 bb = previewableObject.GetBoundingBox();
                             else if (previewableObject.GetBoundingBox() != null)
-                                bb?.Union(previewableObject.GetBoundingBox().Value);
+                                bb.Value.Union(previewableObject.GetBoundingBox().Value);
 
                             if (!objects.ContainsKey(obj.ModifierName))
                             {

@@ -22,7 +22,7 @@ namespace MantaRay.Components
         public GH_AnnualResults()
           : base("AnnualResults", "AnnualResults",
               "Read Ill files...",
-              "2 Radiance")
+              "3 Results")
         {
         }
 
@@ -103,9 +103,19 @@ namespace MantaRay.Components
                         {
                             headerLines.Add(line);
                             if (line.StartsWith("NCOLS"))
+                            {
                                 headerColumns = int.Parse(line.Split('=')[1]);
+                                if(headerColumns == 8760)
+                                {
+                                    throw new IndexOutOfRangeException("Looks like you need to transpose your matrix first! We have 8760 cols and I need 8760 rows.\n" +
+                                        "Use \"rcollate -t input.ill > output.ill\" to perform the task.");
+                                }
+                            }
                             if (line.StartsWith("NROWS"))
+                            {
                                 headerRows = int.Parse(line.Split('=')[1]);
+                                
+                            }
                         }
                     }
                     else
@@ -257,7 +267,7 @@ namespace MantaRay.Components
 
         public override bool Write(GH_IWriter writer)
         {
-            writer.RemoveChunk("numbers");
+            //writer.RemoveChunk("numbers");
             for (int i = 0; i < OldNumberResults.Length; i++)
             {
                 writer.SetDouble("numbers", i, OldNumberResults[i]);

@@ -43,7 +43,7 @@ namespace MantaRay.Components
             int index = Rhino.RhinoDoc.ActiveDoc.NamedViews.FindByName(DA.Fetch<string>("Viewport"));
             Rhino.DocObjects.ViewportInfo vpInfo;
 
-            if (this.RunCount == 0)
+            if (this.RunCount == 1)
             {
                 PointsTo.Clear();
                 Vp.Clear();

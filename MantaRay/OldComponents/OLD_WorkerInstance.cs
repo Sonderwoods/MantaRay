@@ -10,7 +10,7 @@ namespace MantaRay.OldComponents
 {
 
     /// <summary>
-    /// A class that holds the actual compute logic and encapsulates the state it needs. Every <see cref="OLD_GH_TemplateAsync"/> needs to have one.
+    /// A class that holds the actual compute logic and encapsulates the state it needs. Every <see cref="GH_Template_Async_OBSOLETE"/> needs to have one.
     /// Source: Speckle! https://github.com/specklesystems/GrasshopperAsyncComponent
     /// </summary>
     public abstract class OLD_WorkerInstance
@@ -25,12 +25,12 @@ namespace MantaRay.OldComponents
         public GH_Component Parent { get; set; }
 
         /// <summary>
-        /// This token is set by the parent <see cref="OLD_GH_TemplateAsync"/>. 
+        /// This token is set by the parent <see cref="GH_Template_Async_OBSOLETE"/>. 
         /// </summary>
         public CancellationToken CancellationToken { get; set; }
 
         /// <summary>
-        /// This is set by the parent <see cref="OLD_GH_TemplateAsync"/>. You can set it yourself, but it's not really worth it.
+        /// This is set by the parent <see cref="GH_Template_Async_OBSOLETE"/>. You can set it yourself, but it's not really worth it.
         /// </summary>
         public string Id { get; set; }
 
@@ -54,13 +54,13 @@ namespace MantaRay.OldComponents
         public abstract void DoWork(Action<string, double> ReportProgress, Action Done);
 
         /// <summary>
-        /// Write your data setting logic here. <b>Do not call this function directly from this class. It will be invoked by the parent <see cref="OLD_GH_TemplateAsync"/> after you've called `Done` in the <see cref="DoWork(Action{string}, Action{string, GH_RuntimeMessageLevel}, Action)"/> function.</b>
+        /// Write your data setting logic here. <b>Do not call this function directly from this class. It will be invoked by the parent <see cref="GH_Template_Async_OBSOLETE"/> after you've called `Done` in the <see cref="DoWork(Action{string}, Action{string, GH_RuntimeMessageLevel}, Action)"/> function.</b>
         /// </summary>
         /// <param name="DA"></param>
         public abstract void SetData(IGH_DataAccess DA);
 
         /// <summary>
-        /// Write your data collection logic here. <b>Do not call this method directly. It will be invoked by the parent <see cref="OLD_GH_TemplateAsync"/>.</b>
+        /// Write your data collection logic here. <b>Do not call this method directly. It will be invoked by the parent <see cref="GH_Template_Async_OBSOLETE"/>.</b>
         /// </summary>
         /// <param name="DA"></param>
         /// <param name="Params"></param>

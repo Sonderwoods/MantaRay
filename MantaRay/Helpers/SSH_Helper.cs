@@ -46,13 +46,19 @@ namespace MantaRay
         /// <summary>
         /// The suffixes to setup before any commands. Temporary fix untill we get .bashrc correctly setup.
         /// </summary>
-        public static List<string> ExportPrefixes { get; set; } = new List<string>() {
-            "export PATH=$PATH:/usr/local/radiance/bin",
-            //"export RAYPATH=./usr/local/radiance/lib",
-            "export RAYPATH=.:/usr/local/radiance/lib", //including local dir
-            "export DISPLAY=$(ip route list default | awk '{print $3}'):0",
-            "export LIBGL_ALWAYS_INDIRECT=1"
-        };
+        public static string ExportPrefixes { get; set; } =
+            "export PATH=$PATH:/usr/local/radiance/bin;" +
+            "export RAYPATH=.:/usr/local/radiance/lib;" + //including local dir
+            "export DISPLAY=$(ip route list default | awk '{print $3}'):0;" +
+            "export LIBGL_ALWAYS_INDIRECT=1";
+
+
+        public static string ExportPrefixesDefault { get; } =
+            "export PATH=$PATH:/usr/local/radiance/bin;" +
+            "export RAYPATH=.:/usr/local/radiance/lib;" + //including local dir
+            "export DISPLAY=$(ip route list default | awk '{print $3}'):0;" +
+            "export LIBGL_ALWAYS_INDIRECT=1";
+
 
 
         public static SshClient SshClient
@@ -136,10 +142,13 @@ namespace MantaRay
         }
 
         static string defaultSubfolder = "simulation";
+        static public string DefaultDefaultSubfolder => "simulation";
 
         static string linuxParentPath = "~";
+        static public string DefaultLinuxParentPath => "~";
 
         static string windowsParentPath = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+        static public string DefaultWindowsParentPath => Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
 
         static string _linuxFullpath = (linuxParentPath + "/" + defaultSubfolder).Replace(@"\", "/");
 
@@ -429,7 +438,7 @@ namespace MantaRay
                 int rand = rnd.Next(100000, 999999);
 
                 //saving the pid to a local file
-                SshCommand cmd = sshClient.CreateCommand((prependPrefix ? String.Join(";", ExportPrefixes) + ";" + command : command) + (appendSuffix ? $" & echo $! >~/temp{rand}.pid" : ""));
+                SshCommand cmd = sshClient.CreateCommand((prependPrefix ? ExportPrefixes + ";" + command : command) + (appendSuffix ? $" & echo $! >~/temp{rand}.pid" : ""));
 
                 asyncResult = cmd.BeginExecute();
 
@@ -525,7 +534,7 @@ namespace MantaRay
                 command = command.Trim('\n');
 
                 //saving the pid to a local file
-                var cmd = sshClient.CreateCommand((prependPrefix ? String.Join(";", ExportPrefixes) + ";" + command : command) + (appendSuffix ? $" & echo $! >~/temp{rand}.pid" : ""));
+                var cmd = sshClient.CreateCommand((prependPrefix ? ExportPrefixes + ";" + command : command) + (appendSuffix ? $" & echo $! >~/temp{rand}.pid" : ""));
                 cmd.Execute();
 
                 if (appendSuffix)
