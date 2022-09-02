@@ -58,7 +58,7 @@ namespace MantaRay.Components
 
         public List<string> ErrorMsgs = new List<string>();
 
-        private HUD hud = new HUD();
+        private HUD hud = null;
 
         //TimeSpan timeSpan = default;
 

@@ -21,6 +21,7 @@ namespace MantaRay.Components
     public partial class GH_RadViewerSolve : GH_Template
     {
         readonly Random rnd = new Random();
+        public string DisplayName;
 
         public void ToggleTwoSided(object s, EventArgs e)
         {
@@ -63,9 +64,16 @@ namespace MantaRay.Components
             Rhino.RhinoDoc.ActiveDoc.Views.Redraw();
         }
 
+        public void SetDisplayName(object s, EventArgs e)
+        {
+            SetName();
+        }
+
 
         void SetupHUD()
         {
+            hud = new HUD(this);
+            hud.Name = DisplayName;
             //Make sure we're on.
             hud.Component = this;
             hud.Callback.Enabled = true;
@@ -77,6 +85,8 @@ namespace MantaRay.Components
             hud.CloseBtn.ContextMenuItems.Add("Toggle Edges", ToggleEdges);
             hud.CloseBtn.ContextMenuItems.Add("Update Colors", ClearColors);
             hud.CloseBtn.ContextMenuItems.Add("Toggle Colors", ToggleColors);
+            hud.CloseBtn.ContextMenuItems.Add("Set DisplayName", SetDisplayName);
+
 
             //Set up all items
             hud.Items.Clear();
@@ -95,7 +105,7 @@ namespace MantaRay.Components
             {
                 if (!colors.ContainsKey(item.Name))
                 {
-                    colors.Add(item.Name, Color.FromArgb(rnd.Next(100, 255), rnd.Next(100, 255), rnd.Next(100,255)));
+                    colors.Add(item.Name, Color.FromArgb(rnd.Next(100, 255), rnd.Next(100, 255), rnd.Next(100, 255)));
                 }
                 item.Color = colors[item.Name];
             }
@@ -131,6 +141,97 @@ namespace MantaRay.Components
         //public override TimeSpan ProcessorTime => timeSpan;
 
         public override BoundingBox ClippingBox => bb ?? new BoundingBox(new[] { new Point3d(0, 0, 0) });
+
+
+        private bool SetName()
+        {
+
+            Font redFont = new Font("Arial", 18.0f,
+                        FontStyle.Bold);
+
+            Font font = new Font("Arial", 10.0f,
+                        FontStyle.Bold);
+
+            Font smallFont = new Font("Arial", 8.0f,
+                        FontStyle.Bold);
+
+            Form prompt = new Form()
+            {
+                Width = 460,
+                Height = 370,
+                FormBorderStyle = FormBorderStyle.FixedDialog,
+                Text = "DisplayName",
+                StartPosition = FormStartPosition.CenterScreen,
+                BackColor = Color.FromArgb(255, 195, 195, 195),
+                ForeColor = Color.FromArgb(255, 30, 30, 30),
+                Font = font
+
+            };
+
+
+            Label label = new Label()
+            {
+                Left = 50,
+                Top = 45,
+                Width = 340,
+                Height = 28,
+                Text = $"Set Display Name, in case several previews are turned on:"
+            };
+
+
+            TextBox usernameTextBox = new TextBox()
+            {
+                Left = 50,
+                Top = 75,
+                Width = 340,
+                Height = 28,
+                Text = string.IsNullOrEmpty(DisplayName) ? "RadViewer" : DisplayName,
+                ForeColor = Color.FromArgb(88, 100, 84),
+                Font = redFont,
+                BackColor = Color.FromArgb(148, 180, 140),
+                Margin = new Padding(2)
+            };
+
+
+
+            Button connectButton = new Button() { Text = "Connect", Left = 50, Width = 120, Top = 190, Height = 40, DialogResult = DialogResult.OK };
+            Button cancel = new Button() { Text = "Cancel", Left = 270, Width = 120, Top = 190, Height = 40, DialogResult = DialogResult.Cancel };
+
+
+            Label label2 = new Label()
+            {
+                Font = smallFont,
+                Left = 50,
+                Top = 270,
+                Width = 340,
+                Height = 60,
+                Text = $"Part of the {ConstantsHelper.ProjectName} plugin\n" +
+                "(C) Mathias Sønderskov Schaltz 2022"
+            };
+            prompt.Controls.AddRange(new Control[] { label, usernameTextBox, connectButton, cancel, label2 });
+
+
+            prompt.AcceptButton = connectButton;
+
+
+            DialogResult result = prompt.ShowDialog();
+
+            if (result == DialogResult.OK)
+            {
+
+                DisplayName = usernameTextBox.Text;
+                if (hud != null)
+                    hud.Name = usernameTextBox.Text;
+
+                return true;
+            }
+            else
+            {
+
+                return false;
+
+            }
+        }
 
         public override void DrawViewportMeshes(IGH_PreviewArgs args)
         {
@@ -214,6 +315,7 @@ namespace MantaRay.Components
             reader.TryGetBoolean("Polychromatic", ref Polychromatic);
             reader.TryGetBoolean("ShowEdges", ref ShowEdges);
             reader.TryGetBoolean("Transparent", ref Transparent);
+            reader.TryGetString("DisplayName", ref DisplayName);
             colors.Clear();
             Color color = default;
             string colorName = string.Empty;
@@ -221,7 +323,7 @@ namespace MantaRay.Components
             while (true)
             {
                 bool a = reader.TryGetString("ColorNames", i, ref colorName);
-                bool b= reader.TryGetDrawingColor("Colors", i++, ref color) ;
+                bool b = reader.TryGetDrawingColor("Colors", i++, ref color);
                 if (a && b)
                     colors.Add(colorName, color);
                 else
@@ -243,6 +345,7 @@ namespace MantaRay.Components
                 writer.SetDrawingColor("Colors", i, item.Value);
                 writer.SetString("ColorNames", i++, item.Key);
             }
+            writer.SetString("DisplayName", DisplayName);
 
             return base.Write(writer);
         }
@@ -255,6 +358,7 @@ namespace MantaRay.Components
             Menu_AppendItem(menu, "Show edges", ToggleEdges, true, ShowEdges);
             Menu_AppendItem(menu, "Use Colors", ToggleColors, true, Polychromatic);
             Menu_AppendItem(menu, "Clear Colors", ClearColors, true);
+            Menu_AppendItem(menu, "Set DisplayName", SetDisplayName, true);
         }
 
 

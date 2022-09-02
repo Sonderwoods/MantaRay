@@ -5,6 +5,7 @@ using Rhino.Geometry;
 using Rhino.UI;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Drawing;
 using System.Linq;
 using System.Text;
@@ -15,6 +16,9 @@ namespace MantaRay.RadViewer.HeadsUpDisplay
 {
     public class HUD
     {
+        public static Dictionary<Guid, HUD> HUDs = new Dictionary<Guid, HUD>();
+
+        public string Name { get; set; }
         public bool Collapsed = false;
         private bool enabled = true;
 
@@ -24,7 +28,7 @@ namespace MantaRay.RadViewer.HeadsUpDisplay
         public bool Enabled
         {
             get { return enabled; }
-            set { enabled = value; }
+            set { enabled = value; UpdateHudPositions(); }
         }
         public System.Drawing.Point Anchor { get; set; } = new System.Drawing.Point(50, 40);
 
@@ -82,19 +86,23 @@ namespace MantaRay.RadViewer.HeadsUpDisplay
 
 
         }
-
-        public HUD()
+        public void UpdateHudPositions()
         {
-            Callback = new HUD_MouseCallback(this);
-            CloseBtn = new HUD_CloseButton(this);
-
-
+            if (HUDs.Keys.Contains(Component.InstanceGuid))
+            {
+                HUDs.Remove(Component.InstanceGuid);
+            }
+            if (enabled)
+                HUDs.Add(Component.InstanceGuid, this);
         }
+
 
         public HUD(IGH_Component component) : base()
         {
             Component = component;
-
+            Callback = new HUD_MouseCallback(this);
+            CloseBtn = new HUD_CloseButton(this);
+            
         }
 
         private void SetHighlightedItem(int x, int y, MouseCallbackEventArgs e = null)

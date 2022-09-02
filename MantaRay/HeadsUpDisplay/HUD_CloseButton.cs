@@ -16,6 +16,7 @@ namespace MantaRay.RadViewer.HeadsUpDisplay
     {
         public class HUD_CloseButton_Value : IHasPreview
         {
+
             public string Name { get; set; } = "X";
             public string Description { get; set; } = "Click to hide\nRight click to remove";
             public void DrawPreview(IGH_PreviewArgs args, DisplayMaterial material, double? transpaceny = null) { }
@@ -28,14 +29,14 @@ namespace MantaRay.RadViewer.HeadsUpDisplay
 
         }
 
-        public HUD_CloseButton(HUD hud): base(null)
+        public HUD_CloseButton(HUD hud) : base(null)
         {
             Value = new HUD_CloseButton_Value();
             HUD = hud;
             Color = Color.FromArgb(200, 255, 255, 255);
             OnLeftClick = new HUD_ContextMenuEventHandler((e, args) =>
             {
-                HideCollapse(hud);
+                ToggleHideCollapse(hud);
             });
 
             ContextMenuItems.Add("Remove", new HUD_ContextMenuEventHandler((e, args) =>
@@ -51,17 +52,35 @@ namespace MantaRay.RadViewer.HeadsUpDisplay
 
         }
 
+        public void Hide(HUD hud = null)
+        {
+            HUD _hud = hud ?? HUD ?? null;
+            if (_hud != null)
+            {
+                _hud.Collapsed = true;
+                ((HUD_CloseButton_Value)_hud.CloseBtn.Value).Name = _hud.Collapsed ? "+" : "X";
+                ((HUD_CloseButton_Value)_hud.CloseBtn.Value).Description = _hud.Name + "\n" + (_hud.Collapsed ? "Click to Expand\nRight click to remove" : "Click to hide\nRight click to remove");
+            }
+        }
 
-
-        public void HideCollapse(HUD hud = null)
+        public void ToggleHideCollapse(HUD hud = null)
         {
             HUD _hud = hud ?? HUD ?? null;
             if (_hud != null)
             {
 
-                ((HUD_CloseButton_Value)_hud.CloseBtn.Value).Name = _hud.Collapsed ? "X" : "+";
                 _hud.Collapsed = !_hud.Collapsed;
-                ((HUD_CloseButton_Value)_hud.CloseBtn.Value).Description = _hud.Collapsed ? "Click to Expand\nRight click to remove" : "Click to hide\nRight click to remove";
+                if (!_hud.Collapsed)
+                {
+                    foreach (var hu in HUD.HUDs.Where(h => !object.ReferenceEquals(h.Value, this.HUD)))
+                    {
+                        ((HUD_CloseButton)hu.Value.CloseBtn).Hide();
+                    }
+
+                }
+
+                ((HUD_CloseButton_Value)_hud.CloseBtn.Value).Name = _hud.Collapsed ? "+" : "X";
+                ((HUD_CloseButton_Value)_hud.CloseBtn.Value).Description = _hud.Name + "\n" + (_hud.Collapsed ? "Click to Expand\nRight click to remove" : "Click to hide\nRight click to remove");
                 Rhino.RhinoDoc.ActiveDoc.Views.ActiveView.Redraw();
             }
         }
@@ -70,6 +89,17 @@ namespace MantaRay.RadViewer.HeadsUpDisplay
 
         public override void Draw2D(ref System.Drawing.Point anchor, HUD HUD, DrawEventArgs args)
         {
+            var guids = HUD.HUDs.Keys.OrderBy(x => x).ToArray();
+            int order = 0;
+            for (int i = 0; i < guids.Length; i++)
+            {
+                if (HUD.Component.InstanceGuid == guids[i])
+                {
+                    order = i;
+                    break;
+                }
+            }
+
             int fontSize = 10;
             bool isItemHighlighted = ReferenceEquals(HUD.HighlightedItem, this);
 
@@ -77,7 +107,7 @@ namespace MantaRay.RadViewer.HeadsUpDisplay
 
             Rectangle = new Rectangle(
             x: (int)(HUD.Anchor.X - (Size + 5) * HUD.Scale),
-            y: HUD.Anchor.Y,
+            y: HUD.Anchor.Y + order * (int)(Size * HUD.Scale + 5),
             width: (int)(Size * HUD.Scale),
             height: (int)(Size * HUD.Scale));
 
@@ -86,7 +116,7 @@ namespace MantaRay.RadViewer.HeadsUpDisplay
             args.Display.Draw2dText(
                 text: Name,
                 color: Color.Black,
-                screenCoordinate: new Point2d(HUD.Anchor.X - (5 + Size / 2.0) * HUD.Scale, HUD.Anchor.Y + fontSize * HUD.Scale),
+                screenCoordinate: new Point2d(HUD.Anchor.X - (5 + Size / 2.0) * HUD.Scale, HUD.Anchor.Y + fontSize * HUD.Scale + order * (int)(Size * HUD.Scale + 5)),
                 middleJustified: true,
                 height: fontSize,
                 fontface: HUD.FontName
