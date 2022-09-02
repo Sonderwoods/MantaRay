@@ -156,9 +156,9 @@ namespace MantaRay
             //for (int q = 0; q < inMeshes.Branches.Count; q++)
             //{
 
-                if (inMeshes.Branches[q].Count > 500)
+                if (inMeshes.Branches[q].Count > 10000)
                 {
-                    AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, "Long list of meshes.\nAre you sure you're not better off joining the mest first?");
+                    AddRuntimeMessage(GH_RuntimeMessageLevel.Remark, "Long list of meshes.\nAre you sure you're not better off joining the meshes first?");
                 }
 
 
