@@ -175,15 +175,27 @@ namespace MantaRay.Components
                 {
                     SSH_Helper.WindowsParentPath = System.IO.Path.GetDirectoryName(winDir);
                 }
+                else
+                {
+                    SSH_Helper.WindowsParentPath = SSH_Helper.DefaultWindowsParentPath;
+                }
 
                 if (!string.IsNullOrEmpty(linDir))
                 {
                     SSH_Helper.LinuxParentPath = System.IO.Path.GetDirectoryName(linDir);
                 }
+                else
+                {
+                    SSH_Helper.LinuxParentPath = SSH_Helper.DefaultLinuxParentPath;
+                }
 
                 if (!string.IsNullOrEmpty(subfolder))
                 {
                     SSH_Helper.DefaultSubfolder = subfolder;
+                }
+                else
+                {
+                    SSH_Helper.DefaultSubfolder = SSH_Helper.DefaultDefaultSubfolder;
                 }
 
                 sb.AppendFormat("SSH:  Setup <WinHome> to {0}\n", SSH_Helper.WindowsFullpath);
@@ -199,8 +211,8 @@ namespace MantaRay.Components
                 }
                 catch (Renci.SshNet.Common.SshAuthenticationException e)
                 {
-                    sb.AppendLine("SSH:  Wrong password??\n" + e.Message);
-                    var mb = MessageBox.Show("Wrong SSH Password? Try again?", "Wrong SSH Password? Try again?", MessageBoxButtons.RetryCancel);
+                    sb.AppendLine("SSH: Connection Denied??\n" + e.Message);
+                    var mb = MessageBox.Show("Wrong SSH Password? Wrong username? Try again?", "SSH Connection Denied", MessageBoxButtons.RetryCancel);
                     if (mb == DialogResult.Retry)
                     {
                         if (GetCredentials(_usr, ip, out string newUsername, out string pw))
@@ -216,7 +228,7 @@ namespace MantaRay.Components
                     sb.AppendFormat("SSH:  Could not find the SSH server\n      {0}\n      Try restarting it locally in " +
                         "your bash with the command:\n    $ sudo service ssh start\n", e.Message);
 
-                    if(String.Equals(ip, "127.0.0.1"))
+                    if(String.Equals(ip, "127.0.0.1") || String.Equals(ip, "localhost"))
                     {
                         var mb = MessageBox.Show("No SSH, try opening it with\nsudo service ssh start\n\nWant me to start it for you??" +
                             "\n\n\nI'll simply run the below bash command for you:\n\n" +
@@ -352,6 +364,10 @@ namespace MantaRay.Components
 
         private bool GetCredentials(string username, string ip, out string outUsername, out string password)
         {
+            bool localIp = string.Equals(ip, "127.0.0.1") || string.Equals(ip, "localhost");
+            var foreColor = localIp ? Color.FromArgb(88, 100, 84) : Color.FromArgb(128, 66, 19);
+            var backColor = localIp ? Color.FromArgb(148, 180, 140) : Color.FromArgb(250, 205, 170);
+            var background = localIp ? Color.FromArgb(255, 195, 195, 195) : Color.FromArgb(201, 165, 137);
 
             Font redFont = new Font("Arial", 18.0f,
                         FontStyle.Bold);
@@ -369,7 +385,7 @@ namespace MantaRay.Components
                 FormBorderStyle = FormBorderStyle.FixedDialog,
                 Text = "Connect to SSH",
                 StartPosition = FormStartPosition.CenterScreen,
-                BackColor = Color.FromArgb(255, 195, 195, 195),
+                BackColor = background,
                 ForeColor = Color.FromArgb(255, 30, 30, 30),
                 Font = font
                 
@@ -382,20 +398,21 @@ namespace MantaRay.Components
 
             TextBox usernameTextBox = new TextBox() { Left = 50, Top = 75, Width = 340, Height = 28,
                 Text = string.IsNullOrEmpty(_usr) ? "username" : _usr,
-                ForeColor = Color.FromArgb(88, 100, 84),
+                ForeColor = foreColor,
                 Font = redFont,
-                BackColor = Color.FromArgb(148, 180, 140),
+                BackColor = backColor,
                 Margin = new Padding(2)
             };
 
 
             TextBox passwordTextBox = new TextBox() { Left = 50, Top = 125, Width = 340, Height = 28,
                 Text = "",
-                ForeColor = Color.FromArgb(88, 100, 84),
+                ForeColor = foreColor,
                 PasswordChar = '*',
                 Font = redFont,
-                BackColor = Color.FromArgb(148, 180, 140),
-                Margin = new Padding(2)
+                BackColor = backColor,
+                Margin = new Padding(2),
+                
             };
             
 
@@ -406,6 +423,11 @@ namespace MantaRay.Components
             Label label2 = new Label() { Font = smallFont, Left = 50, Top = 270, Width=340, Height = 60, Text = $"Part of the {ConstantsHelper.ProjectName} plugin\n" +
                 "(C) Mathias Sønderskov Schaltz 2022" };
             prompt.Controls.AddRange(new Control[] { label, usernameTextBox, passwordTextBox, connectButton, cancel, label2 });
+
+            if (usernameTextBox.Text != "username")
+            {
+                passwordTextBox.Focus();
+            }
 
             prompt.AcceptButton = connectButton;
             

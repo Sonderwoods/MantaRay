@@ -142,10 +142,13 @@ namespace MantaRay
         }
 
         static string defaultSubfolder = "simulation";
+        static public string DefaultDefaultSubfolder => "simulation";
 
         static string linuxParentPath = "~";
+        static public string DefaultLinuxParentPath => "~";
 
         static string windowsParentPath = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+        static public string DefaultWindowsParentPath => Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
 
         static string _linuxFullpath = (linuxParentPath + "/" + defaultSubfolder).Replace(@"\", "/");
 
