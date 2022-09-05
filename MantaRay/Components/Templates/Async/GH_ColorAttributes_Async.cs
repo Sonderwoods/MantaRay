@@ -36,7 +36,17 @@ namespace MantaRay
             palette_normal_selected = GH_Skin.palette_normal_selected;
             palette_hidden_standard = GH_Skin.palette_hidden_standard;
             palette_hidden_selected = GH_Skin.palette_hidden_selected;
+
+
+            FontFamily fontFamily = new FontFamily("Arial");
+            font = new Font(
+               fontFamily,
+               14,
+               FontStyle.Bold,
+               GraphicsUnit.Pixel);
         }
+
+        public Font font;
 
         public GH_PaletteStyle palette_normal_standard;
         public GH_PaletteStyle palette_normal_selected;
@@ -105,7 +115,12 @@ namespace MantaRay
                     break;
                 case GH_CanvasChannel.Wires:
                     DrawWires(canvas, graphics);
-                    break;
+                    if (component != null && component is GH_Template_Async_Extended c && !string.IsNullOrEmpty(c.LogName))
+                    {
+                        RenderText(c.LogName, graphics);
+                    }
+
+                        break;
                 default:
                     base.Render(canvas, graphics, channel);
                     break;
@@ -278,6 +293,34 @@ namespace MantaRay
             rectangle.Inflate(6, 6);
             graphics.FillRectangle(fill, rectangle);
             graphics.DrawRectangle(edge, rectangle);
+        }
+
+
+        /// <summary>
+        /// From TUNNY plugin
+        /// </summary>
+        /// <param name="graphics"></param>
+        /// <param name="fill"></param>
+        /// <param name="edge"></param>
+        /// <param name="guid"></param>
+        private void RenderText(string s, Graphics graphics)
+        {
+            const int MAXLEN = 25;
+            GH_Document doc = Owner.OnPingDocument();
+
+            if (doc == null) return;
+
+            RectangleF rectangle = Bounds;
+            rectangle.Y -= 33;
+            rectangle.Width += 40;
+            if (s.Length > MAXLEN)
+            {
+                s = s.Substring(0, MAXLEN - 1) + "...";
+            }
+            //rectangle.Inflate(6, 6);
+            graphics.DrawString(s, font, new SolidBrush(Selected ? ColorSelected.Fill : ColorUnselected.Fill), rectangle);
+            //graphics.FillRectangle(fill, rectangle);
+            //graphics.DrawRectangle(edge, rectangle);
         }
 
         /// <summary>

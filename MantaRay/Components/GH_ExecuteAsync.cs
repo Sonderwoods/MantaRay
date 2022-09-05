@@ -205,7 +205,7 @@ namespace MantaRay
                 //for (int i = 0; i < Results.Count; i++)
                 //{
                 if (Results.Count > RunCount - 1)
-                    DA.SetDataList(0, Results[RunCount - 1] != null ? Results[RunCount - 1].Split(new[] { JOIN }, StringSplitOptions.None).Select(v => v.Trim('\n', '\r')).ToArray() : new string[0]);
+                    DA.SetDataList(0, Results[RunCount - 1] != null ? Results[RunCount - 1].Split(new[] { JOIN }, StringSplitOptions.None).Select(v => v.Trim('\n', '\r')).Where(r => r != JOIN && r.Trim() != "_JOIN_").ToArray() : new string[0]);
                 else
                     AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, "There might be cached data missing, please rerun.");
                 //}
@@ -548,7 +548,7 @@ namespace MantaRay
 
 
 
-                DA.SetDataList(0, results != null && !String.Equals(results, JOIN) ? results.Split(new[] { JOIN }, StringSplitOptions.None).Select(b => b.Trim('\n', '\r')) : new string[] { null });
+                DA.SetDataList(0, results != null && !String.Equals(results, JOIN) ? results.Split(new[] { JOIN }, StringSplitOptions.None).Select(b => b.Trim('\n', '\r')).Where(r => r != JOIN && r.Trim() != "_JOIN_") : new string[] { null });
                 //DA.SetDataList(0, results != null && !String.Equals(results, JOIN) ? results.Split(new[] { JOIN }, StringSplitOptions.None).Select(b => b.Trim('\n', '\r')) : new string[] { null });
 
                 DA.SetDataList(1, stderr != null ? stderr.Split(new[] { JOIN }, StringSplitOptions.None).Select(b => b.Trim('\n', '\r')) : new string[] { null });
