@@ -67,12 +67,16 @@ namespace MantaRay.Components
         {
 
             ManPageHelper.Initiate();
+            bool run = DA.Fetch<bool>("connect");
 
 
             // Moving to back will make sure this expires/runs before other objects when you load the file
             Grasshopper.Instances.ActiveCanvas.Document.ArrangeObject(this, GH_Arrange.MoveToBack);
 
-            if (Grasshopper.Instances.ActiveCanvas.Document.Objects.OfType<GH_Connect>().Where(c => !Object.ReferenceEquals(c, this)).Count() > 0)
+            if (run && Grasshopper.Instances.ActiveCanvas.Document.Objects
+                .OfType<GH_Connect>()
+                .Where(c => !Object.ReferenceEquals(c, this) && !c.Locked)
+                .Count() > 0)
             {
                 AddRuntimeMessage(GH_RuntimeMessageLevel.Error,
                     $"There's more than one {this.NickName} component on the canvas.\n" +
@@ -81,19 +85,12 @@ namespace MantaRay.Components
                     $"For one to live the other one has to die\n" +
                     $"It's like Harry Potter and Voldemort.\n\nDisable the other component and enable this one again. Fool.");
 
-                if (Grasshopper.Instances.ActiveCanvas.Document.Objects.
-                    OfType<GH_Connect>().
-                    Where(c => c.Locked != true).
-                    Where(c => !Object.ReferenceEquals(c, this)).
-                    Count() > 0)
-                {
-                    this.Locked = true;
-                    return;
 
-                }
+                this.Locked = true;
+                return;
 
             }
-            
+
             string username = DA.Fetch<string>("user");
             string password = DA.Fetch<string>("password");
             string linDir = DA.Fetch<string>("LinuxDir");
@@ -101,7 +98,6 @@ namespace MantaRay.Components
             string subfolder = DA.Fetch<string>("Subfolder");
             string ip = DA.Fetch<string>("ip");
             int port = DA.Fetch<int>("_port");
-            bool run = DA.Fetch<bool>("connect");
             string prefixes = DA.Fetch<string>("prefixes");
 
             StringBuilder sb = new StringBuilder();
@@ -121,7 +117,7 @@ namespace MantaRay.Components
                             _usr = username;
 
                         }
-                        
+
                         else
                             run = false;
                     }
@@ -228,7 +224,7 @@ namespace MantaRay.Components
                     sb.AppendFormat("SSH:  Could not find the SSH server\n      {0}\n      Try restarting it locally in " +
                         "your bash with the command:\n    $ sudo service ssh start\n", e.Message);
 
-                    if(String.Equals(ip, "127.0.0.1") || String.Equals(ip, "localhost"))
+                    if (String.Equals(ip, "127.0.0.1") || String.Equals(ip, "localhost"))
                     {
                         var mb = MessageBox.Show("No SSH, try opening it with\nsudo service ssh start\n\nWant me to start it for you??" +
                             "\n\n\nI'll simply run the below bash command for you:\n\n" +
@@ -250,7 +246,7 @@ namespace MantaRay.Components
                             this.ExpireSolution(true);
                         }
                     }
-                    
+
 
                 }
                 catch (Exception e)
@@ -309,11 +305,11 @@ namespace MantaRay.Components
                 AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Not Connected.\n\nTry restarting SSH in your bash with:\nsudo service ssh start");
 
 
-            
+
 
         }
 
-        
+
 
         public void TryDisconnect()
         {
@@ -332,7 +328,7 @@ namespace MantaRay.Components
         {
             if (document.Objects.Contains(this))
             {
-                Grasshopper.Instances.ActiveCanvas.Document.ScheduleSolution(100, (e) => this.ExpireSolution(true));
+                document.ScheduleSolution(100, (e) => this.ExpireSolution(true));
 
             }
             else
@@ -397,15 +393,26 @@ namespace MantaRay.Components
                 BackColor = background,
                 ForeColor = Color.FromArgb(255, 30, 30, 30),
                 Font = font
-                
+
             };
-            
-            
-            Label label = new Label() { Left = 50, Top = 45, Width=340, Height = 28,
-                Text = $"Connecting to SSH on {ip}:" };
 
 
-            TextBox usernameTextBox = new TextBox() { Left = 50, Top = 75, Width = 340, Height = 28,
+            Label label = new Label()
+            {
+                Left = 50,
+                Top = 45,
+                Width = 340,
+                Height = 28,
+                Text = $"Connecting to SSH on {ip}:"
+            };
+
+
+            TextBox usernameTextBox = new TextBox()
+            {
+                Left = 50,
+                Top = 75,
+                Width = 340,
+                Height = 28,
                 Text = string.IsNullOrEmpty(username) ? "username" : username,
                 ForeColor = foreColor,
                 Font = redFont,
@@ -414,23 +421,36 @@ namespace MantaRay.Components
             };
 
 
-            TextBox passwordTextBox = new TextBox() { Left = 50, Top = 125, Width = 340, Height = 28,
+            TextBox passwordTextBox = new TextBox()
+            {
+                Left = 50,
+                Top = 125,
+                Width = 340,
+                Height = 28,
                 Text = "",
                 ForeColor = foreColor,
                 PasswordChar = '*',
                 Font = redFont,
                 BackColor = backColor,
                 Margin = new Padding(2),
-                
+
             };
-            
+
 
             Button connectButton = new Button() { Text = "Connect", Left = 50, Width = 120, Top = 190, Height = 40, DialogResult = DialogResult.OK };
             Button cancel = new Button() { Text = "Cancel", Left = 270, Width = 120, Top = 190, Height = 40, DialogResult = DialogResult.Cancel };
 
 
-            Label label2 = new Label() { Font = smallFont, Left = 50, Top = 270, Width=340, Height = 60, Text = $"Part of the {ConstantsHelper.ProjectName} plugin\n" +
-                "(C) Mathias Sønderskov Schaltz 2022" };
+            Label label2 = new Label()
+            {
+                Font = smallFont,
+                Left = 50,
+                Top = 270,
+                Width = 340,
+                Height = 60,
+                Text = $"Part of the {ConstantsHelper.ProjectName} plugin\n" +
+                "(C) Mathias Sønderskov Schaltz 2022"
+            };
             prompt.Controls.AddRange(new Control[] { label, usernameTextBox, passwordTextBox, connectButton, cancel, label2 });
 
             if (usernameTextBox.Text != "username")
@@ -439,7 +459,7 @@ namespace MantaRay.Components
             }
 
             prompt.AcceptButton = connectButton;
-            
+
 
             DialogResult result = prompt.ShowDialog();
 
