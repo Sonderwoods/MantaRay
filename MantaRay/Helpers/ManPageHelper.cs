@@ -58,10 +58,12 @@ namespace MantaRay
                     string href = m.Groups[1].Captures[0].Value.Trim().Replace("\t", " ").Replace(" =", "=").Replace("= ", "=").Split(' ')
                         .Where(s => s.Split('=')[0].ToLower() == "href").Select(s => s.Split('=')[1]).First().Trim('"');
 
-                    AllRadiancePrograms.Add(name, href);
+                    AllRadiancePrograms.Add(name, "https://floyd.lbl.gov/radiance/" + href);
 
                     m = m.NextMatch();
                 }
+
+                AllRadiancePrograms.Add("rtpict", "https://www.radiance-online.org/learning/documentation/manual-pages/pdfs/rtpict.pdf/at_download/file");
 
                 Debug.WriteLine("successfully created díct");
 
@@ -84,7 +86,7 @@ namespace MantaRay
         {
             if (!AllRadiancePrograms.ContainsKey(name)) return;
 
-            string link = "https://floyd.lbl.gov/radiance/" + AllRadiancePrograms[name];
+            string link = AllRadiancePrograms[name];
 
             Form prompt = new Form()
             {
