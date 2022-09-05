@@ -305,6 +305,9 @@ namespace MantaRay
         /// <param name="guid"></param>
         private void RenderText(string s, Graphics graphics)
         {
+            if (string.IsNullOrEmpty(s))
+                return;
+
             const int MAXLEN = 25;
             GH_Document doc = Owner.OnPingDocument();
 
@@ -318,7 +321,7 @@ namespace MantaRay
                 s = s.Substring(0, MAXLEN - 1) + "...";
             }
             //rectangle.Inflate(6, 6);
-            graphics.DrawString(s, font, new SolidBrush(Selected ? ColorSelected.Fill : ColorUnselected.Fill), rectangle);
+            graphics.DrawString(s, font, new SolidBrush(Selected ? (ColorSelected?.Fill ?? GH_Skin.palette_normal_standard.Fill) : (ColorUnselected?.Fill ?? GH_Skin.palette_normal_standard.Fill)), rectangle);
             //graphics.FillRectangle(fill, rectangle);
             //graphics.DrawRectangle(edge, rectangle);
         }
