@@ -118,6 +118,7 @@ namespace MantaRay.Components
                         {
                             _pw = pw;
                             username = newUsername;
+                            _usr = username;
 
                         }
                         
@@ -405,7 +406,7 @@ namespace MantaRay.Components
 
 
             TextBox usernameTextBox = new TextBox() { Left = 50, Top = 75, Width = 340, Height = 28,
-                Text = string.IsNullOrEmpty(_usr) ? "username" : _usr,
+                Text = string.IsNullOrEmpty(username) ? "username" : username,
                 ForeColor = foreColor,
                 Font = redFont,
                 BackColor = backColor,
@@ -445,13 +446,14 @@ namespace MantaRay.Components
             if (result == DialogResult.OK)
             {
                 password = passwordTextBox.Text;
-                _usr = usernameTextBox.Text;
+                //_usr = usernameTextBox.Text;
                 outUsername = usernameTextBox.Text;
                 return true;
             }
             else
             {
                 password = null;
+                outUsername = null;
                 return false;
 
             }
