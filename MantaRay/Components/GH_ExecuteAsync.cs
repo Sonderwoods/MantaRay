@@ -131,7 +131,6 @@ namespace MantaRay
             }
 
             
-
             if (radProgs.Count > 0)
             {
                 Menu_AppendSeparator(menu);
@@ -143,16 +142,6 @@ namespace MantaRay
             }
         }
 
-        //public void LinuxKill()
-        //{
-        //    foreach (var pid in Pids.Where(p => p > 0))
-        //    {
-        //        SSH_Helper.Execute($"kill {Pids}", prependPrefix: false);
-        //    }
-
-        //}
-
-
 
 
         /// <summary>
@@ -163,21 +152,6 @@ namespace MantaRay
             Params.Input[0].NickName = (addPrefix ? "_" : "") + "SSH Commands" + (addSuffix ? "_" : "");
             Params.Output[1].NickName = "stderr" + (suppressWarnings ? "" : "_");
 
-        }
-
-        //protected override void RunOnlyOnce(IGH_DataAccess DA)
-        //{
-        //    Results.Clear();
-        //    Commands.Clear();
-        //    Stderrs.Clear();
-
-        //    //base.RunOnlyOnce(DA); // <-- empty
-        //}
-
-        protected override void AfterDone()
-        {
-            //LogDescriptionDynamic = string.Join("\n\n---\n\n", Commands.Where(s => !string.IsNullOrEmpty(s))).Replace(JOIN, "\n");
-            base.AfterDone();
         }
 
         protected override bool PreRunning(IGH_DataAccess DA)
@@ -201,8 +175,6 @@ namespace MantaRay
                 Commands.Add(null);
             }
 
-            
-
             return RunInput;
         }
 
@@ -222,26 +194,15 @@ namespace MantaRay
                     SetOneBoolOutput(this, DA, 2, false);
                 }
 
-                //for (int i = 0; i < Results.Count; i++)
-                //{
                 if (Results.Count > RunCount - 1)
                     DA.SetDataList(0, Results[RunCount - 1] != null ? Results[RunCount - 1].Split(new[] { JOIN }, StringSplitOptions.None).Select(v => v.Trim('\n', '\r')).Where(r => r != JOIN && r.Trim() != "_JOIN_").ToArray() : new string[0]);
                 else
                     AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, "There might be cached data missing, please rerun.");
-                //}
-                //for (int i = 0; i < Stderrs.Count; i++)
-                //{
+
                 if (Stderrs.Count > RunCount - 1)
                     DA.SetDataList(1, Stderrs[RunCount - 1] != null ? Stderrs[RunCount - 1].Split(new[] { JOIN }, StringSplitOptions.None).Select(v => v.Trim('\n', '\r')).ToArray() : new string[0]);
                 else
                     AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, "There might be cached data missing, please rerun.");
-                //}
-
-
-                //DA.SetDataList(0, Results);
-                //DA.SetDataList(1, Stderrs);
-
-
 
 
                 Message = LastRun.TotalMilliseconds > 0 ? $"Cached  (last was {LastRun.ToShortString()})" : "Clean";
@@ -252,8 +213,6 @@ namespace MantaRay
                     ((GH_ColorAttributes_Async)m_attributes).ColorSelected = new Grasshopper.GUI.Canvas.GH_PaletteStyle(Color.FromArgb(76, 128, 122));
                     ((GH_ColorAttributes_Async)m_attributes).ColorUnselected = new Grasshopper.GUI.Canvas.GH_PaletteStyle(Color.FromArgb(95, 115, 113));
                 }
-
-
 
             }
             else
@@ -321,14 +280,7 @@ namespace MantaRay
                     break;
             }
 
-            //if (reader.TryGetString("results", ref s))
-            //{
-            //    Results = s.Split(new[] { ">JOIN<" }, StringSplitOptions.None).ToList();
-            //}
-            //if (reader.TryGetString("stderr", ref s))
-            //{
-            //    Stderrs = s.Split(new[] { ">JOIN<" }, StringSplitOptions.None).ToList();
-            //}
+
 
             return base.Read(reader);
         }
@@ -356,11 +308,6 @@ namespace MantaRay
             }
 
 
-            //writer.SetString("results", String.Join(">JOIN<", Results).Replace(">JOIN<", String.Empty));
-            //writer.SetString("stderr", String.Join(">JOIN<", Stderrs).Replace(">JOIN<", String.Empty));
-            //writer.SetString("commands", String.Join(">JOIN<", Commands).Replace(">JOIN<", String.Empty));
-
-
             return base.Write(writer);
         }
 
@@ -369,18 +316,13 @@ namespace MantaRay
 
         public override void ClearCachedData()
         {
-            //((SSH_Worker2)BaseWorker).results.Clear();
-            //((SSH_Worker2)BaseWorker).stderr.Clear();
-            //((SSH_Worker2)BaseWorker).commands.Clear();
+
             Results.Clear();
             Stderrs.Clear();
             Commands.Clear();
             LastRun = new TimeSpan();
 
             base.ClearCachedData();
-
-            //this.ExpireSolution(true);
-
 
 
         }
@@ -390,11 +332,6 @@ namespace MantaRay
             SetLogDetails();
             return GH_ObjectResponse.Handled;
         }
-
-        //protected override void AfterDone()
-        //{
-        //    if (!RunInput{ }
-        //}
 
 
         public class SSH_Worker : WorkerInstance
@@ -411,7 +348,6 @@ namespace MantaRay
 
             public override void DoWork(Action<string, double> ReportProgress, Action Done)
             {
-
 
                 Parent.Hidden = true;
 
@@ -431,7 +367,6 @@ namespace MantaRay
                     string command = String.Join(";echo _JOIN_;", commands).Replace("\r\n", "\n").AddGlobals();
                     Renci.SshNet.SshCommand cmd = null;
                     (asyncResult, cmd, pid) = SSH_Helper.ExecuteAsync(command, prependPrefix: ((GH_ExecuteAsync)Parent).addPrefix, ((GH_ExecuteAsync)Parent).addSuffix, HasZeroAreaPolygons);
-
 
 
                     // TODO Need to get pid through "beginexecute" instead of "execute" of SSH.
@@ -483,15 +418,6 @@ namespace MantaRay
                     }
                 }
 
-                //ran = false;
-
-
-
-                //if (((GH_ExecuteAsync)Parent).savedResults.Any(s => !String.IsNullOrEmpty(s.Stdout.ToString())))
-                //{
-                //    results = ((GH_ExecuteAsync)Parent).savedResults;
-                //}
-
 
                 Done();
 
@@ -503,8 +429,6 @@ namespace MantaRay
                 //if (CancellationToken.IsCancellationRequested) return;
                 commands = DA.FetchList<string>(0);
 
-                //if (((GH_ExecuteAsync)Parent).RunCount == 1)
-                //    ((GH_ExecuteAsync)Parent).LogDescriptionDynamic = String.Empty;
 
                 StringBuilder sb = new StringBuilder();
                 GH_Structure<GH_String> data = ((GH_ExecuteAsync)Parent).Params.Input[0].VolatileData as GH_Structure<GH_String>;
@@ -543,14 +467,7 @@ namespace MantaRay
             {
                 if (CancellationToken.IsCancellationRequested)
                 {
-                    //Parent.AddRuntimeMessage( GH_RuntimeMessageLevel.Error, "Cancelled");
-                    //((GH_Template_Async_Extended)Parent).PhaseForColors = AestheticPhase.Cancelled;
 
-                    //((GH_ColorAttributes_Async)Parent.Attributes).ColorSelected = new Grasshopper.GUI.Canvas.GH_PaletteStyle(Color.DarkRed);
-                    //((GH_ColorAttributes_Async)Parent.Attributes).ColorUnselected = new Grasshopper.GUI.Canvas.GH_PaletteStyle(Color.DarkOrchid);
-
-
-                    //Parent.Message = "Cancelled X";
                     return;
                 }
 
@@ -569,17 +486,12 @@ namespace MantaRay
 
 
                 DA.SetDataList(0, results != null && !String.Equals(results, JOIN) ? results.Split(new[] { JOIN }, StringSplitOptions.None).Select(b => b.Trim('\n', '\r')).Where(r => r != JOIN && r.Trim() != "_JOIN_") : new string[] { null });
-                //DA.SetDataList(0, results != null && !String.Equals(results, JOIN) ? results.Split(new[] { JOIN }, StringSplitOptions.None).Select(b => b.Trim('\n', '\r')) : new string[] { null });
-
+ 
                 DA.SetDataList(1, stderr != null ? stderr.Split(new[] { JOIN }, StringSplitOptions.None).Select(b => b.Trim('\n', '\r')) : new string[] { null });
-                //DA.SetDataList(1, stderr != null ? stderr.Split(new[] { JOIN }, StringSplitOptions.None).Select(b => b.Trim('\n', '\r')) : new string[] { null });
 
                 //Set only ONE bool output in "RAN"
                 SetOneBoolOutput(Parent, DA, 2, ran);
-                //var runOut = new GH_Structure<GH_Boolean>();
-                //runOut.Append(new GH_Boolean(ran), new GH_Path(0));
-                //Parent.Params.Output[2].ClearData();
-                //DA.SetDataTree(2, runOut);
+
 
                 if (stderr != null)
                 {
