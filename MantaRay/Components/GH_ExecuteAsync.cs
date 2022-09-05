@@ -96,21 +96,41 @@ namespace MantaRay
 
             HashSet<string> radProgs = new HashSet<string>();
 
-            foreach (var cmd in Commands.Where(c => c != null))
+            try
             {
-                foreach (var cmdStart in cmd.Replace("\n", ";").Split(';'))
+                foreach (var cmd in Commands.Where(c => c != null))
                 {
-                    foreach (var prog in ManPageHelper.Instance.AllRadiancePrograms.Keys)
+                    foreach (var cmdStart in cmd.Replace("\n", ";").Split(';'))
                     {
-                        if (cmd.Trim().Contains(prog))
+                        foreach (var prog in ManPageHelper.Instance.AllRadiancePrograms.Keys)
                         {
-                            radProgs.Add(prog);
+                            if (cmd.Trim().Contains(prog))
+                            {
+                                radProgs.Add(prog);
 
+                            }
+                        }
+
+                        if(
+                            cmd.Trim().Contains("rtpict") ||
+                            cmd.Trim().Contains("rtcontrib") ||
+                            cmd.Trim().Contains("rcontrib") ||
+                            cmd.Trim().Contains("rpiece") ||
+                            cmd.Trim().Contains("rfluxmtx"))
+                        {
+                            radProgs.Add("rpict");
                         }
                     }
-                }
 
+                }
             }
+            catch (Exception)
+            {
+                AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Failed to do the manpage section");
+                //throw new Exception("Failed the contextmenu.." +  e.Message);
+            }
+
+            
 
             if (radProgs.Count > 0)
             {
