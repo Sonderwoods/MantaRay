@@ -108,8 +108,7 @@ namespace MantaRay.Components
 
             if (run)
             {
-                if (string.IsNullOrEmpty(_usr))
-                    _usr = username;
+                _usr = username;
 
                 if (password == "_prompt") //Default saved in the component
                 {
@@ -330,7 +329,16 @@ namespace MantaRay.Components
 
         public override void DocumentContextChanged(GH_Document document, GH_DocumentContext context)
         {
-            TryDisconnect();
+            if (document.Objects.Contains(this))
+            {
+                Grasshopper.Instances.ActiveCanvas.Document.ScheduleSolution(100, (e) => this.ExpireSolution(true));
+
+            }
+            else
+            {
+                TryDisconnect();
+            }
+
 
             base.DocumentContextChanged(document, context);
         }
@@ -443,7 +451,6 @@ namespace MantaRay.Components
             }
             else
             {
-                outUsername = usernameTextBox.Text;
                 password = null;
                 return false;
 
