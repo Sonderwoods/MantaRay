@@ -87,7 +87,11 @@ namespace MantaRay.Components
 
 
                 if (String.IsNullOrEmpty(illFile) || !File.Exists(illFile))
-                    return;
+                {
+                    linesPerHour.CompleteAdding();
+                    throw new FileNotFoundException("The is file not found. Did you convert it to a windows path?\n" + illFile);
+                    //return;
+                }
 
                 int lineCount = 0;
 
@@ -192,7 +196,7 @@ namespace MantaRay.Components
 
                 }
 
-                if (filteredLineCount != scheduleHoursCount)
+                if (filteredLineCount != scheduleHoursCount && filteredLineCount > 0)
                     throw new Exception($"Schedule hours count  ({scheduleHoursCount}) does not match the hours in ill file  ({filteredLineCount})!");
 
             });
@@ -202,7 +206,19 @@ namespace MantaRay.Components
 
             try
             {
-                Task.WaitAll(readLines);
+                while(true)
+                {
+                    if(Task.WaitAll(new Task[] { readLines }, 100))
+                    {
+                        break;
+                    }
+                    if (GH_Document.IsEscapeKeyDown())
+                    {
+                        
+                        return;
+                    }
+
+                }
             }
             catch (AggregateException ae)
             {
