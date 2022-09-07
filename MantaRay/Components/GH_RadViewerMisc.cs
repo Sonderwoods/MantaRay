@@ -1,5 +1,6 @@
 ﻿using GH_IO.Serialization;
 using Grasshopper.Kernel;
+using MantaRay.Helpers;
 using MantaRay.RadViewer;
 using MantaRay.RadViewer.HeadsUpDisplay;
 using Rhino.Display;
@@ -105,7 +106,7 @@ namespace MantaRay.Components
             {
                 if (!colors.ContainsKey(item.Name))
                 {
-                    colors.Add(item.Name, Color.FromArgb(rnd.Next(100, 255), rnd.Next(100, 255), rnd.Next(100, 255)));
+                    colors.Add(item.Name, ColorHelper.GetRandomColor(100, 255, 255));
                 }
                 item.Color = colors[item.Name];
             }
@@ -385,6 +386,8 @@ namespace MantaRay.Components
             hud.Callback.Enabled = false;
 
             hud = null;
+
+            HUD.HUDs.Remove(this.InstanceGuid);
 
             DisplayPipeline.DrawForeground -= DrawForeground;
 

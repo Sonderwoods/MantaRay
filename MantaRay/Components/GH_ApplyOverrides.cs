@@ -148,9 +148,13 @@ namespace MantaRay.Components
                 .OfType<Param_String>()
                 .Where(inp => inp.VolatileDataCount > 0))
             {
+                int branchIndex = input.VolatileData.PathCount == 1 ? 0 : this.RunCount - 1;
+
+                if (input.VolatileData.PathCount <= branchIndex)
+                    throw new ArgumentOutOfRangeException(input.NickName);
 
 
-                System.Collections.IList dataList = input.VolatileData.get_Branch(input.VolatileData.PathCount == 1 ? 0 : this.RunCount - 1);
+                System.Collections.IList dataList = input.VolatileData.get_Branch(branchIndex);
 
                 if (dataList.Count > 0 && dataList[0] is GH_String s)
                 {
