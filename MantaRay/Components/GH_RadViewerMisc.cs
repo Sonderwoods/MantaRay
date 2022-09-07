@@ -387,6 +387,8 @@ namespace MantaRay.Components
 
             hud = null;
 
+            HUD.HUDs.Remove(this.InstanceGuid);
+
             DisplayPipeline.DrawForeground -= DrawForeground;
 
         }
