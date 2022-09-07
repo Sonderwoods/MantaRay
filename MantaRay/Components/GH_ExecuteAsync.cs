@@ -287,24 +287,31 @@ namespace MantaRay
 
         public override bool Write(GH_IWriter writer)
         {
-            writer.SetDouble("lastRunTime", LastRun.TotalMilliseconds);
-            writer.SetBoolean("addPrefix", addPrefix);
-            //writer.SetBoolean("addSuffix", addSuffix);
-            writer.SetBoolean("suppressWarnings", suppressWarnings);
-
-            for (int i = 0; i < Results.Count; i++)
+            try
             {
-                writer.SetString("results", i, Results[i]);
+                writer.SetDouble("lastRunTime", LastRun.TotalMilliseconds);
+                writer.SetBoolean("addPrefix", addPrefix);
+                //writer.SetBoolean("addSuffix", addSuffix);
+                writer.SetBoolean("suppressWarnings", suppressWarnings);
+
+                for (int i = 0; i < Results.Count; i++)
+                {
+                    writer.SetString("results", i, Results[i]);
+                }
+
+                for (int i = 0; i < Stderrs.Count; i++)
+                {
+                    writer.SetString("stderr", i, Stderrs[i]);
+                }
+
+                for (int i = 0; i < Commands.Count; i++)
+                {
+                    writer.SetString("commands", i, Commands[i]);
+                }
             }
-
-            for (int i = 0; i < Stderrs.Count; i++)
+            catch(Exception)
             {
-                writer.SetString("stderr", i, Stderrs[i]);
-            }
-
-            for (int i = 0; i < Commands.Count; i++)
-            {
-                writer.SetString("commands", i, Commands[i]);
+                throw new Exception("WRITE errors");
             }
 
 
