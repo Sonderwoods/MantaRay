@@ -36,7 +36,7 @@ namespace MantaRay.Components
                 "https://github.com/ladybug-tools/spider-rad-viewer",
               "2 Radiance")
         {
-
+            hud = new HUD(this);
         }
 
         public bool TwoSided = false;
@@ -60,7 +60,7 @@ namespace MantaRay.Components
 
         public List<string> ErrorMsgs = new List<string>();
 
-        private HUD hud = null;
+        public HUD hud;
 
         //TimeSpan timeSpan = default;
 
