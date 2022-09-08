@@ -119,7 +119,8 @@ namespace MantaRay.Components
 
             foreach (var file in illFiles)
             {
-                if (!resultsLastModified.Keys.Contains(file) || (!string.IsNullOrEmpty(file) && File.Exists(file) && File.GetLastWriteTime(file) > resultsLastModified[file]))
+                
+                if (!string.IsNullOrEmpty(file) && (!resultsLastModified.Keys.Contains(file) || (!string.IsNullOrEmpty(file) && File.Exists(file) && File.GetLastWriteTime(file) > resultsLastModified[file])))
                 {
                     illFilesToUpdate.Add(file);
                     AddRuntimeMessage(GH_RuntimeMessageLevel.Blank, "Recalculating " + file);
@@ -368,6 +369,13 @@ namespace MantaRay.Components
             GH_Structure<GH_Number> outResults = new GH_Structure<GH_Number>();
             for (int i = 0; i < illFiles.Count; i++)
             {
+                if (illFiles[i] == null)
+                {
+                    AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Inputted a null file. I'm outputting null. I mean nothing.");
+                    continue;
+
+                }
+
                 GH_Path p = new GH_Path(i);
                 outResults.AppendRange(results[illFiles[i]].Select(r => new GH_Number(r)), p);
             }
