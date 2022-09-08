@@ -73,10 +73,14 @@ namespace MantaRay.Components
 
         void SetupHUD()
         {
-            hud = new HUD(this);
-            hud.Name = DisplayName;
-            //Make sure we're on.
-            hud.Component = this;
+            hud = new HUD(this)
+            {
+                Name = string.IsNullOrEmpty(DisplayName) ? $"{HUD.id}_{this.InstanceGuid}": DisplayName,
+                ID = HUD.id++,
+                Component = this,
+                Order = order,
+            };
+
             hud.Callback.Enabled = true;
 
             //Set up close button

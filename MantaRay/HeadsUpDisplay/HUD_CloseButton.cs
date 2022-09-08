@@ -66,7 +66,7 @@ namespace MantaRay.RadViewer.HeadsUpDisplay
         public void ToggleHideCollapse(HUD hud = null)
         {
             HUD _hud = hud ?? HUD ?? null;
-            if (_hud != null)
+            if (_hud != null && _hud.Enabled)
             {
 
                 _hud.Collapsed = !_hud.Collapsed;
