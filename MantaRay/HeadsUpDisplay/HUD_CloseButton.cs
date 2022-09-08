@@ -47,6 +47,7 @@ namespace MantaRay.RadViewer.HeadsUpDisplay
                 Grasshopper.Instances.RedrawCanvas();
 
             }));
+            UpdateButtonDescription(hud);
 
 
 
@@ -58,15 +59,21 @@ namespace MantaRay.RadViewer.HeadsUpDisplay
             if (_hud != null)
             {
                 _hud.Collapsed = true;
-                ((HUD_CloseButton_Value)_hud.CloseBtn.Value).Name = _hud.Collapsed ? "+" : "X";
-                ((HUD_CloseButton_Value)_hud.CloseBtn.Value).Description = _hud.Name + "\n" + (_hud.Collapsed ? "Click to Expand\nRight click to remove" : "Click to hide\nRight click to remove");
+                UpdateButtonDescription(hud);
             }
+        }
+
+        public void UpdateButtonDescription(HUD hud = null)
+        {
+            HUD _hud = hud ?? HUD ?? null;
+            ((HUD_CloseButton_Value)Value).Name = _hud.Collapsed ? "+" : "X";
+            ((HUD_CloseButton_Value)Value).Description = _hud.Name + "\n" + (_hud.Collapsed ? "Click to Expand\nRight click to remove" : "Click to hide\nRight click to remove");
         }
 
         public void ToggleHideCollapse(HUD hud = null)
         {
             HUD _hud = hud ?? HUD ?? null;
-            if (_hud != null)
+            if (_hud != null && _hud.Enabled)
             {
 
                 _hud.Collapsed = !_hud.Collapsed;
@@ -79,8 +86,8 @@ namespace MantaRay.RadViewer.HeadsUpDisplay
 
                 }
 
-                ((HUD_CloseButton_Value)_hud.CloseBtn.Value).Name = _hud.Collapsed ? "+" : "X";
-                ((HUD_CloseButton_Value)_hud.CloseBtn.Value).Description = _hud.Name + "\n" + (_hud.Collapsed ? "Click to Expand\nRight click to remove" : "Click to hide\nRight click to remove");
+                UpdateButtonDescription(hud);
+
                 Rhino.RhinoDoc.ActiveDoc.Views.ActiveView.Redraw();
             }
         }

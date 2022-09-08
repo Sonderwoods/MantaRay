@@ -73,10 +73,18 @@ namespace MantaRay.Components
 
         void SetupHUD()
         {
-            hud = new HUD(this);
-            hud.Name = DisplayName;
-            //Make sure we're on.
+            hud.Name = string.IsNullOrEmpty(DisplayName) ? $"{HUD.id}_{this.InstanceGuid}" : DisplayName;
+            hud.ID = HUD.id++;
             hud.Component = this;
+            hud.Order = order;
+            //hud = new HUD(this)
+            //{
+            //    Name = string.IsNullOrEmpty(DisplayName) ? $"{HUD.id}_{this.InstanceGuid}": DisplayName,
+            //    ID = HUD.id++,
+            //    Component = this,
+            //    Order = order,
+            //};
+
             hud.Callback.Enabled = true;
 
             //Set up close button
@@ -95,6 +103,16 @@ namespace MantaRay.Components
             {
                 hud.Items.Add(new HUD_Item(obj));
             }
+
+            hud.Collapsed = HUD.HUDs.Any(h => !object.ReferenceEquals(h.Value, hud) && h.Value.Enabled && !h.Value.Collapsed);
+            ((HUD_CloseButton)hud.CloseBtn).UpdateButtonDescription();
+            
+            //foreach (var hu in HUD.HUDs.Where(h => !object.ReferenceEquals(h.Value, hud)))
+            //{
+            //    ((HUD_CloseButton)hu.Value.CloseBtn).Hide();
+            //}
+
+
 
             AssignColors();
 

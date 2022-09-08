@@ -21,6 +21,9 @@ namespace MantaRay.RadViewer.HeadsUpDisplay
         public string Name { get; set; }
         public bool Collapsed = false;
         private bool enabled = true;
+        public int Order { get; set; } = 0;
+        public static int id = 0;
+        public int ID { get; set; } = 0;
 
         public string FontName { get; set; } = "Arial Rounded MT Bold";
         public string FontDescription { get; set; } = "Arial Unicode MS";
@@ -58,6 +61,11 @@ namespace MantaRay.RadViewer.HeadsUpDisplay
         public HUD_Item CloseBtn;
 
         public double Scale { get; set; } = 1.0;
+
+        public override string ToString()
+        {
+            return "HUD: " + Name;
+        }
 
         public virtual void Draw(DrawEventArgs args)
         {
@@ -102,7 +110,7 @@ namespace MantaRay.RadViewer.HeadsUpDisplay
             Component = component;
             Callback = new HUD_MouseCallback(this);
             CloseBtn = new HUD_CloseButton(this);
-            
+
         }
 
         private void SetHighlightedItem(int x, int y, MouseCallbackEventArgs e = null)
@@ -113,7 +121,11 @@ namespace MantaRay.RadViewer.HeadsUpDisplay
             }
             else
             {
-                HighlightedItem = Items.FirstOrDefault(item => item.Rectangle.Contains(x, y));
+                if (!Collapsed)
+                    HighlightedItem = Items.FirstOrDefault(item => item.Rectangle.Contains(x, y));
+                else
+                    HighlightedItem = null;
+
                 if (CloseBtn?.Rectangle.Contains(x, y) ?? false)
                     HighlightedItem = CloseBtn;
             }
@@ -144,17 +156,31 @@ namespace MantaRay.RadViewer.HeadsUpDisplay
             protected override void OnMouseEnter(MouseCallbackEventArgs e) => ActiveViewport = e.View?.ActiveViewport;
             protected override void OnMouseMove(MouseCallbackEventArgs e)
             {
-                if (HUD == null)
+                if (HUD == null || !HUD.Enabled)
+                {
                     Enabled = false;
+                    base.OnMouseMove(e);
+                    return;
+                }
 
                 if (HUD.Component != null)
                 {
                     Enabled = !HUD.Component.Locked && !HUD.Component.Hidden;
                 }
+                if (!Enabled)
+                {
+                    base.OnMouseMove(e);
+                    return;
+                }
+
+                var oldHighlighted = HUD.HighlightedItem;
 
                 HUD.SetHighlightedItem(e.ViewportPoint.X, e.ViewportPoint.Y, e);
+
                 LastMousePoint = e.ViewportPoint;
-                Rhino.RhinoDoc.ActiveDoc.Views.Redraw();
+
+                if (!object.ReferenceEquals(oldHighlighted, HUD.HighlightedItem) || oldHighlighted == null != (HUD.HighlightedItem == null))
+                    Rhino.RhinoDoc.ActiveDoc.Views.Redraw();
 
                 base.OnMouseMove(e);
             }
@@ -163,8 +189,19 @@ namespace MantaRay.RadViewer.HeadsUpDisplay
             protected override void OnMouseDown(MouseCallbackEventArgs e)
             {
 
-                if (HUD.HighlightedItem == null)
+
+                if (HUD == null || !HUD.Enabled)
                 {
+                    Enabled = false;
+                    e.Cancel = false;
+                    base.OnMouseDown(e);
+                    return;
+                }
+
+
+                if (!object.ReferenceEquals(((GH_RadViewerSolve)HUD?.Component).hud.Callback, this)) // component is deleted or has got a new HUD..
+                {
+                    Enabled = false;
                     e.Cancel = false;
                     base.OnMouseDown(e);
                     return;
@@ -173,20 +210,28 @@ namespace MantaRay.RadViewer.HeadsUpDisplay
                 {
                     case MouseButton.Left:
 
-                        if (HUD.HighlightedItem.OnLeftClick == null || HUD.HighlightedItem.OnLeftClick.GetInvocationList().Count() == 0)
+                        if (HUD.HighlightedItem is HUD_CloseButton cb)
+                        {
+                            e.Cancel = true;
+                            //HUD.HighlightedItem.OnLeftClick?.Invoke(this, new HUD_Item.HUD_ItemEventArgs(HUD.HighlightedItem));
+                        }
+                        else if (HUD.Collapsed || HUD.HighlightedItem == null)
                         {
                             e.Cancel = false;
                             base.OnMouseDown(e);
                             return;
-
                         }
                         else
                         {
                             e.Cancel = true;
-                            HUD.HighlightedItem.OnLeftClick?.Invoke(this, new HUD_Item.HUD_ItemEventArgs(HUD.HighlightedItem));
+                        }
 
+                        if (HUD.HighlightedItem.OnLeftClick != null && HUD.HighlightedItem.OnLeftClick.GetInvocationList().Count() > 0)
+                        {
+                            HUD.HighlightedItem.OnLeftClick?.Invoke(this, new HUD_Item.HUD_ItemEventArgs(HUD.HighlightedItem));
                         }
                         break;
+
                     case MouseButton.Right:
 
 

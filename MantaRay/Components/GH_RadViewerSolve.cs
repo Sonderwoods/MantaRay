@@ -36,7 +36,7 @@ namespace MantaRay.Components
                 "https://github.com/ladybug-tools/spider-rad-viewer",
               "2 Radiance")
         {
-
+            hud = new HUD(this);
         }
 
         public bool TwoSided = false;
@@ -44,6 +44,8 @@ namespace MantaRay.Components
         public bool Transparent = true;
 
         public bool Polychromatic = true;
+
+        int order = 0; //used for moing the CloseButton when multiple radviewers are open.
 
         /// <summary>
         /// A list of all objects sort by modifier name
@@ -58,7 +60,7 @@ namespace MantaRay.Components
 
         public List<string> ErrorMsgs = new List<string>();
 
-        private HUD hud = null;
+        public HUD hud;
 
         //TimeSpan timeSpan = default;
 
@@ -102,6 +104,8 @@ namespace MantaRay.Components
             failedCurves.Clear();
             modifiers.Clear();
             bb = null;
+
+            order = Grasshopper.Instances.ActiveCanvas.Document.Objects.OfType<GH_RadViewerSolve>().TakeWhile(t => !object.ReferenceEquals(t, this)).Count();
             //timeSpan = new TimeSpan(0);
 
    
@@ -408,6 +412,11 @@ namespace MantaRay.Components
                 {
                     AddRuntimeMessage(GH_RuntimeMessageLevel.Error, e.Message);
                 }
+            }
+
+            if (objects.Count == 0 && radFiles.Count > 0)
+            {
+                AddRuntimeMessage(GH_RuntimeMessageLevel.Remark, "No geometries added. Did you input only modifiers?");
             }
 
             SetupHUD();
