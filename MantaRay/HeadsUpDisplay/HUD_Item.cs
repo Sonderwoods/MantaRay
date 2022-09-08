@@ -123,7 +123,7 @@ namespace MantaRay.RadViewer.HeadsUpDisplay
 
 
             Point2d anchor = new Point2d(
-                (int)(HUD.Anchor.X + HUD.Scale * ((HUD.Collapsed ? 0 : HUD.Width) + 10)),
+                (int)(HUD.Anchor.X + HUD.Scale * ((HUD.HUDs.Any(h => h.Value.Enabled && !h.Value.Collapsed) ? HUD.Width : 0) + 10)),
                 HUD.Anchor.Y - 10
                 );
             int fontSize = (int)(HUD.TextSize * HUD.Scale);

@@ -16,7 +16,7 @@ namespace MantaRay.RadViewer.HeadsUpDisplay
 {
     public class HUD
     {
-        //public static Dictionary<Guid, HUD> HUDs = new Dictionary<Guid, HUD>();
+        public static Dictionary<Guid, HUD> HUDs = new Dictionary<Guid, HUD>();
 
         public string Name { get; set; }
         public bool Collapsed = false;
@@ -110,7 +110,7 @@ namespace MantaRay.RadViewer.HeadsUpDisplay
             Component = component;
             Callback = new HUD_MouseCallback(this);
             CloseBtn = new HUD_CloseButton(this);
-            
+
         }
 
         private void SetHighlightedItem(int x, int y, MouseCallbackEventArgs e = null)
@@ -174,7 +174,7 @@ namespace MantaRay.RadViewer.HeadsUpDisplay
                 }
 
                 var oldHighlighted = HUD.HighlightedItem;
-                
+
                 HUD.SetHighlightedItem(e.ViewportPoint.X, e.ViewportPoint.Y, e);
 
                 LastMousePoint = e.ViewportPoint;
@@ -189,8 +189,19 @@ namespace MantaRay.RadViewer.HeadsUpDisplay
             protected override void OnMouseDown(MouseCallbackEventArgs e)
             {
 
-                if (HUD == null || HUD.HighlightedItem == null || !HUD.Enabled)
+
+                if (HUD == null || !HUD.Enabled)
                 {
+                    Enabled = false;
+                    e.Cancel = false;
+                    base.OnMouseDown(e);
+                    return;
+                }
+
+
+                if (!object.ReferenceEquals(((GH_RadViewerSolve)HUD?.Component).hud.Callback, this)) // component is deleted or has got a new HUD..
+                {
+                    Enabled = false;
                     e.Cancel = false;
                     base.OnMouseDown(e);
                     return;
@@ -198,8 +209,8 @@ namespace MantaRay.RadViewer.HeadsUpDisplay
                 switch (e.MouseButton)
                 {
                     case MouseButton.Left:
-                        
-                        if(HUD.HighlightedItem is HUD_CloseButton cb)
+
+                        if (HUD.HighlightedItem is HUD_CloseButton cb)
                         {
                             e.Cancel = true;
                             //HUD.HighlightedItem.OnLeftClick?.Invoke(this, new HUD_Item.HUD_ItemEventArgs(HUD.HighlightedItem));
@@ -207,6 +218,8 @@ namespace MantaRay.RadViewer.HeadsUpDisplay
                         else if (HUD.Collapsed || HUD.HighlightedItem == null)
                         {
                             e.Cancel = false;
+                            base.OnMouseDown(e);
+                            return;
                         }
                         else
                         {
