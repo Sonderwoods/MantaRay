@@ -238,7 +238,7 @@ namespace MantaRay.RadViewer.HeadsUpDisplay
                         e.Cancel = true;
                         ContextMenuStrip menu = new ContextMenuStrip();
                         //if (HUD.HighlightedItem?.Box != null)
-                        if (HUD.HighlightedItem.Value.GetBoundingBox() != null)
+                        if (HUD.HighlightedItem?.Value.GetBoundingBox() != null)
                         {
                             ToolStripMenuItem menuZoom = new ToolStripMenuItem("Zoom");
                             menuZoom.Click += (s, ee) => HUD.HighlightedItem.ZoomToBox();
