@@ -120,7 +120,7 @@ namespace MantaRay
                         RenderText(c.LogName, graphics);
                     }
 
-                        break;
+                    break;
                 default:
                     base.Render(canvas, graphics, channel);
                     break;
@@ -336,8 +336,23 @@ namespace MantaRay
             //Pen penSelected = new Pen(Color.DarkBlue, 5f);
             //Pen penUnselected = new Pen(Color.FromArgb(120, Color.DarkBlue), 4f);
 
-            DrawPath(canvas, graphics, Owner.Params.Input[0], PenWireTypes.None); // First input wire
-            DrawPath(canvas, graphics, Owner.Params.Input[1], PenWireTypes.Green); // Second input wire
+            if (Owner.Params.Input[0].WireDisplay == GH_ParamWireDisplay.@default)
+            {
+                DrawPath(canvas, graphics, Owner.Params.Input[0], PenWireTypes.None); // First input wire BLUE
+            }
+            else
+            {
+                Owner.Params.Input[0].Attributes.RenderToCanvas(canvas, GH_CanvasChannel.Wires);
+            }
+
+            if (Owner.Params.Input[1].WireDisplay == GH_ParamWireDisplay.@default)
+            {
+                DrawPath(canvas, graphics, Owner.Params.Input[1], PenWireTypes.Green); // Second input wire
+            }
+            else
+            {
+                Owner.Params.Input[1].Attributes.RenderToCanvas(canvas, GH_CanvasChannel.Wires);
+            }
 
             //penSelected.Dispose();
             //penUnselected.Dispose();
