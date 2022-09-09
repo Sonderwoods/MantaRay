@@ -214,10 +214,10 @@ namespace MantaRay.Components
                     previewWindowMaterials[i][j] = new DisplayMaterial()
                     {
                         Transparency = 0.3,
-                        BackTransparency = 0.3,
+                        BackTransparency = 0.1,
                         IsTwoSided = true,
-                        BackDiffuse = isParallelish ? Color.Green : previewRoomMaterials[i][roomsPerWindow[j]].Diffuse,
-                        Diffuse = isParallelish ? previewRoomMaterials[i][roomsPerWindow[j]].Diffuse : Color.Red
+                        BackDiffuse = Color.Red,
+                        Diffuse = previewRoomMaterials[i][roomsPerWindow[j]].Diffuse
                     };
 
 
