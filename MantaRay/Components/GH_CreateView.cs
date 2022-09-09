@@ -66,7 +66,7 @@ namespace MantaRay.Components
 
                 vpInfo = Rhino.RhinoDoc.ActiveDoc.NamedViews[index].Viewport;
                 Names.Add(DA.Fetch<string>("Viewport"));
-                
+
             }
 
             Message = string.Join(", ", Names);
@@ -78,7 +78,18 @@ namespace MantaRay.Components
             Vector3d vd = vpInfo.CameraDirection;
             vpInfo.GetCameraAngles(out _, out double vv, out double vh);
 
-            double _length = 10.0.FromMeter();
+            double _length;
+            try
+            {
+                _length = 10.0.FromMeter();
+            }
+            catch (Exception)
+            {
+                AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, "Could not pick up document units. This is probably due to regional settings.\n" +
+                    "I'm assuming meters. Try setting language to English if you want to use other units.");
+                _length = 10;
+            }
+
             Length.Add(_length);
 
 
@@ -159,7 +170,7 @@ namespace MantaRay.Components
                 DrawCamera(Vp[i], PointsTo[i], this.Attributes.Selected ? System.Drawing.Color.DarkGreen : System.Drawing.Color.DarkRed, Names[i], args);
             }
 
-            
+
 
             base.DrawViewportWires(args);
         }
