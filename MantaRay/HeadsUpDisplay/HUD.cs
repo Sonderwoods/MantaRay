@@ -238,25 +238,28 @@ namespace MantaRay.RadViewer.HeadsUpDisplay
                         e.Cancel = true;
                         ContextMenuStrip menu = new ContextMenuStrip();
                         //if (HUD.HighlightedItem?.Box != null)
-                        if (HUD.HighlightedItem.Value.GetBoundingBox() != null)
+                        if (HUD.HighlightedItem?.Value.GetBoundingBox() != null)
                         {
                             ToolStripMenuItem menuZoom = new ToolStripMenuItem("Zoom");
                             menuZoom.Click += (s, ee) => HUD.HighlightedItem.ZoomToBox();
                             menu.Items.Add(menuZoom);
                         }
 
-
-                        foreach (var item in HUD.HighlightedItem.ContextMenuItems)
+                        if (HUD.HighlightedItem != null)
                         {
-                            ToolStripMenuItem menuSelectGH = new ToolStripMenuItem(item.Key);
-                            menuSelectGH.Click += (s, ee) => { item.Value(item.Value, new HUD_Item.HUD_ItemEventArgs(HUD.HighlightedItem)); };
-                            menu.Items.Add(menuSelectGH);
-                        }
+                            foreach (var item in HUD.HighlightedItem.ContextMenuItems)
+                            {
+                                ToolStripMenuItem menuSelectGH = new ToolStripMenuItem(item.Key);
+                                menuSelectGH.Click += (s, ee) => { item.Value(item.Value, new HUD_Item.HUD_ItemEventArgs(HUD.HighlightedItem)); };
+                                menu.Items.Add(menuSelectGH);
+                            }
 
-                        if (menu.Items.Count > 0)
-                        {
-                            menu.Show(Rhino.RhinoDoc.ActiveDoc.Views.ActiveView.ActiveViewport.ClientToScreen(e.ViewportPoint));
+                            if (menu.Items.Count > 0)
+                            {
+                                menu.Show(Rhino.RhinoDoc.ActiveDoc.Views.ActiveView.ActiveViewport.ClientToScreen(e.ViewportPoint));
+                            }
                         }
+                        
                         break;
 
                     default:

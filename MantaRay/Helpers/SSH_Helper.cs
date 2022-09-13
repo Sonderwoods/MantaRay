@@ -67,13 +67,18 @@ namespace MantaRay
             set
             {
                 if (sshClient == null)
+                {
                     sshClient = value;
+                    HomeDirectory = null;
+
+                }
 
                 else
                 {
                     sshClient.Disconnect();
                     sshClient.Dispose();
                     sshClient = value;
+                    HomeDirectory = null;
 
                 }
 
@@ -545,7 +550,9 @@ namespace MantaRay
 
                     if (string.IsNullOrEmpty(cmd.Error))
                     {
-                        pid = int.Parse(pidCommand.Result);
+                        if (!int.TryParse(pidCommand.Result, out pid))
+                            pid = -1;
+
                     }
 
                     sshClient.CreateCommand($"rm ~/temp{rand}.pid").Execute();

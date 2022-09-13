@@ -9,6 +9,7 @@ using Grasshopper.Kernel.Data;
 using Grasshopper.Kernel.Types;
 using MantaRay.Components;
 using MantaRay.Helpers;
+using Microsoft.Win32.SafeHandles;
 using Rhino.Display;
 using Rhino.Geometry;
 using Rhino.Geometry.Collections;
@@ -40,7 +41,10 @@ namespace MantaRay.Components
 
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
-            pManager.AddBrepParameter("Window surfaces", "Window surfaces", "Breps representing the windows.", GH_ParamAccess.tree);
+            pManager.AddBrepParameter("Window surfaces", "Window surfaces", "Breps representing the windows.\n\n" +
+                "If you only have meshes then do the following:\n" +
+                "1) get the boundary lines of the edges with 'dupBorder'\n" +
+                "2) create surfaces with the 'planarSrf' command", GH_ParamAccess.tree);
             pManager[pManager.AddTextParameter("Window Names", "Window Names", "Names", GH_ParamAccess.tree, "name")].Optional = true;
             pManager.AddBrepParameter("Simulation Surface", "Simulation Surfaces", "A brep representing the zone. (like a flat one representing the floor)\n" +
                 "We will use Brep.NearestPoint to couple it with windows.\n" +
@@ -63,6 +67,7 @@ namespace MantaRay.Components
             int b = pManager.AddBrepParameter("Simulation Surface", "Simulation Surface", "Rooms", GH_ParamAccess.tree);
             int a = pManager.AddBrepParameter("Window Surface", "Window Surface", "Windows", GH_ParamAccess.tree);
             pManager.AddTextParameter("Paths per window", "Window Paths", "Paths per window.", GH_ParamAccess.list);
+            pManager.AddBooleanParameter("Flip Window", "Flip Window", "Boolean indicating whether the window should be flipped. You have to do this manually with the Flip Surface Component.", GH_ParamAccess.tree);
 
             pManager.HideParameter(a);
             pManager.HideParameter(b);
@@ -90,6 +95,7 @@ namespace MantaRay.Components
             GH_Structure<GH_Brep> outWindows = new GH_Structure<GH_Brep>();
             GH_Structure<GH_String> outPaths = new GH_Structure<GH_String>();
             GH_Structure<GH_String> outNames = new GH_Structure<GH_String>();
+            GH_Structure<GH_Boolean> outFlips = new GH_Structure<GH_Boolean>();
 
             lines.Clear();
             lineColors.Clear();
@@ -122,6 +128,10 @@ namespace MantaRay.Components
 
 
                 Point3d[] windowPts = _windows.Select(w => AreaMassProperties.Compute(w.Value, true, true, false, false).Centroid).ToArray();
+                for (int j = 0; j < windowPts.Length; j++)
+                {
+                    windowPts[j].Z = _windows[j].Boundingbox.Min.Z;
+                }
                 Point3d[] roomPts = _grids.Select(w => AreaMassProperties.Compute(w.Value, true, true, false, false).Centroid).ToArray();
 
                 int[] roomsPerWindow = RTreeHelper.ConnectPointsToBreps(windowPts, _grids.Select(g => g.Value).ToList(), tol1, tol2, false);
@@ -149,6 +159,7 @@ namespace MantaRay.Components
                     GH_Path windowPath = new GH_Path(grids.Paths[i]).AppendElement(roomsPerWindow[j]);
                     outWindows.Append(_windows[j], windowPath);
                     outNames.Append(_names[j], windowPath);
+                    
 
                     GH_Path windowPathPath = new GH_Path(grids.Paths[i]);
                     outPaths.Append(new GH_String(windowPath.ToString()), windowPathPath);
@@ -161,11 +172,15 @@ namespace MantaRay.Components
                             previewRoomMaterials[i][roomsPerWindow[j]].Diffuse.B - 80);
 
                     Point3d center = default;
+                    //double zmin = double.MaxValue;
                     foreach (var vertex in _windows[j].Value.Vertices)
                     {
                         center += vertex.Location;
+                        //if (vertex.Location.Z < zmin)
+                           // zmin = vertex.Location.Z;
                     }
                     center /= _windows[j].Value.Vertices.Count;
+                    //center.Z = zmin;
 
                     Vector3d normal = _windows[j].Value.Faces[0].NormalAt(0.5, 0.5);
 
@@ -185,6 +200,9 @@ namespace MantaRay.Components
                     normalLines.Add(new Line(center, center + 0.5.FromMeter() * normal));
 
                     bool isParallelish = lines[lines.Count - 1].Direction * normal > 0.0;
+
+                    outFlips.Append(new GH_Boolean(isParallelish), windowPath);
+
                     if (isParallelish)
                     {
                         lineColors.Add(previewRoomMaterials[i][roomsPerWindow[j]].Diffuse);
@@ -214,10 +232,10 @@ namespace MantaRay.Components
                     previewWindowMaterials[i][j] = new DisplayMaterial()
                     {
                         Transparency = 0.3,
-                        BackTransparency = 0.3,
+                        BackTransparency = 0.1,
                         IsTwoSided = true,
-                        BackDiffuse = isParallelish ? Color.Green : previewRoomMaterials[i][roomsPerWindow[j]].Diffuse,
-                        Diffuse = isParallelish ? previewRoomMaterials[i][roomsPerWindow[j]].Diffuse : Color.Red
+                        BackDiffuse = Color.Red,
+                        Diffuse = previewRoomMaterials[i][roomsPerWindow[j]].Diffuse
                     };
 
 
@@ -242,6 +260,7 @@ namespace MantaRay.Components
             DA.SetDataTree(0, outGrids);
             DA.SetDataTree(1, outWindows);
             DA.SetDataTree(2, outPaths);
+            DA.SetDataTree(3, outFlips);
         }
 
         public override BoundingBox ClippingBox => bb;
@@ -249,7 +268,7 @@ namespace MantaRay.Components
         public override void DrawViewportMeshes(IGH_PreviewArgs args)
         {
 
-            double threshold = 35.0.FromMeter();
+            double threshold = 60.0.FromMeter();
 
             if (Locked || previewRoomMaterials.Length == 0 || previewRoomMaterials[0] == null)
             {
@@ -269,7 +288,7 @@ namespace MantaRay.Components
 
             }
 
-
+            
             for (int i = 0; i < previewRooms.Length; i++)
             {
                 for (int j = 0; j < previewRooms[i].Length; j++)

@@ -1,4 +1,5 @@
 ﻿using GH_IO.Serialization;
+using Grasshopper.Documentation;
 using Grasshopper.Kernel;
 using Grasshopper.Kernel.Data;
 using Grasshopper.Kernel.Types;
@@ -24,6 +25,7 @@ namespace MantaRay
             Running,
             Reusing,
             NotRunning,
+            Done,
             Cancelled
         }
 
@@ -133,8 +135,8 @@ namespace MantaRay
         public override void RequestCancellation()
         {
             PhaseForColors = AestheticPhase.Cancelled;
-            ((GH_ColorAttributes_Async)m_attributes).ColorSelected = new Grasshopper.GUI.Canvas.GH_PaletteStyle(Color.Firebrick);
-            ((GH_ColorAttributes_Async)m_attributes).ColorUnselected = new Grasshopper.GUI.Canvas.GH_PaletteStyle(Color.DarkRed);
+            //((GH_ColorAttributes_Async)m_attributes).ColorSelected = new Grasshopper.GUI.Canvas.GH_PaletteStyle(Color.Firebrick);
+            //((GH_ColorAttributes_Async)m_attributes).ColorUnselected = new Grasshopper.GUI.Canvas.GH_PaletteStyle(Color.DarkRed);
             logHelper.TryFinishTask(latestLogGuid, "Cancelled");
             base.RequestCancellation();
         }
@@ -273,13 +275,51 @@ namespace MantaRay
 
         protected override void ExpireDownStreamObjects()
         {
-            // Prevents the flash of null data until the new solution is ready
-            if (!firstRun && (SetData == 1 || (!RunInput && RunCount == 1 || RunCount == -1)))
+            this.Params.Input[1].CollectData();
+            bool solveInstance = true;
+            foreach(IGH_Goo data in this.Params.Input[1].VolatileData.AllData(false))
+            {
+                switch (data)
+                {
+                    case GH_Boolean b:
+                        if (!b.IsValid || b.Value == false) { solveInstance = false; }
+                        break;
+                    case GH_Integer @int:
+                        if (!@int.IsValid || @int.Value == 0) { solveInstance = false; }
+                        break;
+                    case GH_Number num:
+                        if (!num.IsValid || num.Value == 0) { solveInstance = false; }
+                        break;
+                    case GH_String text:
+                        if (!text.IsValid || !string.Equals("true", text.Value, StringComparison.InvariantCultureIgnoreCase)) { solveInstance = false; }
+                        break;
+                    default:
+                        solveInstance = false;
+                        break;
+                }
+                if (!solveInstance)
+                    break;
+            }
+
+            
+
+            if (SetData == 1 || !solveInstance)
             {
                 base.ForceExpireDownStreamObjects();
-
             }
-            firstRun = false;
+            //base.ExpireDownStreamObjects();
+            //if(firstRun)
+            //{
+            //    firstRun = false;
+            //    return;
+            //}
+            //// Prevents the flash of null data until the new solution is ready
+            //if (SetData == 1 || (!RunInput && RunCount == 1 || RunCount == -1))
+            //{
+            //    base.ForceExpireDownStreamObjects();
+
+            //}
+            //firstRun = false;
         }
 
         protected override void PostRunning(IGH_DataAccess DA)
@@ -299,9 +339,11 @@ namespace MantaRay
             //}
             //else
             //{
-                PhaseForColors = AestheticPhase.NotRunning;
+                PhaseForColors = RunInput? AestheticPhase.Done : AestheticPhase.NotRunning;
+            //((GH_ColorAttributes_Async)m_attributes).ColorSelected = new Grasshopper.GUI.Canvas.GH_PaletteStyle(Color.DarkRed);
+            //((GH_ColorAttributes_Async)m_attributes).ColorUnselected = new Grasshopper.GUI.Canvas.GH_PaletteStyle(Color.DarkOrchid);
 
-                if (RunInput)
+            if (RunInput)
                 {
                     Message = "Ran in " + RunTime.ToShortString();
 
@@ -338,16 +380,17 @@ namespace MantaRay
                 Stopwatch.Restart();
                 //Stopwatch.Start();
                 PhaseForColors = AestheticPhase.Running;
-                ((GH_ColorAttributes_Async)m_attributes).ColorSelected = new Grasshopper.GUI.Canvas.GH_PaletteStyle(Color.MediumVioletRed);
-                ((GH_ColorAttributes_Async)m_attributes).ColorUnselected = new Grasshopper.GUI.Canvas.GH_PaletteStyle(Color.Purple);
-                Message = "Missing connection?";
+                //((GH_ColorAttributes_Async)m_attributes).ColorSelected = new Grasshopper.GUI.Canvas.GH_PaletteStyle(Color.MediumVioletRed);
+                //((GH_ColorAttributes_Async)m_attributes).ColorUnselected = new Grasshopper.GUI.Canvas.GH_PaletteStyle(Color.Purple);
+
+                Message = "Missing connection?"; // this will be overwritten if the task actually starts. So it's kind of a debug
 
             }
             else
             {
                 PhaseForColors = AestheticPhase.Reusing;
-                ((GH_ColorAttributes_Async)m_attributes).ColorSelected = new Grasshopper.GUI.Canvas.GH_PaletteStyle(Color.FromArgb(76, 128, 122));
-                ((GH_ColorAttributes_Async)m_attributes).ColorUnselected = new Grasshopper.GUI.Canvas.GH_PaletteStyle(Color.FromArgb(95, 115, 113));
+                //((GH_ColorAttributes_Async)m_attributes).ColorSelected = new Grasshopper.GUI.Canvas.GH_PaletteStyle(Color.FromArgb(76, 128, 122));
+                //((GH_ColorAttributes_Async)m_attributes).ColorUnselected = new Grasshopper.GUI.Canvas.GH_PaletteStyle(Color.FromArgb(95, 115, 113));
                 Message = "Deactive";
             }
             //OnDisplayExpired(true);

@@ -210,8 +210,8 @@ namespace MantaRay
                 if (LastRun.TotalMilliseconds > 0)
                 {
                     PhaseForColors = AestheticPhase.Reusing;
-                    ((GH_ColorAttributes_Async)m_attributes).ColorSelected = new Grasshopper.GUI.Canvas.GH_PaletteStyle(Color.FromArgb(76, 128, 122));
-                    ((GH_ColorAttributes_Async)m_attributes).ColorUnselected = new Grasshopper.GUI.Canvas.GH_PaletteStyle(Color.FromArgb(95, 115, 113));
+                    //((GH_ColorAttributes_Async)m_attributes).ColorSelected = new Grasshopper.GUI.Canvas.GH_PaletteStyle(Color.FromArgb(76, 128, 122));
+                    //((GH_ColorAttributes_Async)m_attributes).ColorUnselected = new Grasshopper.GUI.Canvas.GH_PaletteStyle(Color.FromArgb(95, 115, 113));
                 }
 
             }
@@ -380,15 +380,34 @@ namespace MantaRay
                     int counter = 0;
                     int intervalForRefreshing = 100; //ms in each loop below.
                     int waitingForNewConnection = 5; // max iterations after checkconnection fails before throwing cancellation (this will give 1000ms to reconnect before changing context)
+                    int dotCounter = 0;
+                    string[] dots = new[] { "", ".", "..", "..." };
                     while (true)
                     {
                         // Update progress bar as we run
-                        if (counter++ % 10 == 0)
+                        if (counter++ % 5 == 0)
                         {
                             ((GH_Template_Async_Extended)Parent).RunTime = ((GH_Template_Async_Extended)Parent).Stopwatch.Elapsed;
-                            Parent.Message = "Running for " + ((GH_Template_Async_Extended)Parent).RunTime.ToShortString() + "(Last: " + ((GH_ExecuteAsync)Parent).LastRun.ToShortString() + ")";
-                            Parent.OnDisplayExpired(true);
+                            if (((GH_Template_Async_Extended)Parent).RunTime.TotalSeconds >= 60)
+                            {
+                            Parent.Message = "Running for " + ((GH_Template_Async_Extended)Parent).RunTime.ToShortString() + dots[dotCounter] + " (Last: " + ((GH_ExecuteAsync)Parent).LastRun.ToShortString() + ")";
+                                if (dotCounter++ >= dots.Length - 1)
+                                    dotCounter = 0;
+                            }
+                            else
+                            {
+                            Parent.Message = "Running for " + ((GH_Template_Async_Extended)Parent).RunTime.ToShortString() + " (Last: " + ((GH_ExecuteAsync)Parent).LastRun.ToShortString() + ")";
+
+                            }
+
+                            
+                            Rhino.RhinoApp.InvokeOnUiThread((Action)delegate
+                            {
+                                Parent.OnDisplayExpired(true);
+                            });
                         }
+
+                        
 
                         // If the command finished
                         if (WaitHandle.WaitAll(new[] { asyncResult.AsyncWaitHandle }, intervalForRefreshing))

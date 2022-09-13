@@ -151,7 +151,7 @@ namespace MantaRay.Components
                 {
                     if (String.IsNullOrEmpty(radFile) || !File.Exists(radFile))
                     {
-                        AddRuntimeMessage(GH_RuntimeMessageLevel.Error, $"File \"{radFile}\" not found.");
+                        AddRuntimeMessage(GH_RuntimeMessageLevel.Error, $"File \"{radFile}\" not found. Did you remember to download/convert to windows paths???");
                         continue;
                     }
 

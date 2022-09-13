@@ -55,6 +55,50 @@ namespace MantaRay
         public GH_PaletteStyle ColorUnselected { get; set; }
         public GH_PaletteStyle ColorSelected { get; set; }
 
+        // RUNNING
+        public GH_PaletteStyle AttRunningSelected = new Grasshopper.GUI.Canvas.GH_PaletteStyle(Color.MediumVioletRed);
+        public GH_PaletteStyle AttRunningUnselected = new Grasshopper.GUI.Canvas.GH_PaletteStyle(Color.Purple);
+
+        // GREEN (ON)
+        public GH_PaletteStyle AttOnSelected = new Grasshopper.GUI.Canvas.GH_PaletteStyle(Color.FromArgb(76, 128, 122));
+        public GH_PaletteStyle AttOnUnselected = new Grasshopper.GUI.Canvas.GH_PaletteStyle(Color.FromArgb(95, 115, 113));
+
+        // CANCELLED
+        public GH_PaletteStyle AttCancelledSelected = new Grasshopper.GUI.Canvas.GH_PaletteStyle(Color.FromArgb(76, 128, 122));
+        public GH_PaletteStyle AttCancelledUnselected = new Grasshopper.GUI.Canvas.GH_PaletteStyle(Color.FromArgb(95, 115, 113));
+
+        public GH_PaletteStyle GetStyle(GH_Template_Async_Extended.AestheticPhase phase, bool? forceSelected = null)
+        {
+            forceSelected = forceSelected ?? Selected;
+            if (forceSelected.Value)
+            {
+                switch (phase)
+                {
+                    case GH_Template_Async_Extended.AestheticPhase.Running:
+                        return AttRunningSelected;
+                    case GH_Template_Async_Extended.AestheticPhase.Done:
+                        return AttOnSelected;
+                    case GH_Template_Async_Extended.AestheticPhase.Cancelled:
+                        return AttCancelledSelected;
+                    default:
+                        return palette_normal_selected;
+                }
+            }
+            else
+            {
+                switch (phase)
+                {
+                    case GH_Template_Async_Extended.AestheticPhase.Running:
+                        return AttRunningUnselected;
+                    case GH_Template_Async_Extended.AestheticPhase.Done:
+                        return AttOnUnselected;
+                    case GH_Template_Async_Extended.AestheticPhase.Cancelled:
+                        return AttCancelledUnselected;
+                    default:
+                        return palette_normal_standard;
+                }
+            }
+        }
 
 
         public enum PenWireTypes
@@ -120,7 +164,7 @@ namespace MantaRay
                         RenderText(c.LogName, graphics);
                     }
 
-                        break;
+                    break;
                 default:
                     base.Render(canvas, graphics, channel);
                     break;
@@ -130,22 +174,20 @@ namespace MantaRay
 
         private void DrawObjects(GH_Canvas canvas, Graphics graphics, GH_CanvasChannel channel)
         {
+
             if (component != null && component is GH_Template_Async_Extended c)
             {
                 switch (c.PhaseForColors)
                 {
                     case GH_Template_Async_Extended.AestheticPhase.Running:
-                    case GH_Template_Async_Extended.AestheticPhase.Reusing:
                     case GH_Template_Async_Extended.AestheticPhase.Cancelled:
-                        // Swap out palette for normal, unselected components.
-                        GH_Skin.palette_normal_standard = ColorUnselected;
-                        GH_Skin.palette_hidden_standard = ColorUnselected;
-                        GH_Skin.palette_normal_selected = ColorSelected;
-                        GH_Skin.palette_hidden_selected = ColorSelected;
+                    case GH_Template_Async_Extended.AestheticPhase.Done:
+
+                        GH_Skin.palette_normal_standard = GH_Skin.palette_hidden_standard = GetStyle(c.PhaseForColors, false);
+                        GH_Skin.palette_normal_selected = GH_Skin.palette_hidden_selected = GetStyle(c.PhaseForColors, true);
 
                         base.Render(canvas, graphics, channel);
 
-                        // Put the original style back.
                         GH_Skin.palette_normal_standard = palette_normal_standard;
                         GH_Skin.palette_normal_selected = palette_normal_selected;
                         GH_Skin.palette_hidden_standard = palette_hidden_standard;
@@ -167,10 +209,10 @@ namespace MantaRay
                     case GH_Template_Async_OBSOLETE.AestheticPhase.Running:
                     case GH_Template_Async_OBSOLETE.AestheticPhase.Reusing:
                         // Swap out palette for normal, unselected components.
-                        GH_Skin.palette_normal_standard = ColorUnselected;
-                        GH_Skin.palette_hidden_standard = ColorUnselected;
-                        GH_Skin.palette_normal_selected = ColorSelected;
-                        GH_Skin.palette_hidden_selected = ColorSelected;
+                        GH_Skin.palette_normal_standard = AttOnUnselected;
+                        GH_Skin.palette_hidden_standard = AttOnUnselected;
+                        GH_Skin.palette_normal_selected = AttOnSelected;
+                        GH_Skin.palette_hidden_selected = AttOnSelected;
 
                         base.Render(canvas, graphics, channel);
 
@@ -321,7 +363,7 @@ namespace MantaRay
                 s = s.Substring(0, MAXLEN - 1) + "...";
             }
             //rectangle.Inflate(6, 6);
-            graphics.DrawString(s, font, new SolidBrush(Selected ? (ColorSelected?.Fill ?? GH_Skin.palette_normal_standard.Fill) : (ColorUnselected?.Fill ?? GH_Skin.palette_normal_standard.Fill)), rectangle);
+            graphics.DrawString(s, font, new SolidBrush(Selected ? (AttRunningSelected.Fill) : (AttRunningUnselected.Fill)), rectangle);
             //graphics.FillRectangle(fill, rectangle);
             //graphics.DrawRectangle(edge, rectangle);
         }
@@ -336,8 +378,23 @@ namespace MantaRay
             //Pen penSelected = new Pen(Color.DarkBlue, 5f);
             //Pen penUnselected = new Pen(Color.FromArgb(120, Color.DarkBlue), 4f);
 
-            DrawPath(canvas, graphics, Owner.Params.Input[0], PenWireTypes.None); // First input wire
-            DrawPath(canvas, graphics, Owner.Params.Input[1], PenWireTypes.Green); // Second input wire
+            if (Owner.Params.Input[0].WireDisplay == GH_ParamWireDisplay.@default)
+            {
+                DrawPath(canvas, graphics, Owner.Params.Input[0], PenWireTypes.None); // First input wire BLUE
+            }
+            else
+            {
+                Owner.Params.Input[0].Attributes.RenderToCanvas(canvas, GH_CanvasChannel.Wires);
+            }
+
+            if (Owner.Params.Input[1].WireDisplay == GH_ParamWireDisplay.@default)
+            {
+                DrawPath(canvas, graphics, Owner.Params.Input[1], PenWireTypes.Green); // Second input wire
+            }
+            else
+            {
+                Owner.Params.Input[1].Attributes.RenderToCanvas(canvas, GH_CanvasChannel.Wires);
+            }
 
             //penSelected.Dispose();
             //penUnselected.Dispose();
