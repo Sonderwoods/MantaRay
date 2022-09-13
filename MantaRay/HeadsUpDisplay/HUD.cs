@@ -245,18 +245,21 @@ namespace MantaRay.RadViewer.HeadsUpDisplay
                             menu.Items.Add(menuZoom);
                         }
 
-
-                        foreach (var item in HUD.HighlightedItem.ContextMenuItems)
+                        if (HUD.HighlightedItem != null)
                         {
-                            ToolStripMenuItem menuSelectGH = new ToolStripMenuItem(item.Key);
-                            menuSelectGH.Click += (s, ee) => { item.Value(item.Value, new HUD_Item.HUD_ItemEventArgs(HUD.HighlightedItem)); };
-                            menu.Items.Add(menuSelectGH);
-                        }
+                            foreach (var item in HUD.HighlightedItem.ContextMenuItems)
+                            {
+                                ToolStripMenuItem menuSelectGH = new ToolStripMenuItem(item.Key);
+                                menuSelectGH.Click += (s, ee) => { item.Value(item.Value, new HUD_Item.HUD_ItemEventArgs(HUD.HighlightedItem)); };
+                                menu.Items.Add(menuSelectGH);
+                            }
 
-                        if (menu.Items.Count > 0)
-                        {
-                            menu.Show(Rhino.RhinoDoc.ActiveDoc.Views.ActiveView.ActiveViewport.ClientToScreen(e.ViewportPoint));
+                            if (menu.Items.Count > 0)
+                            {
+                                menu.Show(Rhino.RhinoDoc.ActiveDoc.Views.ActiveView.ActiveViewport.ClientToScreen(e.ViewportPoint));
+                            }
                         }
+                        
                         break;
 
                     default:
