@@ -26,7 +26,7 @@ namespace MantaRay.Components
         }
 
         private string _pw;
-        private string _usr;
+ 
 
         /// <summary>
         /// Registers all the input parameters for this component.
@@ -40,8 +40,9 @@ namespace MantaRay.Components
             pManager[pManager.AddTextParameter("Subfolder", "Subfolder", "Subfolder", GH_ParamAccess.item, "")].Optional = true;
             pManager[pManager.AddTextParameter("password", "password", "password. Leave empty to prompt.", GH_ParamAccess.item, "_prompt")].Optional = true;
             pManager[pManager.AddIntegerParameter("_port", "_port", "_port", GH_ParamAccess.item, 22)].Optional = true;
-            pManager[pManager.AddBooleanParameter("connect", "connect", "connect", GH_ParamAccess.item, false)].Optional = true;
-            pManager[pManager.AddTextParameter("prefixes", "Prefixes", "Prefixes can be used to set paths etc. This 'CAN' be executed on all components where 'use prefix' is set.\n" +
+            pManager[pManager.AddBooleanParameter("connect", "connect", "Set to true to start connection. If you recompute the component it will reconnect using same password," +
+                "however if you set connect to false, then it will remove the password.", GH_ParamAccess.item, false)].Optional = true;
+            pManager[pManager.AddTextParameter("prefixes", "Prefixes", "Prefixes can be used to set paths etc.This 'CAN' be executed on all components where 'use prefix' is set.\n" +
                 "i added the prefixes because depending on the SSH setup then the paths may or may not be set up correctly\n" +
                 "\n\nOn our local setup i added the file '/etc/profile' and added my paths to that.\n" +
                 "In that case you enter to prefixes:   '. /etc/profile'", GH_ParamAccess.item, "")].Optional = true;
@@ -53,7 +54,7 @@ namespace MantaRay.Components
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
             pManager.AddTextParameter("status", "status", "status", GH_ParamAccess.item);
-            pManager.AddGenericParameter("prefixes", "prefixes", "Show the current prefixes. If you remove the prefix input, then this will output the default prefix!", GH_ParamAccess.item);
+            pManager.AddGenericParameter("prefixes", "prefixes", "Show the current prefixes.\n\nThis means that all the execute components will run these commands before the actual command.\n\nIf you remove the prefix input, then this will output the default prefix!", GH_ParamAccess.item);
             pManager.AddTextParameter("Run", "Run", "Run", GH_ParamAccess.tree);
         }
 
@@ -104,17 +105,16 @@ namespace MantaRay.Components
 
             if (run)
             {
-                _usr = username;
+
 
                 if (password == "_prompt") //Default saved in the component
                 {
                     if (_pw == null)
                     {
-                        if (GetCredentials(username, ip, out string newUsername, out string pw))
+                        if (GetCredentials(username, ip, out string pw))
                         {
                             _pw = pw;
-                            username = newUsername;
-                            _usr = username;
+
 
                         }
 
@@ -197,9 +197,11 @@ namespace MantaRay.Components
                 sb.AppendFormat("SSH:  Setup <WinHome> to {0}\n", SSH_Helper.WindowsFullpath);
                 sb.AppendFormat("SSH:  Setup <LinuxHome> to {0}\n", SSH_Helper.LinuxFullpath);
 
+                
 
                 try
                 {
+                    SSH_Helper.HomeDirectory = null;
                     SSH_Helper.SshClient.Connect();
 
                     sb.AppendFormat("SSH:  Connected in {0} ms\n", stopwatch.ElapsedMilliseconds);
@@ -211,9 +213,8 @@ namespace MantaRay.Components
                     var mb = MessageBox.Show("Wrong SSH Password? Wrong username? Try again?", "SSH Connection Denied", MessageBoxButtons.RetryCancel);
                     if (mb == DialogResult.Retry)
                     {
-                        if (GetCredentials(_usr, ip, out string newUsername, out string pw))
+                        if (GetCredentials(username, ip, out string pw))
                         {
-                            username = newUsername;
                             _pw = pw;
                         }
                         this.ExpireSolution(true);
@@ -263,6 +264,7 @@ namespace MantaRay.Components
                 SSH_Helper.SftpClient = new SftpClient(ConnNfo);
                 try
                 {
+                    SSH_Helper.HomeDirectory = null;
                     SSH_Helper.SftpClient.Connect();
 
                     sb.AppendFormat("Sftp: Connected in {0} ms\n", stopwatch.ElapsedMilliseconds);
@@ -367,7 +369,7 @@ namespace MantaRay.Components
             get { return new Guid("1B57442F-E5FE-4462-9EB0-564497CB076D"); }
         }
 
-        private bool GetCredentials(string username, string ip, out string outUsername, out string password)
+        private bool GetCredentials(string username, string ip, out string password)
         {
             bool localIp = string.Equals(ip, "127.0.0.1") || string.Equals(ip, "localhost");
             var foreColor = localIp ? Color.FromArgb(88, 100, 84) : Color.FromArgb(128, 66, 19);
@@ -417,6 +419,7 @@ namespace MantaRay.Components
                 ForeColor = foreColor,
                 Font = redFont,
                 BackColor = backColor,
+                Enabled = false,
                 Margin = new Padding(2)
             };
 
@@ -467,13 +470,13 @@ namespace MantaRay.Components
             {
                 password = passwordTextBox.Text;
                 //_usr = usernameTextBox.Text;
-                outUsername = usernameTextBox.Text;
+                //outUsername = usernameTextBox.Text;
                 return true;
             }
             else
             {
                 password = null;
-                outUsername = null;
+                //outUsername = null;
                 return false;
 
             }
