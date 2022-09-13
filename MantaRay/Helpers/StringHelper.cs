@@ -11,9 +11,26 @@ namespace MantaRay
     public static class StringHelper
     {
 
+        public static int[] GetNumbers(string input)
+        {
+            if (string.IsNullOrEmpty(input))
+                return default;
+            if (int.TryParse(input, out int result))
+                return new int[] { result };
+            string[] splitted = input.Split(' ');
+            if (splitted.Length == 3 && string.Equals(splitted[1], "to", StringComparison.InvariantCultureIgnoreCase))
+            {
+                if (int.TryParse(splitted[0], out int domainStart) && int.TryParse(splitted[2], out int domainEnd))
+                {
+                    return Enumerable.Range(domainStart, domainEnd - domainStart).ToArray();
+                }
+            }
+            throw new ArgumentException($"Could not parse numbers from {input}", input);
+        }
+
         public static bool HasLetters(this string line)
         {
-            
+
             for (int i = 0; i < line.Length; i++)
             {
 
