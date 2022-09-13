@@ -1,4 +1,5 @@
 ﻿using GH_IO.Serialization;
+using Grasshopper.Documentation;
 using Grasshopper.Kernel;
 using Grasshopper.Kernel.Data;
 using Grasshopper.Kernel.Types;
@@ -273,13 +274,51 @@ namespace MantaRay
 
         protected override void ExpireDownStreamObjects()
         {
-            // Prevents the flash of null data until the new solution is ready
-            if (!firstRun && (SetData == 1 || (!RunInput && RunCount == 1 || RunCount == -1)))
+            this.Params.Input[1].CollectData();
+            bool solveInstance = true;
+            foreach(IGH_Goo data in this.Params.Input[1].VolatileData.AllData(false))
+            {
+                switch (data)
+                {
+                    case GH_Boolean b:
+                        if (!b.IsValid || b.Value == false) { solveInstance = false; }
+                        break;
+                    case GH_Integer @int:
+                        if (!@int.IsValid || @int.Value == 0) { solveInstance = false; }
+                        break;
+                    case GH_Number num:
+                        if (!num.IsValid || num.Value == 0) { solveInstance = false; }
+                        break;
+                    case GH_String text:
+                        if (!text.IsValid || !string.Equals("true", text.Value, StringComparison.InvariantCultureIgnoreCase)) { solveInstance = false; }
+                        break;
+                    default:
+                        solveInstance = false;
+                        break;
+                }
+                if (!solveInstance)
+                    break;
+            }
+
+            
+
+            if (SetData == 1 || !solveInstance)
             {
                 base.ForceExpireDownStreamObjects();
-
             }
-            firstRun = false;
+            //base.ExpireDownStreamObjects();
+            //if(firstRun)
+            //{
+            //    firstRun = false;
+            //    return;
+            //}
+            //// Prevents the flash of null data until the new solution is ready
+            //if (SetData == 1 || (!RunInput && RunCount == 1 || RunCount == -1))
+            //{
+            //    base.ForceExpireDownStreamObjects();
+
+            //}
+            //firstRun = false;
         }
 
         protected override void PostRunning(IGH_DataAccess DA)

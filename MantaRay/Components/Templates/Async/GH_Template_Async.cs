@@ -159,10 +159,10 @@ namespace MantaRay
         protected override void ExpireDownStreamObjects()
         {
             // Prevents the flash of null data until the new solution is ready
-            if (SetData == 1 && !firstRun)
+            if (SetData == 1/* && !firstRun*/)
             {
                 base.ExpireDownStreamObjects();
-                firstRun = true;
+                //firstRun = true;
             }
         }
 
