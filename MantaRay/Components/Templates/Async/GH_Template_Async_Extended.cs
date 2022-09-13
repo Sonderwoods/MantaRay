@@ -25,6 +25,7 @@ namespace MantaRay
             Running,
             Reusing,
             NotRunning,
+            Done,
             Cancelled
         }
 
@@ -134,8 +135,8 @@ namespace MantaRay
         public override void RequestCancellation()
         {
             PhaseForColors = AestheticPhase.Cancelled;
-            ((GH_ColorAttributes_Async)m_attributes).ColorSelected = new Grasshopper.GUI.Canvas.GH_PaletteStyle(Color.Firebrick);
-            ((GH_ColorAttributes_Async)m_attributes).ColorUnselected = new Grasshopper.GUI.Canvas.GH_PaletteStyle(Color.DarkRed);
+            //((GH_ColorAttributes_Async)m_attributes).ColorSelected = new Grasshopper.GUI.Canvas.GH_PaletteStyle(Color.Firebrick);
+            //((GH_ColorAttributes_Async)m_attributes).ColorUnselected = new Grasshopper.GUI.Canvas.GH_PaletteStyle(Color.DarkRed);
             logHelper.TryFinishTask(latestLogGuid, "Cancelled");
             base.RequestCancellation();
         }
@@ -338,9 +339,11 @@ namespace MantaRay
             //}
             //else
             //{
-                PhaseForColors = AestheticPhase.NotRunning;
+                PhaseForColors = RunInput? AestheticPhase.Done : AestheticPhase.NotRunning;
+            //((GH_ColorAttributes_Async)m_attributes).ColorSelected = new Grasshopper.GUI.Canvas.GH_PaletteStyle(Color.DarkRed);
+            //((GH_ColorAttributes_Async)m_attributes).ColorUnselected = new Grasshopper.GUI.Canvas.GH_PaletteStyle(Color.DarkOrchid);
 
-                if (RunInput)
+            if (RunInput)
                 {
                     Message = "Ran in " + RunTime.ToShortString();
 
@@ -377,16 +380,17 @@ namespace MantaRay
                 Stopwatch.Restart();
                 //Stopwatch.Start();
                 PhaseForColors = AestheticPhase.Running;
-                ((GH_ColorAttributes_Async)m_attributes).ColorSelected = new Grasshopper.GUI.Canvas.GH_PaletteStyle(Color.MediumVioletRed);
-                ((GH_ColorAttributes_Async)m_attributes).ColorUnselected = new Grasshopper.GUI.Canvas.GH_PaletteStyle(Color.Purple);
-                Message = "Missing connection?";
+                //((GH_ColorAttributes_Async)m_attributes).ColorSelected = new Grasshopper.GUI.Canvas.GH_PaletteStyle(Color.MediumVioletRed);
+                //((GH_ColorAttributes_Async)m_attributes).ColorUnselected = new Grasshopper.GUI.Canvas.GH_PaletteStyle(Color.Purple);
+
+                Message = "Missing connection?"; // this will be overwritten if the task actually starts. So it's kind of a debug
 
             }
             else
             {
                 PhaseForColors = AestheticPhase.Reusing;
-                ((GH_ColorAttributes_Async)m_attributes).ColorSelected = new Grasshopper.GUI.Canvas.GH_PaletteStyle(Color.FromArgb(76, 128, 122));
-                ((GH_ColorAttributes_Async)m_attributes).ColorUnselected = new Grasshopper.GUI.Canvas.GH_PaletteStyle(Color.FromArgb(95, 115, 113));
+                //((GH_ColorAttributes_Async)m_attributes).ColorSelected = new Grasshopper.GUI.Canvas.GH_PaletteStyle(Color.FromArgb(76, 128, 122));
+                //((GH_ColorAttributes_Async)m_attributes).ColorUnselected = new Grasshopper.GUI.Canvas.GH_PaletteStyle(Color.FromArgb(95, 115, 113));
                 Message = "Deactive";
             }
             //OnDisplayExpired(true);
