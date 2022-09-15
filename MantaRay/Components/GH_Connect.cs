@@ -10,6 +10,7 @@ using Grasshopper.Kernel.Data;
 using Grasshopper.Kernel.Types;
 using System.Linq;
 using MantaRay.Components;
+using Rhino.Geometry;
 
 namespace MantaRay.Components
 {
@@ -216,10 +217,13 @@ namespace MantaRay.Components
                         if (GetCredentials(username, ip, out string pw))
                         {
                             _pw = pw;
+                            this.ExpireSolution(true);
                         }
-                        this.ExpireSolution(true);
+                        
                     }
                 }
+
+                
                 catch (System.Net.Sockets.SocketException e)
                 {
                     sb.AppendFormat("SSH:  Could not find the SSH server\n      {0}\n      Try restarting it locally in " +
