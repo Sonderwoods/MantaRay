@@ -12,7 +12,7 @@ namespace MantaRay
     {
         public static Dictionary<string, LogHelper> AllLogSystems = new Dictionary<string, LogHelper>();
         readonly List<LogEntry> logMessages = new List<LogEntry>();
-        readonly Dictionary<Guid, LogEntry> currentTasks = new Dictionary<Guid, LogEntry>();
+        Dictionary<Guid, LogEntry> currentTasks { get; set; } = new Dictionary<Guid, LogEntry>();
         public string Name;
         readonly object _logLock = new object();
         readonly object _taskLock = new object();
@@ -95,15 +95,21 @@ namespace MantaRay
         public bool TryFinishTask(Guid taskGuid, string status = "Finished")
         {
 
-            if (currentTasks.ContainsKey(taskGuid))
+            if (currentTasks.ContainsKey(taskGuid) && taskGuid != Guid.Empty)
             {
                 lock (_taskLock)
                 {
-                    var t = currentTasks[taskGuid];
-                    Add(t.Name, t.Description + $"\n{status} in {(DateTime.Now - t.Timestamp).ToReadableString()}", t.ComponentGuid);
-                    currentTasks.Remove(taskGuid);
-                    LogUpdated?.Invoke(this, new EventArgs());
-                    return true;
+                    if (currentTasks.ContainsKey(taskGuid))
+                    {
+
+                        var t = currentTasks[taskGuid];
+                        Add(t.Name, t.Description + $"\n{status} in {(DateTime.Now - t.Timestamp).ToReadableString()}", t.ComponentGuid);
+                        currentTasks.Remove(taskGuid);
+                        LogUpdated?.Invoke(this, new EventArgs());
+                        return true;
+                    }
+                    else
+                        return false;
                 }
             }
             else
