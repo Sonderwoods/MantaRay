@@ -82,15 +82,17 @@ namespace MantaRay
         /// </summary>
         protected virtual void AfterDone()
         {
-            if (HasLogAbilities() && LogSave)
-            {
-
-                //logHelper.Add(LogName, $"Done in {Stopwatch.Elapsed.ToReadableString()}", InstanceGuid);
-                logHelper.TryFinishTask(latestLogGuid);
-            }
+            
             if (Tasks.Count == 0)
             {
                 RunTime = Stopwatch.Elapsed;
+
+                if (HasLogAbilities() && LogSave)
+                {
+
+                    //logHelper.Add(LogName, $"Done in {Stopwatch.Elapsed.ToReadableString()}", InstanceGuid);
+                    logHelper.TryFinishTask(latestLogGuid);
+                }
 
             }
 
@@ -275,30 +277,41 @@ namespace MantaRay
 
         protected override void ExpireDownStreamObjects()
         {
-            this.Params.Input[1].CollectData();
             bool solveInstance = true;
-            foreach(IGH_Goo data in this.Params.Input[1].VolatileData.AllData(false))
+            GH_SolutionPhase phase;
+            try
             {
-                switch (data)
+                phase = Params.Input[1].Phase;
+                this.Params.Input[1].CollectData();
+                foreach (IGH_Goo data in this.Params.Input[1].VolatileData.AllData(false))
                 {
-                    case GH_Boolean b:
-                        if (!b.IsValid || b.Value == false) { solveInstance = false; }
-                        break;
-                    case GH_Integer @int:
-                        if (!@int.IsValid || @int.Value == 0) { solveInstance = false; }
-                        break;
-                    case GH_Number num:
-                        if (!num.IsValid || num.Value == 0) { solveInstance = false; }
-                        break;
-                    case GH_String text:
-                        if (!text.IsValid || !string.Equals("true", text.Value, StringComparison.InvariantCultureIgnoreCase)) { solveInstance = false; }
-                        break;
-                    default:
-                        solveInstance = false;
+                    switch (data)
+                    {
+                        case GH_Boolean b:
+                            if (!b.IsValid || b.Value == false) { solveInstance = false; }
+                            break;
+                        case GH_Integer @int:
+                            if (!@int.IsValid || @int.Value == 0) { solveInstance = false; }
+                            break;
+                        case GH_Number num:
+                            if (!num.IsValid || num.Value == 0) { solveInstance = false; }
+                            break;
+                        case GH_String text:
+                            if (!text.IsValid || !string.Equals("true", text.Value, StringComparison.InvariantCultureIgnoreCase)) { solveInstance = false; }
+                            break;
+                        default:
+                            solveInstance = false;
+                            break;
+                    }
+                    if (!solveInstance)
                         break;
                 }
-                if (!solveInstance)
-                    break;
+
+                this.Params.Input[1].ClearData();
+            }
+            catch (NullReferenceException)
+            {
+                solveInstance = true;
             }
 
             
@@ -397,7 +410,7 @@ namespace MantaRay
 
 
 
-            if (HasLogAbilities() && LogSave && RunInput && RunCount == this.Params.Input[0].VolatileData.PathCount - 1)
+            if (HasLogAbilities() && LogSave && RunInput && RunCount == this.Params.Input[0].VolatileData.PathCount)
             {
                 
                 //logHelper.Add($"{LogName} {RunCount - 1}", (LogUseFixedDescription ? LogDescriptionStatic : LogDescriptionDynamic) + " Starting", InstanceGuid);
