@@ -12,6 +12,8 @@ namespace MantaRay
         public static readonly Dictionary<string, string> Globals = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         //public static readonly Regex regexAdvanced = new Regex(@"<([\w]+?)-??([\d.]*)*?>", RegexOptions.Compiled);
         public static readonly Regex regexAdvanced = new Regex(@"<([a-zA-Z]+[\d]*)-??((?<=-)([\d]*||.))*?>", RegexOptions.Compiled);
+
+        public static object @Lock = new object();
         /*
          * This is:
          * LETTER + optional number> for a key
@@ -62,25 +64,28 @@ namespace MantaRay
         public static string AddGlobals(this string s, Dictionary<string, string> locals = null, List<string> missingKeys = null)
         {
 
-
-            if (locals != null)
+            lock (Lock)
             {
-                Dictionary<string, string> _locals = new Dictionary<string, string>(Globals);
-                // Setup the dict only once and not in the Replacers method
-                foreach (KeyValuePair<string, string> item in locals)
+                if (locals != null)
                 {
-                    _locals[item.Key] = item.Value;
+                    Dictionary<string, string> _locals = new Dictionary<string, string>(Globals);
+                    // Setup the dict only once and not in the Replacers method
+                    foreach (KeyValuePair<string, string> item in locals)
+                    {
+                        _locals[item.Key] = item.Value;
 
+                    }
+
+                    return regexAdvanced.Replace(s.Replace('−', '-'), new MatchEvaluator((v) => Replacers(v, _locals, missingKeys)));
+                    //Replacing '-' unicode with the default ascii '-'. The unicode one was found in gensky documentation.
+                    //Did you understand it? The two dashes are not the same!
                 }
-
-                return regexAdvanced.Replace(s.Replace('−', '-'), new MatchEvaluator((v) => Replacers(v, _locals, missingKeys)));
-                //Replacing '-' unicode with the default ascii '-'. The unicode one was found in gensky documentation.
-                //Did you understand it? The two dashes are not the same!
+                else
+                {
+                    return regexAdvanced.Replace(s.Replace('−', '-'), new MatchEvaluator((v) => Replacers(v, null, missingKeys)));
+                }
             }
-            else
-            {
-                return regexAdvanced.Replace(s.Replace('−', '-'), new MatchEvaluator((v) => Replacers(v, null, missingKeys)));
-            }
+            
 
 
         }
