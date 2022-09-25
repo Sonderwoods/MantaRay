@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace MantaRay
+namespace MantaRay.Helpers
 {
     public static class UnitHelper
     {
