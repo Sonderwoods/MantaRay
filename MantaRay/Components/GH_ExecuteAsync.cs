@@ -4,8 +4,10 @@ using Grasshopper.GUI.Canvas;
 using Grasshopper.Kernel;
 using Grasshopper.Kernel.Data;
 using Grasshopper.Kernel.Types;
+using Grasshopper.Plugin;
 using MantaRay.Components.Templates;
 using MantaRay.Helpers;
+using MantaRay.Types;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -14,6 +16,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement.TextBox;
 
 namespace MantaRay
 {
@@ -21,7 +24,7 @@ namespace MantaRay
     //TODO: Get outputs while running -> https://www.linuxfixes.com/2022/04/solved-sshnet-real-time-command-output.html
     public class GH_ExecuteAsync : GH_Template_Async_Extended, IHasDoubleClick
     {
-        public override Guid ComponentGuid { get => new Guid("22C612B2-2C57-47CE-B2FE-E10621F18933"); }
+        public override Guid ComponentGuid { get => new Guid("22C612B2-2B57-47CE-A2FE-E10221F18933"); }
 
         const string JOIN = "\n_JOIN_\n";
 
@@ -29,7 +32,7 @@ namespace MantaRay
 
         public override GH_Exposure Exposure => GH_Exposure.primary;
 
-        public GH_ExecuteAsync() : base("Execute SSH WIP", "ExecuteSSH WIP", "WORK IN PROGRESS; Use me to execute a SSH Command", "1 SSH")
+        public GH_ExecuteAsync() : base("Execute SSH", "ExecuteSSH", "Use me to execute a SSH Command", "1 SSH")
         {
             BaseWorker = new SSH_Worker(this);
             RunTime = new TimeSpan(0, 0, 0, 0, (int)LastRun.TotalMilliseconds);
@@ -47,7 +50,7 @@ namespace MantaRay
 
         protected override void RegisterInputParams(GH_InputParamManager pManager)
         {
-            pManager.AddTextParameter("SSH Commands", "_SSH commands_", "SSH commands. Each item in list will be executed\n\n" +
+            pManager.AddGenericParameter("SSH Commands", "_SSH commands_", "SSH commands. Each item in list will be executed\n\n" +
                 "Do a grafted tree input to run in parallel. However there is no checks if this starts too many CPUs on the host\n" +
                 "Use with caution!!", GH_ParamAccess.list);
             pManager[pManager.AddBooleanParameter("Run", "Run", "Run", GH_ParamAccess.tree, false)].Optional = true;
@@ -97,9 +100,38 @@ namespace MantaRay
 
             HashSet<string> radProgs = new HashSet<string>();
 
+            List<string> commands = new List<string>();
+
+            if (Params.Input[0].Phase == GH_SolutionPhase.Blank)
+            {
+                this.Params.Input[0].CollectData();
+
+            }
+            foreach (IGH_Goo data in this.Params.Input[0].VolatileData.AllData(false))
+            {
+                switch (data)
+                {
+                    case GH_String b:
+                        if (b.IsValid) { commands.Add(b.Value); }
+                        break;
+                    case OverridableText ot:
+                        if (ot.IsValid) { commands.Add(ot.Value); }
+                        break;
+
+                    default:
+
+                        break;
+                }
+
+            }
+
+            this.Params.Input[0].ClearData();
+
+
+
             try
             {
-                foreach (var cmd in Commands.Where(c => c != null))
+                foreach (var cmd in commands.Where(c => c != null))
                 {
                     foreach (var cmdStart in cmd.Replace("\n", ";").Split(';'))
                     {
@@ -112,7 +144,7 @@ namespace MantaRay
                             }
                         }
 
-                        if(
+                        if (
                             cmd.Trim().Contains("rtpict") ||
                             cmd.Trim().Contains("rtcontrib") ||
                             cmd.Trim().Contains("rcontrib") ||
@@ -131,7 +163,7 @@ namespace MantaRay
                 //throw new Exception("Failed the contextmenu.." +  e.Message);
             }
 
-            
+
             if (radProgs.Count > 0)
             {
                 Menu_AppendSeparator(menu);
@@ -167,7 +199,7 @@ namespace MantaRay
                 Commands.Clear();
                 Results.Clear();
                 Stderrs.Clear();
-                
+
             }
             if (RunInput)
             {
@@ -198,12 +230,15 @@ namespace MantaRay
                 if (Results.Count > RunCount - 1)
                     DA.SetDataList(0, Results[RunCount - 1] != null ? Results[RunCount - 1].Split(new[] { JOIN }, StringSplitOptions.None).Select(v => v.Trim('\n', '\r')).Where(r => r != JOIN && r.Trim() != "_JOIN_").ToArray() : new string[0]);
                 else
-                    AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, "There might be cached data missing, please rerun.");
+                    AddRuntimeMessage(GH_RuntimeMessageLevel.Remark, "No cached data, please rerun.");
 
                 if (Stderrs.Count > RunCount - 1)
                     DA.SetDataList(1, Stderrs[RunCount - 1] != null ? Stderrs[RunCount - 1].Split(new[] { JOIN }, StringSplitOptions.None).Select(v => v.Trim('\n', '\r')).ToArray() : new string[0]);
                 else
-                    AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, "There might be cached data missing, please rerun.");
+                    AddRuntimeMessage(GH_RuntimeMessageLevel.Remark, "No cached data, please rerun.");
+
+
+                
 
 
                 Message = LastRun.TotalMilliseconds > 0 ? $"Cached  (last was {LastRun.ToShortString()})" : "Clean";
@@ -310,7 +345,7 @@ namespace MantaRay
                     writer.SetString("commands", i, Commands[i]);
                 }
             }
-            catch(Exception)
+            catch (Exception)
             {
                 throw new Exception("WRITE errors");
             }
@@ -372,7 +407,11 @@ namespace MantaRay
                 if (run)
                 {
 
-                    string command = String.Join(";echo _JOIN_;", commands).Replace("\r\n", "\n").AddGlobals();
+                    string command = String.Join(";echo _JOIN_;", commands).Replace("\r\n", "\n").ApplyGlobals();
+
+                    
+
+
                     Renci.SshNet.SshCommand cmd = null;
                     (asyncResult, cmd, pid) = SSH_Helper.ExecuteAsync(command, prependPrefix: ((GH_ExecuteAsync)Parent).addPrefix, ((GH_ExecuteAsync)Parent).addSuffix, HasZeroAreaPolygons);
 
@@ -391,24 +430,24 @@ namespace MantaRay
                             ((GH_Template_Async_Extended)Parent).RunTime = ((GH_Template_Async_Extended)Parent).Stopwatch.Elapsed;
                             if (((GH_Template_Async_Extended)Parent).RunTime.TotalSeconds >= 60)
                             {
-                            Parent.Message = "Running for " + ((GH_Template_Async_Extended)Parent).RunTime.ToShortString() + dots[dotCounter] + " (Last: " + ((GH_ExecuteAsync)Parent).LastRun.ToShortString() + ")";
+                                Parent.Message = "Running for " + ((GH_Template_Async_Extended)Parent).RunTime.ToShortString() + dots[dotCounter] + " (Last: " + ((GH_ExecuteAsync)Parent).LastRun.ToShortString() + ")";
                                 if (dotCounter++ >= dots.Length - 1)
                                     dotCounter = 0;
                             }
                             else
                             {
-                            Parent.Message = "Running for " + ((GH_Template_Async_Extended)Parent).RunTime.ToShortString() + " (Last: " + ((GH_ExecuteAsync)Parent).LastRun.ToShortString() + ")";
+                                Parent.Message = "Running for " + ((GH_Template_Async_Extended)Parent).RunTime.ToShortString() + " (Last: " + ((GH_ExecuteAsync)Parent).LastRun.ToShortString() + ")";
 
                             }
 
-                            
+
                             Rhino.RhinoApp.InvokeOnUiThread((Action)delegate
                             {
                                 Parent.OnDisplayExpired(true);
                             });
                         }
 
-                        
+
 
                         // If the command finished
                         if (WaitHandle.WaitAll(new[] { asyncResult.AsyncWaitHandle }, intervalForRefreshing))
@@ -454,18 +493,35 @@ namespace MantaRay
             public override void GetData(IGH_DataAccess DA, GH_ComponentParamServer Params)
             {
                 //if (CancellationToken.IsCancellationRequested) return;
-                commands = DA.FetchList<string>(0);
+
+                //By calling ToString on the overridable text we make sure that the overrides are done.
+                commands = DA.FetchList<OverridableText>(0).Select(s => s.Value).ToList();
+
+                foreach (var command in commands)
+                {
+                    if(command.EndsWith("Execute component"))
+                    {
+                        Parent.AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "There's a risk that you are using a manipulated text output from ApplyOverrides.\n" +
+                            "You should connect the component directly to this one and not do any editing between them");
+                        break;
+                    }
+                }
 
 
                 StringBuilder sb = new StringBuilder();
-                GH_Structure<GH_String> data = ((GH_ExecuteAsync)Parent).Params.Input[0].VolatileData as GH_Structure<GH_String>;
+                GH_Structure<IGH_Goo> data = ((GH_ExecuteAsync)Parent).Params.Input[0].VolatileData as GH_Structure<IGH_Goo>;
+
+
                 for (int i = 0; i < data.Branches.Count; i++)
                 {
-                    List<GH_String> branch = data.Branches[i];
-                    foreach (GH_String item in branch)
+                    List<IGH_Goo> branch = data.Branches[i];
+                    foreach (IGH_Goo item in branch.Where(it => it != null))
                     {
-                        if (item != null && item.Value != null)
-                            sb.AppendFormat("{0}\n", item.Value);
+                        if (typeof(OverridableText).IsAssignableFrom(item.GetType()))
+                        {
+                            sb.AppendFormat("{0}\n", ((OverridableText)item).Value);
+                        }
+
                     }
                     if (i < data.Branches.Count - 1)
                         sb.Append("\n\n- - -\n\n");
@@ -492,6 +548,16 @@ namespace MantaRay
             /// <param name="DA"></param>
             public override void SetData(IGH_DataAccess DA)
             {
+                foreach (var command in ((GH_ExecuteAsync)Parent).Commands)
+                {
+                    if (command != null && command.EndsWith("Execute component"))
+                    {
+                        Parent.AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "There's a risk that you are using a manipulated text output from ApplyOverrides.\n" +
+                            "You should connect the component directly to this one and not do any editing between them");
+                        break;
+                    }
+                }
+
                 if (CancellationToken.IsCancellationRequested)
                 {
 
@@ -513,7 +579,7 @@ namespace MantaRay
 
 
                 DA.SetDataList(0, results != null && !String.Equals(results, JOIN) ? results.Split(new[] { JOIN }, StringSplitOptions.None).Select(b => b.Trim('\n', '\r')).Where(r => r != JOIN && r.Trim() != "_JOIN_") : new string[] { null });
- 
+
                 DA.SetDataList(1, stderr != null ? stderr.Split(new[] { JOIN }, StringSplitOptions.None).Select(b => b.Trim('\n', '\r')) : new string[] { null });
 
                 //Set only ONE bool output in "RAN"

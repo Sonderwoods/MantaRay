@@ -203,17 +203,26 @@ namespace MantaRay.Components
 
                 if (!string.IsNullOrEmpty(subfolder))
                 {
-                    SSH_Helper.DefaultSubfolder = subfolder;
+                    SSH_Helper.ProjectSubPath = subfolder;
                 }
                 else
                 {
-                    SSH_Helper.DefaultSubfolder = SSH_Helper.DefaultProjectSubFolder;
+                    SSH_Helper.ProjectSubPath = SSH_Helper.DefaultProjectSubFolder;
                 }
 
+                
                 sb.AppendFormat("SSH:  Setup <WinHome> to {0}\n", SSH_Helper.WindowsFullpath);
                 sb.AppendFormat("SSH:  Setup <LinuxHome> to {0}\n", SSH_Helper.LinuxFullpath);
+                sb.AppendFormat("SSH:  Setup <Project> to {0}\n", SSH_Helper.ProjectSubPath);
+                sb.AppendFormat("SSH:  Setup <cpus> to {0}\n", (Environment.ProcessorCount - 1).ToString());
 
-                
+                GlobalsHelper.GlobalsFromConnectComponent["WinHome"] = SSH_Helper.WindowsFullpath;
+                GlobalsHelper.GlobalsFromConnectComponent["LinuxHome"] = SSH_Helper.LinuxFullpath;
+                GlobalsHelper.GlobalsFromConnectComponent["Project"] = SSH_Helper.ProjectSubPath;
+                GlobalsHelper.GlobalsFromConnectComponent["cpus"] = (Environment.ProcessorCount - 1).ToString();
+
+
+
 
                 try
                 {

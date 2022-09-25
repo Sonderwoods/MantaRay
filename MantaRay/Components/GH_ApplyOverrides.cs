@@ -7,6 +7,7 @@ using Grasshopper.Kernel;
 using Grasshopper.Kernel.Parameters;
 using Grasshopper.Kernel.Types;
 using MantaRay.Components;
+using MantaRay.Types;
 using Rhino.Geometry;
 
 namespace MantaRay.Components
@@ -39,9 +40,7 @@ namespace MantaRay.Components
         {
             staticParameterCount = this.Params.Input.Count;
 
-            pManager.AddTextParameter("Input", "Input_", "Input string", GH_ParamAccess.list);
-            pManager[pManager.AddTextParameter("Additional Keys", "_Keys", "Keys, list must match length of values list. Each key will be replaced ", GH_ParamAccess.list, new List<string>())].Optional = true;
-            pManager[pManager.AddTextParameter("Additional Values", "_Values", "Values, list must match length of keys list.", GH_ParamAccess.list, new List<string>())].Optional = true;
+            pManager.AddGenericParameter("Input", "Input_", "Input string", GH_ParamAccess.list);
 
             staticParameterCount = this.Params.Input.Count - staticParameterCount;
         }
@@ -51,8 +50,7 @@ namespace MantaRay.Components
         /// </summary>
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
-            pManager.AddTextParameter("Output", "O", "output with globals applied", GH_ParamAccess.list);
-            pManager.AddTextParameter("Pairs", "K,V", "Pairs", GH_ParamAccess.list);
+            pManager.AddGenericParameter("Output", "O", "output with globals applied", GH_ParamAccess.list);
         }
 
         /// <summary>
@@ -63,17 +61,9 @@ namespace MantaRay.Components
         {
 
             int dynamicParameterCount = Params.Input.Count - staticParameterCount;
-            List<string> keys = DA.FetchList<string>("Additional Keys");
-            List<string> values = DA.FetchList<string>("Additional Values");
-            List<string> outPairs = new List<string>(keys.Count);
-            List<string> inputs = DA.FetchList<string>("Input");
+            List<OverridableText> inputs = DA.FetchList<OverridableText>("Input").Select(o => (OverridableText)o.Duplicate()).ToList();
             missingInputs.Clear();
 
-
-            if (keys.Count != values.Count)
-            {
-                AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, "Keys and Value List lengths are not matching");
-            }
 
             // House keeping to set the PadRight distance in the output (only aesthetic)
             int keysLength = 3;
@@ -81,66 +71,18 @@ namespace MantaRay.Components
             {
                 keysLength = GlobalsHelper.Globals.Keys.Select(k => k.Length).Max();
             }
-            if (keys.Count > 0)
-            {
-                keysLength = Math.Max(keysLength, keys.Select(k => k.Length).Max());
-            }
+
             if (dynamicParameterCount > 0)
             {
                 keysLength = Math.Max(keysLength, Params.Input.Skip(staticParameterCount).Select(p => p.NickName.Length).Max());
             }
             keysLength += 2; // account for <>
 
-            //foreach (KeyValuePair<string, string> item in GlobalsHelper.Globals)
-            //{
-            //    outPairs.Add($"{("<" + item.Key + ">").PadRight(keysLength + 1)} --> {item.Value}");
-            //}
 
 
-            // House keeping if list lengths are OK
-            if (keys.Count == 0 && values.Count == 0 && dynamicParameterCount == 0)
-            {
+            Dictionary<string, string> localsTest = new Dictionary<string, string>(GlobalsHelper.Globals, StringComparer.OrdinalIgnoreCase);
+            Dictionary<string, string> locals = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
-                if (missingInputs.Count == 0)
-                {
-                    DA.SetDataList(0, inputs.Select(s => s.AddGlobals(missingKeys: missingInputs)));
-                }
-
-                DA.SetDataList(1, outPairs);
-
-                foreach (string item in missingInputs)
-                {
-                    AddRuntimeMessage(GH_RuntimeMessageLevel.Error, $"Missing \"{item}\"");
-                }
-
-                return;
-            }
-
-
-            Dictionary<string, string> locals = new Dictionary<string, string>(GlobalsHelper.Globals, StringComparer.OrdinalIgnoreCase);
-
-            // Adding keys and values from the Key/Value list
-            int valuesCount = values.Count;
-            int keysCount = keys.Count;
-
-            if (valuesCount > 0 && keysCount > 0)
-            {
-                for (int i = 0; i < Math.Max(valuesCount, keysCount); i++)
-                {
-                    if (values[Math.Min(i, valuesCount - 1)] == null)
-                    {
-                        AddRuntimeMessage(GH_RuntimeMessageLevel.Error, $"Null item at key {keys[Math.Min(i, keysCount - 1)]} - missing a value???");
-
-                    }
-                    if (locals.ContainsKey(keys[Math.Min(i, keysCount - 1)]))
-                    {
-                        AddRuntimeMessage(GH_RuntimeMessageLevel.Error, $"Key {keys[Math.Min(i, keysCount - 1)]} (in the Keys list) already exists. Overwritten to {values[Math.Min(i, valuesCount - 1)]}");
-                    }
-
-                    locals[keys[Math.Min(i, keysCount - 1)]] = values[Math.Min(i, valuesCount - 1)];
-                }
-
-            }
 
             // Adding keys and values from the dynamic parameter inputs
             foreach (Param_String input in this.Params.Input
@@ -158,42 +100,27 @@ namespace MantaRay.Components
 
                 if (dataList.Count > 0 && dataList[0] is GH_String s)
                 {
-                    if (locals.ContainsKey(input.NickName))
+                    if (localsTest.ContainsKey(input.NickName))
                     {
-                        AddRuntimeMessage(GH_RuntimeMessageLevel.Error, $"Key {input.NickName} (in the dynamic parameters) already exists. Overwritten to {s.Value}");
+                        AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, $"Key {input.NickName} (in the dynamic parameters) already exists. Overwritten to {s.Value}");
                     }
 
 
+                    localsTest[input.NickName] = s.Value;
                     locals[input.NickName] = s.Value;
 
                 }
 
             }
 
-            //for (int i = 2; i < Params.Input.Count; i++)
-            //{
-            //    string key = Params.Input[i].NickName;
-            //    string value = DA.Fetch<string>(i);
-
-            //    if (locals.ContainsKey(key))
-            //    {
-            //        AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, $"Key {key} (in the dynamic parameters) already exists. Overwritten to {value}");
-            //    }
-
-
-            //    locals[key] = value;
-            //}
-
-            foreach (KeyValuePair<string, string> item in locals.OrderBy(o => o.Key))
+            foreach(var @input in inputs)
             {
-                outPairs.Add($"{("<" + item.Key + ">").PadRight(keysLength + 1)} --> {item.Value}");
+                input.Locals = locals;
             }
 
-            //as array instead of IEnumerable, otherwise the misingInputs is not updated before the check below.
-            string[] outputs = inputs.Select(i => i.AddGlobals(locals, missingKeys: missingInputs)).ToArray();
 
-            //extra round to fix nested keys (inside a value)!
-            outputs = outputs.Select(i => i.AddGlobals(locals, missingKeys: missingInputs)).ToArray();
+            //ToArray to make sure it's enumerated and thus added to missing inputs.
+            OverridableText[] outputs = inputs.Select(i => new OverridableText(i, locals, missingInputs)).ToArray();
 
             missingInputs.ForEach(item => AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, $"Missing \"{item}\""));
 
@@ -202,7 +129,6 @@ namespace MantaRay.Components
                 DA.SetDataList(0, outputs);
             }
 
-            DA.SetDataList(1, outPairs);
 
         }
 
@@ -297,7 +223,7 @@ namespace MantaRay.Components
 
                 if (param.NickName == "-")
                 {
-                    param.NickName = missingInputs.Skip(staticParameterCount + added++).FirstOrDefault() ?? $"d{i + 1}";
+                    param.NickName = missingInputs.Where(n => Params.IndexOfInputParam(n) < 0).Distinct().Skip(added++).FirstOrDefault() ?? $"d{i + 1}";
                 }
 
                 param.Name = param.NickName;
@@ -337,7 +263,7 @@ namespace MantaRay.Components
         /// </summary>
         public override Guid ComponentGuid
         {
-            get { return new Guid("9B21A68A-179E-4BDB-8232-0729E8CF5EA4"); }
+            get { return new Guid("9B21A68A-179E-4BDB-8232-0722E8AF5EA4"); }
 
         }
     }
