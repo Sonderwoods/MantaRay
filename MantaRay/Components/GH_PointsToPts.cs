@@ -55,7 +55,7 @@ namespace MantaRay.Components
             
 
 
-            string name = DA.Fetch<string>("Name").AddGlobals();
+            string name = DA.Fetch<string>("Name").ApplyGlobals();
 
             List<Point3d> pts = DA.FetchList<Point3d>("Points");
             List<Vector3d> vects = DA.FetchList<Vector3d>("Vectors");
@@ -88,7 +88,7 @@ namespace MantaRay.Components
 
             string workingDir;
 
-            string subfolderOverride = DA.Fetch<string>("Subfolder Override").AddGlobals().Replace('\\','/').Trim('/');
+            string subfolderOverride = DA.Fetch<string>("Subfolder Override").ApplyGlobals().Replace('\\','/').Trim('/');
 
 
             if (string.IsNullOrEmpty(subfolderOverride))
