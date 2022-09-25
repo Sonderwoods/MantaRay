@@ -78,7 +78,7 @@ namespace MantaRay.OldComponents
 
             if (keys.Count == 0 && values.Count == 0)
             {
-                DA.SetDataList(0, inputs.Select(s => s.AddGlobals(missingKeys: missingInputs)));
+                DA.SetDataList(0, inputs.Select(s => s.ApplyGlobals(missingKeys: missingInputs)));
                 DA.SetDataList(1, outPairs);
 
                 foreach (string item in missingInputs)
@@ -112,7 +112,7 @@ namespace MantaRay.OldComponents
 
             List<string> outputs = new List<string>(inputs.Count);
 
-            inputs.ForEach(i => outputs.Add(i.AddGlobals(locals, missingKeys: missingInputs)));
+            inputs.ForEach(i => outputs.Add(i.ApplyGlobals(locals, missingKeys: missingInputs)));
 
             foreach (string item in missingInputs)
             {
