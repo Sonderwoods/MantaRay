@@ -19,6 +19,7 @@ using MantaRay.RadViewer;
 using MantaRay.RadViewer.HeadsUpDisplay;
 using Grasshopper.Kernel.Data;
 using Grasshopper.Kernel.Types;
+using MantaRay.Helpers;
 
 namespace MantaRay.Components
 {

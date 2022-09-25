@@ -3,6 +3,7 @@ using Grasshopper.Kernel;
 using MantaRay.Helpers;
 using MantaRay.RadViewer;
 using MantaRay.RadViewer.HeadsUpDisplay;
+using MantaRay.Setup;
 using Rhino.Display;
 using Rhino.Geometry;
 using System;

@@ -9,6 +9,7 @@ using System.Text.RegularExpressions;
 using System.Diagnostics;
 using System.Drawing;
 using System.Windows.Forms;
+using MantaRay.Setup;
 
 namespace MantaRay
 {

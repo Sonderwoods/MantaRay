@@ -5,6 +5,7 @@ using Grasshopper.Kernel;
 using Grasshopper.Kernel.Data;
 using Grasshopper.Kernel.Types;
 using MantaRay.Components.Templates;
+using MantaRay.Helpers;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
