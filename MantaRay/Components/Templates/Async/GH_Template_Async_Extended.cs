@@ -400,7 +400,7 @@ namespace MantaRay
                 //((GH_ColorAttributes_Async)m_attributes).ColorSelected = new Grasshopper.GUI.Canvas.GH_PaletteStyle(Color.MediumVioletRed);
                 //((GH_ColorAttributes_Async)m_attributes).ColorUnselected = new Grasshopper.GUI.Canvas.GH_PaletteStyle(Color.Purple);
 
-                Message = "Missing connection?"; // this will be overwritten if the task actually starts. So it's kind of a debug
+                Message = "Right click and cancel"; // this will be overwritten if the task actually starts. So it's kind of a debug
 
             }
             else
