@@ -37,7 +37,9 @@ namespace MantaRay
         /// <summary>
         /// default subfolder WITHOUT starting slash.
         /// </summary>
-        public static string DefaultSubfolder { get => projectSubFolder; set { projectSubFolder = value; UpdatePaths(); } }
+        public static string ProjectSubPath { get => projectSubFolder; set { projectSubFolder = value; UpdatePaths(); } }
+
+
 
         /// <summary>
         /// Will be set on connection
