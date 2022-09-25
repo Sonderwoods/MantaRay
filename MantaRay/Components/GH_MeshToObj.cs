@@ -49,7 +49,7 @@ namespace MantaRay
             pManager[pManager.AddTextParameter("MapFileName", "MapFileName", "name of mapping file name. Default is mapping (.map)", GH_ParamAccess.item, "mapping")].Optional = true;
             pManager[pManager.AddTextParameter("ModifierName", "ModifierName", "ModifierName - Name of the radiance material", GH_ParamAccess.tree)].DataMapping = GH_DataMapping.Graft;
 
-            pManager[pManager.AddTextParameter("Subfolder Override", "Subfolder", "Optional. Override the subfolder from the connection component.\n" +
+            pManager[pManager.AddTextParameter("Target folder", "Target folder", "Optional. Override the subfolder from the connection component.\n" +
                 "Example:\n" +
                 "simulation/objFiles", GH_ParamAccess.item, "")].Optional = true;
             pManager.AddBooleanParameter("Run", "Run", "Run", GH_ParamAccess.item);
@@ -85,7 +85,7 @@ namespace MantaRay
 
             string mappingName = DA.Fetch<string>("MapFileName");
 
-            string subfolder = DA.Fetch<string>("Subfolder Override").AddGlobals().Replace('/', '\\').Trim('\\'); //keep backslash as we're in windows.
+            string subfolder = DA.Fetch<string>("Target folder", "Subfolder Override").AddGlobals().Replace('/', '\\').Trim('\\'); //keep backslash as we're in windows.
 
             Grasshopper.Kernel.Data.GH_Structure<GH_Mesh> inMeshes = DA.FetchTree<GH_Mesh>("Mesh");
 
@@ -200,7 +200,7 @@ namespace MantaRay
                         {
                             if (mesh.Faces[j].IsQuad)
                             {
-                                if (!MeshToRadHelper.InverseVertexOrder(mesh, j))
+                                if (!InverseVertexOrder(mesh, j))
                                 {
                                     geometryFile.AppendFormat(CultureInfo.InvariantCulture, "f {0} {1} {2} {3}\r\n", mesh.Faces[j].A + totalVertexCount, mesh.Faces[j].B + totalVertexCount, mesh.Faces[j].C + totalVertexCount, mesh.Faces[j].D + totalVertexCount);
                                 }
@@ -212,7 +212,7 @@ namespace MantaRay
                             }
                             else
                             {
-                                if (!MeshToRadHelper.InverseVertexOrder(mesh, j))
+                                if (!InverseVertexOrder(mesh, j))
                                 {
                                     geometryFile.AppendFormat(CultureInfo.InvariantCulture, "f {0} {1} {2}\r\n", mesh.Faces[j].A + totalVertexCount, mesh.Faces[j].B + totalVertexCount, mesh.Faces[j].C + totalVertexCount);
                                 }
@@ -224,7 +224,7 @@ namespace MantaRay
                         }
                         totalVertexCount += currentVertices;
                     }
-                    if (!IsFileLocked(new FileInfo(geometryFilePath)))
+                    if (!File.Exists(geometryFilePath) || !IsFileLocked(new FileInfo(geometryFilePath)))
                     {
                         System.IO.File.WriteAllText(geometryFilePath, geometryFile.ToString());
                     }
@@ -251,6 +251,50 @@ namespace MantaRay
 
 
 
+
+
+        }
+
+        public static bool InverseVertexOrder(Mesh mesh, in int faceIndex)
+        {
+            var face = mesh.Faces[faceIndex];
+
+
+            Vector3f normalFromVertices = face.IsQuad ?
+                NormalFromVertices(mesh.Vertices[face.A], mesh.Vertices[face.B], mesh.Vertices[face.B], mesh.Vertices[face.C])
+                : NormalFromVertices(mesh.Vertices[face.A], mesh.Vertices[face.B], mesh.Vertices[face.B]);
+
+            Vector3f normalFromFace = mesh.FaceNormals[faceIndex];
+
+            double angle = Math.Asin(
+
+                Vector3f.CrossProduct(normalFromFace, normalFromVertices).Length
+                /
+                (normalFromFace.Length * normalFromVertices.Length)
+            );
+
+            return angle > 0;
+
+
+
+        }
+
+        public static Vector3f NormalFromVertices(in Point3f pt0, in Point3f pt1, in Point3f pt2)
+        {
+            Vector3f normalFromVertices = Vector3f.CrossProduct(pt1 - pt0, pt2 - pt0);
+            normalFromVertices.Unitize();
+            return normalFromVertices;
+        }
+
+        public static Vector3f NormalFromVertices(in Point3f pt0, in Point3f pt1, in Point3f pt2, in Point3f pt3)
+        {
+            Vector3f n1 = Vector3f.CrossProduct(pt1 - pt0, pt2 - pt0);
+            n1.Unitize();
+
+            Vector3f n2 = Vector3f.CrossProduct(pt3 - pt2, pt1 - pt2);
+            n2.Unitize();
+
+            return 0.5f * (n1 + n2);
 
 
         }
