@@ -2,6 +2,7 @@
 using Grasshopper.Kernel.Data;
 using Grasshopper.Kernel.Types;
 using MantaRay.Components;
+using MantaRay.Helpers;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;

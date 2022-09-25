@@ -9,6 +9,7 @@ using System.Text.RegularExpressions;
 using System.Diagnostics;
 using System.Drawing;
 using System.Windows.Forms;
+using MantaRay.Setup;
 
 namespace MantaRay
 {
@@ -35,7 +36,7 @@ namespace MantaRay
 
                 try
                 {
-                    
+
                     content = await client.GetStringAsync(path);
 
                 }
@@ -58,7 +59,7 @@ namespace MantaRay
                     string href = m.Groups[1].Captures[0].Value.Trim().Replace("\t", " ").Replace(" =", "=").Replace("= ", "=").Split(' ')
                         .Where(s => s.Split('=')[0].ToLower() == "href").Select(s => s.Split('=')[1]).First().Trim('"');
 
-                    AllRadiancePrograms.Add(name, "https://floyd.lbl.gov/radiance/" + href);
+                    AllRadiancePrograms.Add(name, /*"https://floyd.lbl.gov/radiance/" +*/ href);
 
                     m = m.NextMatch();
                 }
@@ -68,7 +69,7 @@ namespace MantaRay
                 Debug.WriteLine("successfully created díct");
 
                 SetGlobals();
-                
+
 
                 return true;
             }
@@ -78,8 +79,9 @@ namespace MantaRay
 
         public void SetGlobals()
         {
-            GlobalsHelper.Globals["AllRadProgs"] = String.Join("\\|", AllRadiancePrograms.Keys);
-                
+            lock (GlobalsHelper.Lock)
+                GlobalsHelper.Globals["AllRadProgs"] = String.Join("\\|", AllRadiancePrograms.Keys);
+
         }
 
         public void OpenManual(string name)
@@ -99,7 +101,7 @@ namespace MantaRay
                 ForeColor = Color.FromArgb(255, 30, 30, 30),
                 TopMost = true,
                 //Capture = false
-  
+
 
             };
             WebBrowser webBrowser = new WebBrowser()
@@ -131,7 +133,7 @@ namespace MantaRay
                 Instance.SetGlobals();
             }
 #else
-                
+
 
             Instance = new ManPageHelper();
 

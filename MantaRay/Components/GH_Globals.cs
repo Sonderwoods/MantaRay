@@ -118,6 +118,12 @@ namespace MantaRay.Components
                 }
 
             }
+            if (ManPageHelper.Instance != null)
+            {
+            lock (GlobalsHelper.Lock)
+                GlobalsHelper.Globals["AllRadProgs"] = String.Join("\\|", ManPageHelper.Instance.AllRadiancePrograms.Keys);
+
+            }
 
             int keysLength = 3;
             if (GlobalsHelper.Globals.Keys.Count > 0)

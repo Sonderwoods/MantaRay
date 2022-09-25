@@ -32,10 +32,12 @@ namespace MantaRay
         /// </summary>
         public static string WindowsFullpath => _windowsFullpath;
 
+        public static string SftpDir { get; set; } = "";
+
         /// <summary>
         /// default subfolder WITHOUT starting slash.
         /// </summary>
-        public static string DefaultSubfolder { get => defaultSubfolder; set { defaultSubfolder = value; UpdatePaths(); } }
+        public static string DefaultSubfolder { get => projectSubFolder; set { projectSubFolder = value; UpdatePaths(); } }
 
         /// <summary>
         /// Will be set on connection
@@ -146,18 +148,18 @@ namespace MantaRay
                 return _windowsFullpath;
         }
 
-        static string defaultSubfolder = "simulation";
-        static public string DefaultDefaultSubfolder => "simulation";
+        static string projectSubFolder = String.Empty;
+        static public string DefaultProjectSubFolder => "UnnamedProject";
 
-        static string linuxParentPath = "~";
-        static public string DefaultLinuxParentPath => "~";
+        static string linuxParentPath = String.Empty;
+        static public string DefaultLinuxParentPath => "~/MantaRay";
 
-        static string windowsParentPath = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-        static public string DefaultWindowsParentPath => Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+        static string windowsParentPath = String.Empty;
+        static public string DefaultWindowsParentPath => Environment.GetFolderPath(Environment.SpecialFolder.UserProfile) + "\\MantaRay";
 
-        static string _linuxFullpath = (linuxParentPath + "/" + defaultSubfolder).Replace(@"\", "/");
+        static string _linuxFullpath = (linuxParentPath + "/" + projectSubFolder).Replace(@"\", "/");
 
-        static string _windowsFullpath = (windowsParentPath + @"\" + defaultSubfolder).Replace("/", @"\");
+        static string _windowsFullpath = (windowsParentPath + @"\" + projectSubFolder).Replace("/", @"\");
 
         private static SshClient sshClient;
 
@@ -298,20 +300,20 @@ namespace MantaRay
         /// Uploads a file
         /// </summary>
         /// <param name="localFileName"></param>
-        /// <param name="sshPath">target linux path. Default is <see cref="defaultSubfolder"/></param>
+        /// <param name="targetFilePath">target linux path. Default is <see cref="projectSubFolder"/></param>
         /// <param name="log"></param>
         /// <exception cref="Renci.SshNet.Common.SftpPathNotFoundException"></exception>
         /// <exception cref="FileNotFoundException"></exception>
         /// <exception cref="Renci.SshNet.Common.SftpPermissionDeniedException"></exception>
         /// <exception cref="Renci.SshNet.Common.SshConnectionException"></exception>
-        public static void Upload(string localFileName, string sshPath = null, StringBuilder log = null)
+        public static void Upload(string localFileName, string targetFilePath = null, StringBuilder log = null)
         {
-            localFileName = localFileName.Replace("/", "\\");
+            //localFileName = localFileName.Replace("/", "\\");
 
-            if (string.IsNullOrEmpty(sshPath))
-            {
-                sshPath = _linuxFullpath;
-            }
+            //if (string.IsNullOrEmpty(targetFilePath))
+            //{
+            //    targetFilePath = _linuxFullpath;
+            //}
 
 
             //if (String.Compare(Path.GetDirectoryName(localFileName).ToLinuxPath(), sshPath, StringComparison.OrdinalIgnoreCase) == 0)
@@ -331,23 +333,33 @@ namespace MantaRay
             }
 
 
-            try
+            //try
+            //{
+            //    HomeDirectory = HomeDirectory ?? sftpClient.WorkingDirectory; // Set it once.
+
+            //    //targetFilePath = targetFilePath.TrimEnd('/');
+
+            if (targetFilePath.Contains("~"))
             {
-                HomeDirectory = HomeDirectory ?? sftpClient.WorkingDirectory;
-
-                sshPath = sshPath.TrimEnd('/');
-
-                sshPath = sshPath.Replace("~", HomeDirectory);
-
-                SSH_Helper.Execute($"mkdir -p {sshPath}");
-
-                SSH_Helper.SftpClient.ChangeDirectory(sshPath);
+                StringBuilder sb = new StringBuilder();
+                SSH_Helper.Execute($"readlink -f {targetFilePath}", null, sb, null, false, false, null);
+                targetFilePath = sb.ToString();
             }
 
-            catch (Renci.SshNet.Common.SftpPathNotFoundException e)
-            {
-                throw new Renci.SshNet.Common.SftpPathNotFoundException($"Linux Path not found\n{e.Message}.\nTry {HomeDirectory}\nThe current working directory is {sftpClient.WorkingDirectory}");
-            }
+            //    //SSH_Helper.Execute($"mkdir -p {targetFilePath}");
+
+            //    var v = SSH_Helper.SftpClient.WorkingDirectory;
+
+            //    //if (!string.IsNullOrEmpty(targetFilePath))
+            //    //    SSH_Helper.SftpClient.ChangeDirectory(targetFilePath.Contains(":") ? "/" : "" + targetFilePath);
+            //    //else
+            //    //    throw new Renci.SshNet.Common.SftpPathNotFoundException("Path is not set");
+            //}
+
+            //catch (Renci.SshNet.Common.SftpPathNotFoundException e)
+            //{
+            //    throw new Renci.SshNet.Common.SftpPathNotFoundException($"Linux Path not found\n{e.Message}.\nTry {HomeDirectory} (linux HomeDirectory)\nTried to set the working directory to {targetFilePath}\n(It was set to {sftpClient.WorkingDirectory})");
+            //}
 
 
             if (!File.Exists(localFileName))
@@ -360,21 +372,21 @@ namespace MantaRay
             {
                 try
                 {
-                    SSH_Helper.SftpClient.UploadFile(uplfileStream, Path.GetFileName(localFileName), true);
+                    SSH_Helper.SftpClient.UploadFile(uplfileStream, targetFilePath + (String.IsNullOrEmpty(targetFilePath) ? "" : "/") + Path.GetFileName(localFileName), true);
 
                 }
                 catch (Renci.SshNet.Common.SftpPermissionDeniedException e)
                 {
 
 
-                    if (String.Compare(Path.GetDirectoryName(localFileName).ToLinuxPath(), sshPath, StringComparison.OrdinalIgnoreCase) == 0)
+                    if (String.Compare(Path.GetDirectoryName(localFileName).ToLinuxPath(), targetFilePath, StringComparison.OrdinalIgnoreCase) == 0)
                     {
                         log?.Append("The paths are the same, so skipping the download\n");
                         return;
                     }
                     else
                     {
-                        throw new Renci.SshNet.Common.SftpPermissionDeniedException($"Tried accessing {sshPath}\nLocal file is {localFileName}\n{e.Message}", e);
+                        throw new Renci.SshNet.Common.SftpPermissionDeniedException($"Tried accessing {targetFilePath}\nLocal file is {localFileName}\n{e.Message}", e);
                     }
 
 
@@ -388,7 +400,7 @@ namespace MantaRay
                 log.Append("[");
                 log.Append(DateTime.Now.ToString("G"));
                 log.Append("] Uploaded ");
-                log.Append(sshPath);
+                log.Append(targetFilePath);
                 log.Append("/");
                 log.Append(Path.GetFileName(localFileName));
                 log.Append("\n");
@@ -426,7 +438,7 @@ namespace MantaRay
         {
             IAsyncResult asyncResult = null;
 
-            
+
 
             int pid = -1;
 
@@ -452,12 +464,12 @@ namespace MantaRay
                 return (asyncResult, cmd, pid);
 
 
-                
+
 
 
 
             }
-            
+
 
             return (asyncResult, null, pid);
 
@@ -465,7 +477,7 @@ namespace MantaRay
 
         public static void OnExecutionCompleted(SshCommand cmd, Func<string, bool> filter = null, StringBuilder stdout = null, StringBuilder errors = null)
         {
-            
+
             if (!string.IsNullOrEmpty(cmd.Error) && (filter == null || filter(cmd.Error)))
             {
                 errors?.Append(cmd.Error);
@@ -482,13 +494,13 @@ namespace MantaRay
         {
             if (appendSuffix)
             {
-                
+
 
                 var pidCmd = sshClient.CreateCommand($"cat  ~/temp{rand}.pid");
                 pidCmd.Execute();
 
-                
-                int pid =  -1;
+
+                int pid = -1;
                 int.TryParse(pidCmd.Result, out pid);
 
                 sshClient.CreateCommand($"rm ~/temp{rand}.pid").Execute(); // remove temp file again
@@ -694,8 +706,8 @@ namespace MantaRay
                 linuxParentPath = linuxParentPath.Substring(0, linuxParentPath.Length - 1);
             }
 
-            _linuxFullpath = linuxParentPath + "/" + defaultSubfolder.Replace(@"\", "/");
-            _windowsFullpath = windowsParentPath + "/" + defaultSubfolder.Replace("/", @"\");
+            _linuxFullpath = linuxParentPath + "/" + projectSubFolder.Replace(@"\", "/");
+            _windowsFullpath = (windowsParentPath + "/" + projectSubFolder).Replace("/", @"\");
 
         }
 

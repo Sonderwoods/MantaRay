@@ -6,7 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace MantaRay
+namespace MantaRay.Helpers
 {
     public static class StringHelper
     {
@@ -59,7 +59,7 @@ namespace MantaRay
             StringBuilder sb = new StringBuilder();
             foreach (char c in s)
             {
-                if ((c >= '0' && c <= '9') || (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || c == '.' || c == '_')
+                if (c >= '0' && c <= '9' || c >= 'A' && c <= 'Z' || c >= 'a' && c <= 'z' || c == '.' || c == '_')
                 {
                     sb.Append(c);
                 }

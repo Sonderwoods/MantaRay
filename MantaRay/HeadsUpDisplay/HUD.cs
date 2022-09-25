@@ -235,18 +235,19 @@ namespace MantaRay.RadViewer.HeadsUpDisplay
                     case MouseButton.Right:
 
 
-                        e.Cancel = true;
-                        ContextMenuStrip menu = new ContextMenuStrip();
-                        //if (HUD.HighlightedItem?.Box != null)
-                        if (HUD.HighlightedItem?.Value.GetBoundingBox() != null)
-                        {
-                            ToolStripMenuItem menuZoom = new ToolStripMenuItem("Zoom");
-                            menuZoom.Click += (s, ee) => HUD.HighlightedItem.ZoomToBox();
-                            menu.Items.Add(menuZoom);
-                        }
-
                         if (HUD.HighlightedItem != null)
                         {
+
+                            ContextMenuStrip menu = new ContextMenuStrip();
+                            //if (HUD.HighlightedItem?.Box != null)
+                            if (HUD.HighlightedItem?.Value.GetBoundingBox() != null)
+                            {
+                                ToolStripMenuItem menuZoom = new ToolStripMenuItem("Zoom");
+                                menuZoom.Click += (s, ee) => HUD.HighlightedItem.ZoomToBox();
+                                menu.Items.Add(menuZoom);
+                            }
+
+                            e.Cancel = true;
                             foreach (var item in HUD.HighlightedItem.ContextMenuItems)
                             {
                                 ToolStripMenuItem menuSelectGH = new ToolStripMenuItem(item.Key);

@@ -9,7 +9,133 @@ namespace MantaRay.Helpers
 {
     public class RTreeHelper
     {
+        public static double[] FindClosestWeightedValues(Grid grid, IList<double> results, bool parallel = false)
+        {
+            if (grid.UseCenters == false)
+                throw new Exception("should only be called on nonCenter grids");
 
+            List<Point3d> searchPoints = grid.SimMesh.Vertices.ToPoint3dArray().ToList();
+            double CollisionDistance = grid.GridDist * 2.5;
+            var targetMesh = grid.SimMesh;
+            RTree rTree = new RTree();
+
+            List<List<int>> potentialTargetsPerPoint = new List<List<int>>();
+            int[] closestTargetPerPoint = new int[searchPoints.Count].Populate(-1);
+            int[][] closestTargetsPerPoint = new int[searchPoints.Count][];
+
+            double[] finalResults = new double[searchPoints.Count];
+
+            List<List<Point3d>> roomVertices = new List<List<Point3d>>();
+
+            for (int i = 0; i < searchPoints.Count; i++)
+            {
+                potentialTargetsPerPoint.Add(new List<int>());
+                closestTargetsPerPoint[i] = new int[targetMesh.Faces[i].IsQuad ? 4 : 3];
+            }
+
+            for (int i = 0; i < targetMesh.Vertices.Count; i++)
+                rTree.Insert(targetMesh.Vertices[i], i);
+
+            for (int i = 0; i < searchPoints.Count; i++)
+            {
+                rTree.Search(
+                    new Sphere(searchPoints[i], CollisionDistance),
+                    (sender, args) => { potentialTargetsPerPoint[i].Add(args.Id); });
+            }
+
+            for (int i = 0; i < potentialTargetsPerPoint.Count; i++)
+                potentialTargetsPerPoint[i] = potentialTargetsPerPoint[i].Distinct().ToList();
+
+            if (!parallel)
+            {
+                for (int i = 0; i < searchPoints.Count; i++)
+                {
+
+                    if (potentialTargetsPerPoint.Count > 0)
+                    {
+
+                        var list = new[]
+                        {
+                            new {dist = double.MaxValue, result = 0.0 },
+                            new {dist = double.MaxValue, result = 0.0 },
+                            new {dist = double.MaxValue, result = 0.0 }
+                        }.ToList();
+                        if (closestTargetsPerPoint[i].Length == 4) // isquad
+                            list.Add(new { dist = double.MaxValue, result = 0.0 });
+
+                        for (int j = 0; j < potentialTargetsPerPoint[i].Count; j++)
+                        {
+
+                            var targetPoint = targetMesh.Vertices[potentialTargetsPerPoint[i][j]];
+
+                            double distance = searchPoints[i].DistanceTo(targetPoint);
+
+                            if (distance < list[list.Count - 1].dist)
+                            {
+
+                                closestTargetPerPoint[i] = potentialTargetsPerPoint[i][j];
+
+                                list[closestTargetsPerPoint[i].Length] = new { dist = distance, result = results[closestTargetPerPoint[i]] };
+
+                                list.OrderBy(l => l.dist);
+
+                            }
+                        }
+
+                        finalResults[i] = list.Select(l => l.result).Sum() / closestTargetsPerPoint[i].Length;
+
+                    }
+
+                }
+
+            }
+            else
+            {
+                Parallel.For(0, searchPoints.Count, i =>
+                {
+                    if (potentialTargetsPerPoint.Count > 0)
+                    {
+
+                        var list = new[]
+                        {
+                            new {dist = double.MaxValue, result = 0.0 },
+                            new {dist = double.MaxValue, result = 0.0 },
+                            new {dist = double.MaxValue, result = 0.0 }
+                        }.ToList();
+                        if (closestTargetsPerPoint[i].Length == 4) // isquad
+                            list.Add(new { dist = double.MaxValue, result = 0.0 });
+
+                        for (int j = 0; j < potentialTargetsPerPoint[i].Count; j++)
+                        {
+
+                            var targetPoint = targetMesh.Vertices[potentialTargetsPerPoint[i][j]];
+
+                            double distance = searchPoints[i].DistanceTo(targetPoint);
+
+                            if (distance < list[list.Count - 1].dist)
+                            {
+
+                                closestTargetPerPoint[i] = potentialTargetsPerPoint[i][j];
+
+                                list[closestTargetsPerPoint[i].Length] = new { dist = distance, result = results[closestTargetPerPoint[i]] };
+
+                                list.OrderBy(l => l.dist);
+
+                            }
+                        }
+
+                        finalResults[i] = list.Select(l => l.result).Sum() / closestTargetsPerPoint[i].Length;
+
+                    }
+
+
+                });
+            }
+
+
+            return finalResults;
+
+        }
         public static int[] ConnectPointsToBreps(IEnumerable<Point3d> points, List<Brep> breps, double maxDist = 5, double rTreeTolerance = -1, bool parallel = false)
         {
             bool autoRTraceTol = rTreeTolerance <= 0;

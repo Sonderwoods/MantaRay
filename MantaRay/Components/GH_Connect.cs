@@ -10,6 +10,8 @@ using Grasshopper.Kernel.Data;
 using Grasshopper.Kernel.Types;
 using System.Linq;
 using MantaRay.Components;
+using Rhino.Geometry;
+using MantaRay.Setup;
 
 namespace MantaRay.Components
 {
@@ -35,9 +37,11 @@ namespace MantaRay.Components
         {
             pManager[pManager.AddTextParameter("user", "user", "input a string containing the linux user name.\nFor instance:\nmyName", GH_ParamAccess.item, System.Environment.UserName)].Optional = true;
             pManager[pManager.AddTextParameter("ip", "ip", "input a string containing the SSH ip address.\nFor instance:\n127.0.0.1", GH_ParamAccess.item, "127.0.0.1")].Optional = true;
-            pManager[pManager.AddTextParameter("LinuxDir", "LinuxDir", "LinuxDir", GH_ParamAccess.item, "")].Optional = true;
-            pManager[pManager.AddTextParameter("WindowsDir", "WindowsDir", "WindowsDir", GH_ParamAccess.item, "")].Optional = true;
-            pManager[pManager.AddTextParameter("Subfolder", "Subfolder", "Subfolder", GH_ParamAccess.item, "")].Optional = true;
+            pManager[pManager.AddTextParameter("LinuxDir", "LinuxDir", "Default linux dir.\nDefault is:\n'~/simulation'", GH_ParamAccess.item, "")].Optional = true;
+            pManager[pManager.AddTextParameter("WindowsDir", "WindowsDir", $"WindowsDir\nDefault is:\n'C:\\users\\{System.Environment.UserName}\\MantaRay\\", GH_ParamAccess.item, "")].Optional = true;
+            pManager[pManager.AddTextParameter("SftpDir", "SftpDir", "SftpDir. This can in some cases be a windows directory even though you are SSH'ing to linux.\nThis is sometimes the case when using Windows Subsystem Linux", GH_ParamAccess.item, "")].Optional = true;
+            pManager[pManager.AddTextParameter("ProjectName", "ProjectName", "Subfolder for this project\n" +
+                "If none is specified, files will land in UnnamedProject folder.\nIdeas:\nMyProject\nMyAwesomeProject", GH_ParamAccess.item, "")].Optional = true;
             pManager[pManager.AddTextParameter("password", "password", "password. Leave empty to prompt.", GH_ParamAccess.item, "_prompt")].Optional = true;
             pManager[pManager.AddIntegerParameter("_port", "_port", "_port", GH_ParamAccess.item, 22)].Optional = true;
             pManager[pManager.AddBooleanParameter("connect", "connect", "Set to true to start connection. If you recompute the component it will reconnect using same password," +
@@ -96,7 +100,8 @@ namespace MantaRay.Components
             string password = DA.Fetch<string>("password");
             string linDir = DA.Fetch<string>("LinuxDir");
             string winDir = DA.Fetch<string>("WindowsDir");
-            string subfolder = DA.Fetch<string>("Subfolder");
+            string sftpDir = DA.Fetch<string>("SftpDir");
+            string subfolder = DA.Fetch<string>("ProjectName", "Subfolder");
             string ip = DA.Fetch<string>("ip");
             int port = DA.Fetch<int>("_port");
             string prefixes = DA.Fetch<string>("prefixes");
@@ -176,6 +181,8 @@ namespace MantaRay.Components
                     SSH_Helper.WindowsParentPath = SSH_Helper.DefaultWindowsParentPath;
                 }
 
+                
+
                 if (!string.IsNullOrEmpty(linDir))
                 {
                     SSH_Helper.LinuxParentPath = System.IO.Path.GetDirectoryName(linDir);
@@ -185,13 +192,22 @@ namespace MantaRay.Components
                     SSH_Helper.LinuxParentPath = SSH_Helper.DefaultLinuxParentPath;
                 }
 
+                if (!string.IsNullOrEmpty(sftpDir))
+                {
+                    SSH_Helper.SftpDir = sftpDir;
+                }
+                else
+                {
+                    SSH_Helper.SftpDir = SSH_Helper.LinuxParentPath;
+                }
+
                 if (!string.IsNullOrEmpty(subfolder))
                 {
                     SSH_Helper.DefaultSubfolder = subfolder;
                 }
                 else
                 {
-                    SSH_Helper.DefaultSubfolder = SSH_Helper.DefaultDefaultSubfolder;
+                    SSH_Helper.DefaultSubfolder = SSH_Helper.DefaultProjectSubFolder;
                 }
 
                 sb.AppendFormat("SSH:  Setup <WinHome> to {0}\n", SSH_Helper.WindowsFullpath);
@@ -216,10 +232,13 @@ namespace MantaRay.Components
                         if (GetCredentials(username, ip, out string pw))
                         {
                             _pw = pw;
+                            this.ExpireSolution(true);
                         }
-                        this.ExpireSolution(true);
+                        
                     }
                 }
+
+                
                 catch (System.Net.Sockets.SocketException e)
                 {
                     sb.AppendFormat("SSH:  Could not find the SSH server\n      {0}\n      Try restarting it locally in " +
@@ -292,6 +311,8 @@ namespace MantaRay.Components
                 TryDisconnect();
                 sb.Append("Sftp + SSH: Disconnected\n");
             }
+
+            SSH_Helper.Execute($"mkdir -p {SSH_Helper.LinuxFullpath}");
 
 
             DA.SetData("status", sb.ToString());

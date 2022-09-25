@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using Grasshopper.Kernel;
 using MantaRay.Components;
@@ -55,11 +56,11 @@ namespace MantaRay.Components
             {
                 if(!(ptsFile.Contains(" ") || ptsFile.Contains("\t")) && System.IO.File.Exists(ptsFile))
                 {
-                    planes.AddRange(PointsHelper.ReadPtsString(System.IO.File.ReadAllText(ptsFile)));
+                    planes.AddRange(ReadPtsString(System.IO.File.ReadAllText(ptsFile)));
                 }
                 else
                 {
-                    planes.AddRange(PointsHelper.ReadPtsString(ptsFile));
+                    planes.AddRange(ReadPtsString(ptsFile));
                 }
                 
             }
@@ -71,6 +72,26 @@ namespace MantaRay.Components
 
             DA.SetDataList(0, planes);
             
+        }
+
+        public static List<Plane> ReadPtsString(string ptsString)
+        {
+            List<Plane> planes = new List<Plane>();
+
+            foreach (string line in ptsString.Split('\n').Where(l => !l.StartsWith("#")))
+            {
+
+                double[] n = line.Replace('\t', ' ').Split(' ')
+                    .Where(s => !String.IsNullOrEmpty(s))
+                    .Select(s => double.Parse(s, CultureInfo.InvariantCulture)).ToArray();
+                if (n.Length == 6)
+                {
+                    planes.Add(new Plane(new Point3d(n[0], n[1], n[2]), new Vector3d(n[3], n[4], n[5])));
+
+                }
+            }
+
+            return planes;
         }
 
         public override void DrawViewportMeshes(IGH_PreviewArgs args)

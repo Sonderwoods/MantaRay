@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Drawing;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -9,6 +10,7 @@ using Grasshopper.Kernel;
 using Grasshopper.Kernel.Data;
 using Grasshopper.Kernel.Types;
 using MantaRay.Components;
+using MantaRay.Setup;
 using Rhino.Geometry;
 
 namespace MantaRay
@@ -21,7 +23,7 @@ namespace MantaRay
         public GH_MeshToObj()
           : base("MeshToObj", "Mesh2Obj",
               "MeshToRad.\n\n" +
-                
+
                 "CAUTION: Does not export any UV mapping of materials etc. Just applies the modifer that you input.\n" +
                 "Connect me to the ObjToRad component for rad files.\n\n" +
                 "It is advised to join large list of meshes into singular joined meshes.\n" +
@@ -43,11 +45,11 @@ namespace MantaRay
                 "And input it as a grafted list. This will make the component run 3 meshing engines at the same time.", GH_ParamAccess.tree); //TODO: change to tree and allow parallel runs
 
             pManager[pManager.AddTextParameter("Name", "Name", "Name (will save name.rad)", GH_ParamAccess.tree)].DataMapping = GH_DataMapping.Graft;
-           
+
             pManager[pManager.AddTextParameter("MapFileName", "MapFileName", "name of mapping file name. Default is mapping (.map)", GH_ParamAccess.item, "mapping")].Optional = true;
             pManager[pManager.AddTextParameter("ModifierName", "ModifierName", "ModifierName - Name of the radiance material", GH_ParamAccess.tree)].DataMapping = GH_DataMapping.Graft;
-            
-            pManager[pManager.AddTextParameter("Subfolder Override", "Subfolder", "Optional. Override the subfolder from the connection component.\n" +
+
+            pManager[pManager.AddTextParameter("Target folder", "Target folder", "Optional. Override the subfolder from the connection component.\n" +
                 "Example:\n" +
                 "simulation/objFiles", GH_ParamAccess.item, "")].Optional = true;
             pManager.AddBooleanParameter("Run", "Run", "Run", GH_ParamAccess.item);
@@ -83,7 +85,7 @@ namespace MantaRay
 
             string mappingName = DA.Fetch<string>("MapFileName");
 
-            string subfolder = DA.Fetch<string>("Subfolder Override").AddGlobals().Replace('/', '\\').Trim('\\'); //keep backslash as we're in windows.
+            string subfolder = DA.Fetch<string>("Target folder", "Subfolder Override").AddGlobals().Replace('/', '\\').Trim('\\'); //keep backslash as we're in windows.
 
             Grasshopper.Kernel.Data.GH_Structure<GH_Mesh> inMeshes = DA.FetchTree<GH_Mesh>("Mesh");
 
@@ -150,81 +152,97 @@ namespace MantaRay
 
 
             // Write an obj file for each branch in the meshes list
-
-            Parallel.For(0, inMeshes.Branches.Count, q =>
+            try
             {
-            //for (int q = 0; q < inMeshes.Branches.Count; q++)
-            //{
-
-                if (inMeshes.Branches[q].Count > 10000)
+                Parallel.For(0, inMeshes.Branches.Count, q =>
                 {
-                    AddRuntimeMessage(GH_RuntimeMessageLevel.Remark, "Long list of meshes.\nAre you sure you're not better off joining the meshes first?");
-                }
+                    //for (int q = 0; q < inMeshes.Branches.Count; q++)
+                    //{
 
-
-                string name = names[q][0].Value.Replace(" ", "_"); //TODO: more fixes?
-
-                string geometryFilePath = workingDir + $"{name}.obj";
-
-                StringBuilder geometryFile = new StringBuilder();
-
-                geometryFile.Append($"# Written with {ConstantsHelper.ProjectName} plugin/GH_MeshToRad\r\n");
-
-                geometryFile.AppendFormat("g {0}\r\n", name);
-
-                int totalVertexCount = 1; // vertices in obj files start at #1
-                int objectCounter = 0;
-
-
-
-                for (int i = 0; i < inMeshes[q].Count; i++)
-                {
-                    int currentVertices = 0;
-                    Mesh mesh = inMeshes[q][i].Value;
-                    //mesh.Faces.ConvertQuadsToTriangles();
-                    mesh.FaceNormals.ComputeFaceNormals();
-
-                    geometryFile.AppendFormat(CultureInfo.InvariantCulture, "o {0}_{1:0}\r\n", name, ++objectCounter);
-
-                    for (int j = 0; j < mesh.Vertices.Count; j++)
+                    if (inMeshes.Branches[q].Count > 10000)
                     {
-                        currentVertices++;
-                        geometryFile.AppendFormat(CultureInfo.InvariantCulture, "v {0:0.000} {1:0.000} {2:0.000}\r\n", mesh.Vertices[j].X, mesh.Vertices[j].Y, mesh.Vertices[j].Z);
-                        //TODO: Tolerances/Units?
+                        AddRuntimeMessage(GH_RuntimeMessageLevel.Remark, "Long list of meshes.\nAre you sure you're not better off joining the meshes first?");
                     }
 
-                    for (int j = 0; j < mesh.Faces.Count; j++)
+
+                    string name = names[q][0].Value.Replace(" ", "_"); //TODO: more fixes?
+
+                    string geometryFilePath = workingDir + $"{name}.obj";
+
+                    StringBuilder geometryFile = new StringBuilder();
+
+                    geometryFile.Append($"# Written with {ConstantsHelper.ProjectName} plugin/GH_MeshToRad\r\n");
+
+                    geometryFile.AppendFormat("g {0}\r\n", name);
+
+                    int totalVertexCount = 1; // vertices in obj files start at #1
+                    int objectCounter = 0;
+
+
+
+                    for (int i = 0; i < inMeshes[q].Count; i++)
                     {
-                        if (mesh.Faces[j].IsQuad)
+                        int currentVertices = 0;
+                        Mesh mesh = inMeshes[q][i].Value;
+                        //mesh.Faces.ConvertQuadsToTriangles();
+                        mesh.FaceNormals.ComputeFaceNormals();
+
+                        geometryFile.AppendFormat(CultureInfo.InvariantCulture, "o {0}_{1:0}\r\n", name, ++objectCounter);
+
+                        for (int j = 0; j < mesh.Vertices.Count; j++)
                         {
-                            if (!MeshToRadHelper.InverseVertexOrder(mesh, j))
+                            currentVertices++;
+                            geometryFile.AppendFormat(CultureInfo.InvariantCulture, "v {0:0.000} {1:0.000} {2:0.000}\r\n", mesh.Vertices[j].X, mesh.Vertices[j].Y, mesh.Vertices[j].Z);
+                            //TODO: Tolerances/Units?
+                        }
+
+                        for (int j = 0; j < mesh.Faces.Count; j++)
+                        {
+                            if (mesh.Faces[j].IsQuad)
                             {
-                                geometryFile.AppendFormat(CultureInfo.InvariantCulture, "f {0} {1} {2} {3}\r\n", mesh.Faces[j].A + totalVertexCount, mesh.Faces[j].B + totalVertexCount, mesh.Faces[j].C + totalVertexCount, mesh.Faces[j].D + totalVertexCount);
+                                if (!InverseVertexOrder(mesh, j))
+                                {
+                                    geometryFile.AppendFormat(CultureInfo.InvariantCulture, "f {0} {1} {2} {3}\r\n", mesh.Faces[j].A + totalVertexCount, mesh.Faces[j].B + totalVertexCount, mesh.Faces[j].C + totalVertexCount, mesh.Faces[j].D + totalVertexCount);
+                                }
+                                else
+                                {
+                                    geometryFile.AppendFormat(CultureInfo.InvariantCulture, "f {0} {1} {2} {3}\r\n", mesh.Faces[j].D + totalVertexCount, mesh.Faces[j].C + totalVertexCount, mesh.Faces[j].B + totalVertexCount, mesh.Faces[j].A + totalVertexCount);
+
+                                }
                             }
                             else
                             {
-                                geometryFile.AppendFormat(CultureInfo.InvariantCulture, "f {0} {1} {2} {3}\r\n", mesh.Faces[j].D + totalVertexCount, mesh.Faces[j].C + totalVertexCount, mesh.Faces[j].B + totalVertexCount, mesh.Faces[j].A + totalVertexCount);
-
+                                if (!InverseVertexOrder(mesh, j))
+                                {
+                                    geometryFile.AppendFormat(CultureInfo.InvariantCulture, "f {0} {1} {2}\r\n", mesh.Faces[j].A + totalVertexCount, mesh.Faces[j].B + totalVertexCount, mesh.Faces[j].C + totalVertexCount);
+                                }
+                                else
+                                {
+                                    geometryFile.AppendFormat(CultureInfo.InvariantCulture, "f {0} {1} {2}\r\n", mesh.Faces[j].C + totalVertexCount, mesh.Faces[j].B + totalVertexCount, mesh.Faces[j].A + totalVertexCount);
+                                }
                             }
                         }
-                        else
-                        {
-                            if (!MeshToRadHelper.InverseVertexOrder(mesh, j))
-                            {
-                                geometryFile.AppendFormat(CultureInfo.InvariantCulture, "f {0} {1} {2}\r\n", mesh.Faces[j].A + totalVertexCount, mesh.Faces[j].B + totalVertexCount, mesh.Faces[j].C + totalVertexCount);
-                            }
-                            else
-                            {
-                                geometryFile.AppendFormat(CultureInfo.InvariantCulture, "f {0} {1} {2}\r\n", mesh.Faces[j].C + totalVertexCount, mesh.Faces[j].B + totalVertexCount, mesh.Faces[j].A + totalVertexCount);
-                            }
-                        }
+                        totalVertexCount += currentVertices;
                     }
-                    totalVertexCount += currentVertices;
-                }
+                    if (!File.Exists(geometryFilePath) || !IsFileLocked(new FileInfo(geometryFilePath)))
+                    {
+                        System.IO.File.WriteAllText(geometryFilePath, geometryFile.ToString());
+                    }
+                    else
+                    {
+                        throw new AccessViolationException($"File is locked? {geometryFilePath}");
+                    }
 
-                System.IO.File.WriteAllText(geometryFilePath, geometryFile.ToString());
-            //}
-            });
+                    //}
+                });
+            }
+            catch (AggregateException ae)
+            {
+                foreach (var e in ae.InnerExceptions)
+                {
+                    throw e;
+                }
+            }
 
 
             DA.SetDataList("Obj Files", localFilePaths);
@@ -233,6 +251,50 @@ namespace MantaRay
 
 
 
+
+
+        }
+
+        public static bool InverseVertexOrder(Mesh mesh, in int faceIndex)
+        {
+            var face = mesh.Faces[faceIndex];
+
+
+            Vector3f normalFromVertices = face.IsQuad ?
+                NormalFromVertices(mesh.Vertices[face.A], mesh.Vertices[face.B], mesh.Vertices[face.B], mesh.Vertices[face.C])
+                : NormalFromVertices(mesh.Vertices[face.A], mesh.Vertices[face.B], mesh.Vertices[face.B]);
+
+            Vector3f normalFromFace = mesh.FaceNormals[faceIndex];
+
+            double angle = Math.Asin(
+
+                Vector3f.CrossProduct(normalFromFace, normalFromVertices).Length
+                /
+                (normalFromFace.Length * normalFromVertices.Length)
+            );
+
+            return angle > 0;
+
+
+
+        }
+
+        public static Vector3f NormalFromVertices(in Point3f pt0, in Point3f pt1, in Point3f pt2)
+        {
+            Vector3f normalFromVertices = Vector3f.CrossProduct(pt1 - pt0, pt2 - pt0);
+            normalFromVertices.Unitize();
+            return normalFromVertices;
+        }
+
+        public static Vector3f NormalFromVertices(in Point3f pt0, in Point3f pt1, in Point3f pt2, in Point3f pt3)
+        {
+            Vector3f n1 = Vector3f.CrossProduct(pt1 - pt0, pt2 - pt0);
+            n1.Unitize();
+
+            Vector3f n2 = Vector3f.CrossProduct(pt3 - pt2, pt1 - pt2);
+            n2.Unitize();
+
+            return 0.5f * (n1 + n2);
 
 
         }
@@ -246,6 +308,28 @@ namespace MantaRay
         public override Guid ComponentGuid
         {
             get { return new Guid("7262DFF6-5027-40E7-A493-840F258EFB83"); }
+        }
+
+        protected virtual bool IsFileLocked(FileInfo file)
+        {
+            try
+            {
+                using (FileStream stream = file.Open(FileMode.Open, FileAccess.Write, FileShare.None))
+                {
+                    stream.Close();
+                }
+            }
+            catch (IOException)
+            {
+                //the file is unavailable because it is:
+                //still being written to
+                //or being processed by another thread
+                //or does not exist (has already been processed)
+                return true;
+            }
+
+            //file is not locked
+            return false;
         }
     }
 }

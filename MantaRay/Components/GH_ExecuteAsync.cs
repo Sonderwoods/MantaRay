@@ -5,6 +5,7 @@ using Grasshopper.Kernel;
 using Grasshopper.Kernel.Data;
 using Grasshopper.Kernel.Types;
 using MantaRay.Components.Templates;
+using MantaRay.Helpers;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -382,7 +383,7 @@ namespace MantaRay
                     int waitingForNewConnection = 5; // max iterations after checkconnection fails before throwing cancellation (this will give 1000ms to reconnect before changing context)
                     int dotCounter = 0;
                     string[] dots = new[] { "", ".", "..", "..." };
-                    while (true)
+                    while (true && asyncResult != null)
                     {
                         // Update progress bar as we run
                         if (counter++ % 5 == 0)

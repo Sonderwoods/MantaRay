@@ -3,6 +3,7 @@ using Grasshopper.Documentation;
 using Grasshopper.Kernel;
 using Grasshopper.Kernel.Data;
 using Grasshopper.Kernel.Types;
+using MantaRay.Helpers;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -82,15 +83,17 @@ namespace MantaRay
         /// </summary>
         protected virtual void AfterDone()
         {
-            if (HasLogAbilities() && LogSave)
-            {
 
-                //logHelper.Add(LogName, $"Done in {Stopwatch.Elapsed.ToReadableString()}", InstanceGuid);
-                logHelper.TryFinishTask(latestLogGuid);
-            }
             if (Tasks.Count == 0)
             {
                 RunTime = Stopwatch.Elapsed;
+
+                if (HasLogAbilities() && LogSave)
+                {
+
+                    //logHelper.Add(LogName, $"Done in {Stopwatch.Elapsed.ToReadableString()}", InstanceGuid);
+                    logHelper.TryFinishTask(latestLogGuid);
+                }
 
             }
 
@@ -275,33 +278,47 @@ namespace MantaRay
 
         protected override void ExpireDownStreamObjects()
         {
-            this.Params.Input[1].CollectData();
             bool solveInstance = true;
-            foreach(IGH_Goo data in this.Params.Input[1].VolatileData.AllData(false))
+            //GH_SolutionPhase phase;
+            try
             {
-                switch (data)
+                if (Params.Input[1].Phase == GH_SolutionPhase.Blank)
                 {
-                    case GH_Boolean b:
-                        if (!b.IsValid || b.Value == false) { solveInstance = false; }
-                        break;
-                    case GH_Integer @int:
-                        if (!@int.IsValid || @int.Value == 0) { solveInstance = false; }
-                        break;
-                    case GH_Number num:
-                        if (!num.IsValid || num.Value == 0) { solveInstance = false; }
-                        break;
-                    case GH_String text:
-                        if (!text.IsValid || !string.Equals("true", text.Value, StringComparison.InvariantCultureIgnoreCase)) { solveInstance = false; }
-                        break;
-                    default:
-                        solveInstance = false;
+                    this.Params.Input[1].CollectData();
+
+                }
+                foreach (IGH_Goo data in this.Params.Input[1].VolatileData.AllData(false))
+                {
+                    switch (data)
+                    {
+                        case GH_Boolean b:
+                            if (!b.IsValid || b.Value == false) { solveInstance = false; }
+                            break;
+                        case GH_Integer @int:
+                            if (!@int.IsValid || @int.Value == 0) { solveInstance = false; }
+                            break;
+                        case GH_Number num:
+                            if (!num.IsValid || num.Value == 0) { solveInstance = false; }
+                            break;
+                        case GH_String text:
+                            if (!text.IsValid || !string.Equals("true", text.Value, StringComparison.InvariantCultureIgnoreCase)) { solveInstance = false; }
+                            break;
+                        default:
+                            solveInstance = false;
+                            break;
+                    }
+                    if (!solveInstance)
                         break;
                 }
-                if (!solveInstance)
-                    break;
+
+                this.Params.Input[1].ClearData();
+            }
+            catch (NullReferenceException)
+            {
+                solveInstance = true;
             }
 
-            
+
 
             if (SetData == 1 || !solveInstance)
             {
@@ -339,21 +356,21 @@ namespace MantaRay
             //}
             //else
             //{
-                PhaseForColors = RunInput? AestheticPhase.Done : AestheticPhase.NotRunning;
+            PhaseForColors = RunInput ? AestheticPhase.Done : AestheticPhase.NotRunning;
             //((GH_ColorAttributes_Async)m_attributes).ColorSelected = new Grasshopper.GUI.Canvas.GH_PaletteStyle(Color.DarkRed);
             //((GH_ColorAttributes_Async)m_attributes).ColorUnselected = new Grasshopper.GUI.Canvas.GH_PaletteStyle(Color.DarkOrchid);
 
             if (RunInput)
-                {
-                    Message = "Ran in " + RunTime.ToShortString();
+            {
+                Message = "Ran in " + RunTime.ToShortString();
 
 
-                }
-                else
-                {
-                    Message = "Deactive";
+            }
+            else
+            {
+                Message = "Deactive";
 
-                }
+            }
             //}
 
             //base.PostRunning();
@@ -397,9 +414,9 @@ namespace MantaRay
 
 
 
-            if (HasLogAbilities() && LogSave && RunInput && RunCount == this.Params.Input[0].VolatileData.PathCount - 1)
+            if (HasLogAbilities() && LogSave && RunInput && RunCount == this.Params.Input[0].VolatileData.PathCount)
             {
-                
+
                 //logHelper.Add($"{LogName} {RunCount - 1}", (LogUseFixedDescription ? LogDescriptionStatic : LogDescriptionDynamic) + " Starting", InstanceGuid);
                 latestLogGuid = logHelper.AddTask($"{LogName}", (LogUseFixedDescription ? LogDescriptionStatic : LogDescriptionDynamic), InstanceGuid);
             }

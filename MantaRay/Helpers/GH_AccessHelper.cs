@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Xml.Linq;
 
 namespace MantaRay
 {
@@ -59,9 +60,32 @@ namespace MantaRay
             }
             catch (System.InvalidOperationException e)
             {
-                throw new IndexOutOfRangeException($"item instead of list!?: {position}" + msg, e);
+                throw new InvalidOperationException($"item instead of list!?: {position}" + msg, e);
             }
             return temp;
+        }
+
+        public static T Fetch<T>(this IGH_DataAccess da, params string[] names)
+        {
+            var temp = default(T);
+
+            foreach (var name in names)
+            {
+                try
+                {
+                    da.GetData(name, ref temp);
+                    return temp;
+                }
+                catch(System.IndexOutOfRangeException)
+                {
+                    continue;
+                }
+                catch (System.InvalidOperationException e)
+                {
+                    throw new InvalidOperationException($"item instead of list!?: {name}" + msg, e);
+                }
+            }
+            throw new IndexOutOfRangeException($"Input parameter not found: \"{string.Join("\", \"", names)}\"\n+{msg}");
         }
         /// <summary>
         /// Fetch data with name
@@ -84,7 +108,7 @@ namespace MantaRay
             }
             catch (System.InvalidOperationException e)
             {
-                throw new IndexOutOfRangeException($"item instead of list!?: {name}" + msg, e);
+                throw new InvalidOperationException($"item instead of list!?: {name}" + msg, e);
             }
             return temp;
         }
@@ -110,7 +134,7 @@ namespace MantaRay
             }
             catch (System.InvalidOperationException e)
             {
-                throw new IndexOutOfRangeException($"item instead of list!?: {position}" + msg, e);
+                throw new InvalidOperationException($"item instead of list!?: {position}" + msg, e);
             }
             return temp;
         }
@@ -136,7 +160,7 @@ namespace MantaRay
             }
             catch (System.InvalidOperationException e)
             {
-                throw new IndexOutOfRangeException($"item instead of list!?: {name}" + msg, e);
+                throw new InvalidOperationException($"item instead of list!?: {name}" + msg, e);
             }
             return temp;
         }
@@ -161,7 +185,7 @@ namespace MantaRay
             }
             catch (System.InvalidOperationException e)
             {
-                throw new IndexOutOfRangeException($"item instead of list!?: {position}" + msg, e);
+                throw new InvalidOperationException($"item instead of list!?: {position}" + msg, e);
             }
             return temp;
         }
@@ -188,7 +212,7 @@ namespace MantaRay
             }
             catch (System.InvalidOperationException e)
             {
-                throw new IndexOutOfRangeException($"item instead of list!?: {name}" + msg, e);
+                throw new InvalidOperationException($"item instead of list!?: {name}" + msg, e);
             }
             return temp;
         }
