@@ -86,10 +86,13 @@ namespace MantaRay.Components
 
             if (keys.Count != values.Count) throw new ArgumentOutOfRangeException("The list lengths do not match in Keys/Values inputs");
 
+
+            //The below are set in the Connect component
             GlobalsHelper.Globals.Clear();
-            GlobalsHelper.Globals["WinHome"] = SSH_Helper.WindowsFullpath;
-            GlobalsHelper.Globals["LinuxHome"] = SSH_Helper.LinuxFullpath;
-            GlobalsHelper.Globals["cpus"] = (Environment.ProcessorCount - 1).ToString();
+            foreach (var kvp in GlobalsHelper.GlobalsFromConnectComponent)
+            {
+                GlobalsHelper.Globals.Add(kvp.Key, kvp.Value);
+            }
 
 
             for (int i = 0; i < keys.Count; i++)
@@ -120,8 +123,8 @@ namespace MantaRay.Components
             }
             if (ManPageHelper.Instance != null)
             {
-            lock (GlobalsHelper.Lock)
-                GlobalsHelper.Globals["AllRadProgs"] = String.Join("\\|", ManPageHelper.Instance.AllRadiancePrograms.Keys);
+                lock (GlobalsHelper.Lock)
+                    GlobalsHelper.Globals["AllRadProgs"] = String.Join("\\|", ManPageHelper.Instance.AllRadiancePrograms.Keys);
 
             }
 
@@ -133,7 +136,7 @@ namespace MantaRay.Components
 
 
             // Outputs
-            foreach (KeyValuePair<string, string> item in GlobalsHelper.Globals)
+            foreach (KeyValuePair<string, string> item in GlobalsHelper.Globals.Where(i => i.Key != "AllRadProgs"))
             {
                 outPairs.Add($"{("<" + item.Key + ">").PadRight(keysLength + 2)} --> {item.Value}");
             }
