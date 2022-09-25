@@ -83,7 +83,7 @@ namespace MantaRay
         /// </summary>
         protected virtual void AfterDone()
         {
-            
+
             if (Tasks.Count == 0)
             {
                 RunTime = Stopwatch.Elapsed;
@@ -279,11 +279,14 @@ namespace MantaRay
         protected override void ExpireDownStreamObjects()
         {
             bool solveInstance = true;
-            GH_SolutionPhase phase;
+            //GH_SolutionPhase phase;
             try
             {
-                phase = Params.Input[1].Phase;
-                this.Params.Input[1].CollectData();
+                if (Params.Input[1].Phase == GH_SolutionPhase.Blank)
+                {
+                    this.Params.Input[1].CollectData();
+
+                }
                 foreach (IGH_Goo data in this.Params.Input[1].VolatileData.AllData(false))
                 {
                     switch (data)
@@ -315,7 +318,7 @@ namespace MantaRay
                 solveInstance = true;
             }
 
-            
+
 
             if (SetData == 1 || !solveInstance)
             {
@@ -353,21 +356,21 @@ namespace MantaRay
             //}
             //else
             //{
-                PhaseForColors = RunInput? AestheticPhase.Done : AestheticPhase.NotRunning;
+            PhaseForColors = RunInput ? AestheticPhase.Done : AestheticPhase.NotRunning;
             //((GH_ColorAttributes_Async)m_attributes).ColorSelected = new Grasshopper.GUI.Canvas.GH_PaletteStyle(Color.DarkRed);
             //((GH_ColorAttributes_Async)m_attributes).ColorUnselected = new Grasshopper.GUI.Canvas.GH_PaletteStyle(Color.DarkOrchid);
 
             if (RunInput)
-                {
-                    Message = "Ran in " + RunTime.ToShortString();
+            {
+                Message = "Ran in " + RunTime.ToShortString();
 
 
-                }
-                else
-                {
-                    Message = "Deactive";
+            }
+            else
+            {
+                Message = "Deactive";
 
-                }
+            }
             //}
 
             //base.PostRunning();
@@ -413,7 +416,7 @@ namespace MantaRay
 
             if (HasLogAbilities() && LogSave && RunInput && RunCount == this.Params.Input[0].VolatileData.PathCount)
             {
-                
+
                 //logHelper.Add($"{LogName} {RunCount - 1}", (LogUseFixedDescription ? LogDescriptionStatic : LogDescriptionDynamic) + " Starting", InstanceGuid);
                 latestLogGuid = logHelper.AddTask($"{LogName}", (LogUseFixedDescription ? LogDescriptionStatic : LogDescriptionDynamic), InstanceGuid);
             }
