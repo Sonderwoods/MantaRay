@@ -53,7 +53,7 @@ namespace MantaRay.Components
         protected override void SolveInstance(IGH_DataAccess DA)
         {
 
-            if (!CheckIfRunOrUseOldResults(DA, 1)) return; //template
+            if (!CheckIfRunOrUseOldResults(DA, 0)) return; //template
 
 
             string targetFolder = DA.Fetch<string>("Target local folder");
