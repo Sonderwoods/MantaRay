@@ -249,7 +249,17 @@ namespace MantaRay
 
 
 
+                if (!Directory.Exists(Path.GetDirectoryName(targetFileName)))
+                {
+                    Directory.CreateDirectory(Path.GetDirectoryName(targetFileName));
+                }
 
+                if (linuxFileName.Contains("~"))
+                {
+                    StringBuilder sb = new StringBuilder();
+                    SSH_Helper.Execute($"readlink -f {linuxFileName}", null, sb, null, false, false, null);
+                    linuxFileName = sb.ToString();
+                }
 
 
                 using (var saveFile = File.OpenWrite(targetFileName))
