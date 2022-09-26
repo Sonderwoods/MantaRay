@@ -274,7 +274,7 @@ namespace MantaRay
 
         public void SetPanelColors()
         {
-            System.Drawing.Color color = RuntimeMessages(GH_RuntimeMessageLevel.Warning).Count + RuntimeMessages(GH_RuntimeMessageLevel.Error).Count > 0 ? Color.FromArgb(255, 220, 190, 190) : Color.FromArgb(255, 160, 190, 160);
+            System.Drawing.Color color = RuntimeMessages(GH_RuntimeMessageLevel.Warning).Count + RuntimeMessages(GH_RuntimeMessageLevel.Error).Count > 0 ? Color.FromArgb(255, 250, 210, 210) : Color.FromArgb(255, 160, 190, 160);
             foreach (var panel in Grasshopper.Instances.ActiveCanvas.Document.Objects
                 .OfType<Grasshopper.Kernel.Special.GH_Panel>())
             {
