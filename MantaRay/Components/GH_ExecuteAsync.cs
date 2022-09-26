@@ -101,12 +101,13 @@ namespace MantaRay
             HashSet<string> radProgs = new HashSet<string>();
 
             List<string> commands = new List<string>();
+            //GH_SolutionPhase paramPhase = Params.Input[0].Phase;
 
-            if (Params.Input[0].Phase == GH_SolutionPhase.Blank)
-            {
-                this.Params.Input[0].CollectData();
+            //if (paramPhase == GH_SolutionPhase.Blank)
+            //{
+            //    //this.Params.Input[0].CollectData();
 
-            }
+            //}
             foreach (IGH_Goo data in this.Params.Input[0].VolatileData.AllData(false))
             {
                 switch (data)
@@ -124,8 +125,9 @@ namespace MantaRay
                 }
 
             }
+            //Params.Input[0].Phase = paramPhase;
 
-            this.Params.Input[0].ClearData();
+            
 
 
 
@@ -224,7 +226,7 @@ namespace MantaRay
                     Params.Output[1].ClearData();
 
 
-                    SetOneBoolOutput(this, DA, 2, false);
+                    
                 }
 
                 if (Results.Count > RunCount - 1)
@@ -237,8 +239,10 @@ namespace MantaRay
                 else
                     AddRuntimeMessage(GH_RuntimeMessageLevel.Remark, "No cached data, please rerun.");
 
+                SetOneBoolOutput(this, DA, 2, false);
 
-                
+
+
 
 
                 Message = LastRun.TotalMilliseconds > 0 ? $"Cached  (last was {LastRun.ToShortString()})" : "Clean";
@@ -255,7 +259,7 @@ namespace MantaRay
             {
                 if (Params.Output[this.Params.Output.Count - 1].VolatileDataCount == 0)
                 {
-                    DA.SetData(this.Params.Output.Count - 1, false);
+                    SetOneBoolOutput(this, DA, 2, false);
 
                 }
 
