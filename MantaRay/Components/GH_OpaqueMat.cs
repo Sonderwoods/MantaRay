@@ -38,7 +38,7 @@ namespace MantaRay.Components
         /// </summary>
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
-            pManager.AddTextParameter("RadMaterials", "RadMaterials", "RadMaterials", GH_ParamAccess.item);
+            pManager.AddTextParameter("RadMaterials", "RadMaterials", "all RadMaterials joined in one string", GH_ParamAccess.item);
             pManager.AddTextParameter("RadMaterialList", "RadMaterialList", "RadMaterialList", GH_ParamAccess.list);
         }
 
@@ -75,7 +75,7 @@ namespace MantaRay.Components
 
             for (int i = 0; i < names.Count; i++)
             {
-                var name = names[i].AddGlobals().Cleaned();
+                var name = names[i].ApplyGlobals().Cleaned();
                 var color = colors[i];
                 var roughness = roughnesses[i];
                 var specularity = specularities[i];

@@ -124,7 +124,7 @@ namespace MantaRay
 
             AfterDone();
 
-
+            
 
         }
 
@@ -272,55 +272,58 @@ namespace MantaRay
             //Set only ONE bool output in "RAN"
             var runOut = new GH_Structure<GH_Boolean>();
             runOut.Append(new GH_Boolean(result), new GH_Path(0));
-            component.Params.Output[param].ClearData();
-            DA.SetDataTree(param, runOut);
+            //component.Params.Output[param].ClearData();
+            if (component.Params.Output[param].VolatileDataCount == 0)
+                DA.SetDataTree(param, runOut);
         }
 
         protected override void ExpireDownStreamObjects()
         {
-            bool solveInstance = true;
-            //GH_SolutionPhase phase;
-            try
-            {
-                if (Params.Input[1].Phase == GH_SolutionPhase.Blank)
-                {
-                    this.Params.Input[1].CollectData();
+            //bool solveInstance = true;
+            ////GH_SolutionPhase phase;
+            //try
+            //{
+            //    //GH_SolutionPhase paramPhase = Params.Input[1].Phase;
+            //    //if (paramPhase == GH_SolutionPhase.Blank)
+            //    //{
+            //    //    //this.Params.Input[1].CollectData();
 
-                }
-                foreach (IGH_Goo data in this.Params.Input[1].VolatileData.AllData(false))
-                {
-                    switch (data)
-                    {
-                        case GH_Boolean b:
-                            if (!b.IsValid || b.Value == false) { solveInstance = false; }
-                            break;
-                        case GH_Integer @int:
-                            if (!@int.IsValid || @int.Value == 0) { solveInstance = false; }
-                            break;
-                        case GH_Number num:
-                            if (!num.IsValid || num.Value == 0) { solveInstance = false; }
-                            break;
-                        case GH_String text:
-                            if (!text.IsValid || !string.Equals("true", text.Value, StringComparison.InvariantCultureIgnoreCase)) { solveInstance = false; }
-                            break;
-                        default:
-                            solveInstance = false;
-                            break;
-                    }
-                    if (!solveInstance)
-                        break;
-                }
+            //    //}
+            //    var x = Params.Input[1].SourceCount;
+            //    foreach (IGH_Goo data in this.Params.Input[1].VolatileData.AllData(false))
+            //    {
+            //        switch (data)
+            //        {
+            //            case GH_Boolean b:
+            //                if (!b.IsValid || b.Value == false) { solveInstance = false; }
+            //                break;
+            //            case GH_Integer @int:
+            //                if (!@int.IsValid || @int.Value == 0) { solveInstance = false; }
+            //                break;
+            //            case GH_Number num:
+            //                if (!num.IsValid || num.Value == 0) { solveInstance = false; }
+            //                break;
+            //            case GH_String text:
+            //                if (!text.IsValid || !string.Equals("true", text.Value, StringComparison.InvariantCultureIgnoreCase)) { solveInstance = false; }
+            //                break;
+            //            default:
+            //                solveInstance = false;
+            //                break;
+            //        }
+            //        if (!solveInstance)
+            //            break;
+            //    }
+            //    //this.Params.Input[1].Phase = paramPhase;
+            //    //this.Params.Input[1].ClearData();
+            //}
+            //catch (NullReferenceException)
+            //{
+            //    solveInstance = true;
+            //}
 
-                this.Params.Input[1].ClearData();
-            }
-            catch (NullReferenceException)
-            {
-                solveInstance = true;
-            }
 
 
-
-            if (SetData == 1 || !solveInstance)
+            if (SetData == 1 || !RunInput || PhaseForColors  == AestheticPhase.Reusing || PhaseForColors == AestheticPhase.NotRunning || PhaseForColors == AestheticPhase.Done)
             {
                 base.ForceExpireDownStreamObjects();
             }
@@ -400,7 +403,7 @@ namespace MantaRay
                 //((GH_ColorAttributes_Async)m_attributes).ColorSelected = new Grasshopper.GUI.Canvas.GH_PaletteStyle(Color.MediumVioletRed);
                 //((GH_ColorAttributes_Async)m_attributes).ColorUnselected = new Grasshopper.GUI.Canvas.GH_PaletteStyle(Color.Purple);
 
-                Message = "Missing connection?"; // this will be overwritten if the task actually starts. So it's kind of a debug
+                Message = "Right click and cancel"; // this will be overwritten if the task actually starts. So it's kind of a debug
 
             }
             else

@@ -64,7 +64,7 @@ namespace MantaRay.Components
 
             for (int i = 0; i < names.Count; i++)
             {
-                var name = names[i].AddGlobals().Cleaned();
+                var name = names[i].ApplyGlobals().Cleaned();
                 var transmittance = transmittances[i];
       
 

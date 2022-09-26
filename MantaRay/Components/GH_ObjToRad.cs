@@ -69,7 +69,7 @@ namespace MantaRay.Components
 
             List<string> radFilePaths = new List<string>(allFilePaths.Count);
 
-            string subfolderOverride = DA.Fetch<string>("Target folder", "Subfolder Override").AddGlobals().Replace('\\', '/').TrimEnd('/');
+            string subfolderOverride = DA.Fetch<string>("Target folder", "Subfolder Override").ApplyGlobals().Replace('\\', '/').TrimEnd('/');
 
             StringBuilder sb = new StringBuilder();
 
@@ -112,7 +112,7 @@ namespace MantaRay.Components
 
                     string radFilePath = Path.GetFileNameWithoutExtension(filePath);
 
-                    SSH_Helper.Execute($"obj2rad -m {targetPath}/{Path.GetFileName(allFilePaths[0].AddGlobals())} -f {targetPath}/{Path.GetFileName(filePath)} >{targetPath}/{radFilePath}.rad", log: sb.Length < 10 ? sb : null, errors: sb);
+                    SSH_Helper.Execute($"obj2rad -m {targetPath}/{Path.GetFileName(allFilePaths[0].ApplyGlobals())} -f {targetPath}/{Path.GetFileName(filePath)} >{targetPath}/{radFilePath}.rad", log: sb.Length < 10 ? sb : null, errors: sb);
 
                     radFilePaths.Add($"{targetPath}/{radFilePath}.rad");
                 }

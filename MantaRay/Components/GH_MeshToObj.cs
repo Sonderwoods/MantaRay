@@ -85,7 +85,7 @@ namespace MantaRay
 
             string mappingName = DA.Fetch<string>("MapFileName");
 
-            string subfolder = DA.Fetch<string>("Target folder", "Subfolder Override").AddGlobals().Replace('/', '\\').Trim('\\'); //keep backslash as we're in windows.
+            string subfolder = DA.Fetch<string>("Target folder", "Subfolder Override").ApplyGlobals().Replace('/', '\\').Trim('\\'); //keep backslash as we're in windows.
 
             Grasshopper.Kernel.Data.GH_Structure<GH_Mesh> inMeshes = DA.FetchTree<GH_Mesh>("Mesh");
 
@@ -139,7 +139,7 @@ namespace MantaRay
 
                 string name = names[i][0].Value.Replace(" ", "_");
 
-                mapping.AppendFormat("\n{0} (Group \"{1}\");", modifierName.AddGlobals(), name.AddGlobals());
+                mapping.AppendFormat("\n{0} (Group \"{1}\");", modifierName.ApplyGlobals(), name.ApplyGlobals());
 
                 localFilePaths.Add(workingDir + name + ".obj");
             }

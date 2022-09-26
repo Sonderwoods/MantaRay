@@ -109,8 +109,8 @@ namespace MantaRay.Components
             order = Grasshopper.Instances.ActiveCanvas.Document.Objects.OfType<GH_RadViewerSolve>().TakeWhile(t => !object.ReferenceEquals(t, this)).Count();
             //timeSpan = new TimeSpan(0);
 
-   
-      
+
+
 
             /*
              * The RAD viewer architecture is a setup im testing. I have not benchmarked it but it runs in several steps asynchronously.
@@ -241,7 +241,7 @@ namespace MantaRay.Components
                         //ErrorMsgs.Add("SyntaxError: " + e.Message);
 
                     }
-                    
+
                     if (c2++ % 10 == 0 && GH_Document.IsEscapeKeyDown())
                     {
                         this.Locked = true;
@@ -304,8 +304,12 @@ namespace MantaRay.Components
 
                             break;
 
+
                         default:
-                            throw new Exception("Unknown type");
+                            if (obj == null)
+                                continue;
+                            else
+                                throw new Exception("Unknown type");
                     }
                     //}
                     //catch (Exception e)
@@ -427,7 +431,7 @@ namespace MantaRay.Components
             //DA.SetDataList(2, objects.OrderBy(o => o.Key).Select(o => o.Value.ModifierName));
             DA.SetDataList(2, objects.OrderBy(o => o.Key).Select(o => (o.Value.Modifier)).Select(m => m is RadianceMaterial ? (m as RadianceMaterial).MaterialDefinition : null));
             DA.SetDataList(3, failedCurves);
-  
+
 
             foreach (string msg in ErrorMsgs)
             {

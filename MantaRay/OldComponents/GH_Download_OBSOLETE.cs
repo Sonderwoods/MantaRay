@@ -7,17 +7,17 @@ using GH_IO.Serialization;
 using Grasshopper.Kernel;
 using Grasshopper.Kernel.Data;
 using Grasshopper.Kernel.Types;
-using MantaRay.Components;
 using Rhino.Geometry;
 
-namespace MantaRay.Components
+namespace MantaRay.OldComponents
 {
-    public class GH_Download : GH_Template_SaveStrings
+    [Obsolete]
+    public class GH_Download_OBSOLETE : GH_Template_SaveStrings
     {
         /// <summary>
         /// Initializes a new instance of the GH_Download class.
         /// </summary>
-        public GH_Download()
+        public GH_Download_OBSOLETE()
           : base("Download", "Download",
               "Download a file from linux to local in windows",
               "1 SSH")
@@ -25,11 +25,11 @@ namespace MantaRay.Components
         }
 
 
-
+        public override GH_Exposure Exposure => GH_Exposure.hidden;
         /// <summary>
         /// Registers all the input parameters for this component.
         /// </summary>
-        protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
+        protected override void RegisterInputParams(GH_InputParamManager pManager)
         {
             pManager.AddTextParameter("Linux File Paths", "Linux File", "Linux file path", GH_ParamAccess.list);
             pManager[pManager.AddTextParameter("Target local folder", "target folder", "Local target folder in windows", GH_ParamAccess.item, "")].Optional = true;
@@ -39,10 +39,10 @@ namespace MantaRay.Components
         /// <summary>
         /// Registers all the output parameters for this component.
         /// </summary>
-        protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
+        protected override void RegisterOutputParams(GH_OutputParamManager pManager)
         {
-            pManager.AddTextParameter("File Paths", "File Paths", "Path to the files", GH_ParamAccess.list);
             pManager.AddTextParameter("Status", "Status", "status", GH_ParamAccess.item);
+            pManager.AddTextParameter("File Paths", "File Paths", "Path to the files", GH_ParamAccess.list);
             pManager.AddTextParameter("Ran", "Ran", "Run", GH_ParamAccess.tree);
         }
 
@@ -53,12 +53,12 @@ namespace MantaRay.Components
         protected override void SolveInstance(IGH_DataAccess DA)
         {
 
-            if (!CheckIfRunOrUseOldResults(DA, 0)) return; //template
+            if (!CheckIfRunOrUseOldResults(DA, 1)) return; //template
 
 
             string targetFolder = DA.Fetch<string>("Target local folder");
 
-            if (targetFolder == null || String.IsNullOrEmpty(targetFolder))
+            if (targetFolder == null || string.IsNullOrEmpty(targetFolder))
             {
                 targetFolder = SSH_Helper.WindowsFullpath;
             }
@@ -95,7 +95,7 @@ namespace MantaRay.Components
         /// </summary>
         public override Guid ComponentGuid
         {
-            get { return new Guid("6C897E25-1EBE-48D8-AD3A-121DA1B2AD90"); }
+            get { return new Guid("6C897E25-1EBE-48D8-AD3A-111DB1B2AD90"); }
         }
     }
 }

@@ -79,7 +79,7 @@ namespace MantaRay
                 StringBuilder stdout = new StringBuilder();
                 StringBuilder errors = new StringBuilder();
                 List<string> commands = DA.FetchList<string>("SSH Commands");
-                string command = String.Join(";", commands).AddGlobals();
+                string command = String.Join(";", commands).ApplyGlobals();
 
 
 
