@@ -31,6 +31,8 @@ namespace MantaRay.Components
         int staticParameterCount = 0;
         List<string> missingInputs = new List<string>();
 
+        public override bool IsPreviewCapable => false;
+
 
 
         /// <summary>
@@ -40,7 +42,7 @@ namespace MantaRay.Components
         {
             staticParameterCount = this.Params.Input.Count;
 
-            pManager.AddGenericParameter("Input", "Input_", "Input string", GH_ParamAccess.list);
+            pManager.AddGenericParameter("Input", "Input", "Input string", GH_ParamAccess.list);
 
             staticParameterCount = this.Params.Input.Count - staticParameterCount;
         }
@@ -50,7 +52,11 @@ namespace MantaRay.Components
         /// </summary>
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
-            pManager.AddGenericParameter("Output", "O", "output with globals applied", GH_ParamAccess.list);
+            pManager.AddTextParameter("Output", "Output", "Output with globals applied.\nOutputs a text object", GH_ParamAccess.list);
+            pManager.AddGenericParameter("DynamicOutput", "DynamicOutput", "output with globals 'on demand'\nUse me to connect to Execute Component\n\n" +
+                "This is NOT your average text object, because if you feed it into the Execute Component,\n" +
+                "the globals will not be applied untill the Execute Component is actually executing.\n\n" +
+                "This gives some advantages in case some globals were changed such as project folder etc.", GH_ParamAccess.list);
         }
 
         /// <summary>
@@ -121,13 +127,20 @@ namespace MantaRay.Components
 
             //ToArray to make sure it's enumerated and thus added to missing inputs.
             OverridableText[] outputs = inputs.Select(i => new OverridableText(i, locals, missingInputs)).ToArray();
+            string[] outputsRaw = inputs.Select(i => new OverridableText(i, locals, missingInputs).Value).ToArray();
 
             missingInputs.ForEach(item => AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, $"Missing \"{item}\""));
 
             if (RuntimeMessages(GH_RuntimeMessageLevel.Error).Count == 0)
             {
-                DA.SetDataList(0, outputs);
+                DA.SetDataList(0, outputsRaw);
+
+                if (Params.Output.Count == 2)
+                {
+                    DA.SetDataList(1, outputs);
+                }
             }
+            
 
 
         }
@@ -195,12 +208,14 @@ namespace MantaRay.Components
 
         bool IGH_VariableParameterComponent.CanInsertParameter(GH_ParameterSide side, int index)
         {
-            return side == GH_ParameterSide.Input && index >= staticParameterCount;
+            return (side == GH_ParameterSide.Input && index >= staticParameterCount) ||
+                (side == GH_ParameterSide.Output && index == 1 && Params.Output.Count == 1);
         }
 
         bool IGH_VariableParameterComponent.CanRemoveParameter(GH_ParameterSide side, int index)
         {
-            return side == GH_ParameterSide.Input && index >= staticParameterCount;
+            return (side == GH_ParameterSide.Input && index >= staticParameterCount) ||
+                (side == GH_ParameterSide.Output && index == 1);
         }
 
         IGH_Param IGH_VariableParameterComponent.CreateParameter(GH_ParameterSide side, int index)
@@ -234,6 +249,15 @@ namespace MantaRay.Components
 
                 param.DataMapping = GH_DataMapping.Graft;
 
+            }
+
+            if(Params.Output.Count == 2)
+            {
+                var param = Params.Output[1];
+                if (param.NickName == "-")
+                {
+                    param.NickName = "DynamicOutput";
+                }
             }
 
             this.Params.ParameterNickNameChanged -= Params_ParameterNickNameChanged;
