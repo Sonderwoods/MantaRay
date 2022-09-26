@@ -15,7 +15,7 @@ namespace MantaRay.Components
         /// Initializes a new instance of the GH_Globals class.
         /// </summary>
         public GH_Globals()
-          : base("Global Overrides", "Global Overrides",
+          : base("Setup Global Overrides", "Setup Global Overrides",
               "Sets globals that can be replaced in the ssh commands and in paths",
               "0 Setup")
         {
@@ -138,7 +138,7 @@ namespace MantaRay.Components
             // Outputs
             foreach (KeyValuePair<string, string> item in GlobalsHelper.Globals.Where(i => i.Key != "AllRadProgs"))
             {
-                outPairs.Add($"{("<" + item.Key + ">").PadRight(keysLength + 2)} --> {item.Value}");
+                outPairs.Add($"{("<" + item.Key + ">").PadRight(keysLength + 2)} --> {item.Value.ApplyGlobals()}");
             }
 
             DA.SetDataList(0, outPairs);
