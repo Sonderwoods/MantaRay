@@ -28,7 +28,8 @@ namespace MantaRay.Components
         }
 
         private string _pw;
- 
+        int connectID = 0;
+
 
         /// <summary>
         /// Registers all the input parameters for this component.
@@ -44,8 +45,9 @@ namespace MantaRay.Components
                 "If none is specified, files will land in UnnamedProject folder.\nIdeas:\nMyProject\nMyAwesomeProject", GH_ParamAccess.item, "")].Optional = true;
             pManager[pManager.AddTextParameter("password", "password", "password. Leave empty to prompt.", GH_ParamAccess.item, "_prompt")].Optional = true;
             pManager[pManager.AddIntegerParameter("_port", "_port", "_port", GH_ParamAccess.item, 22)].Optional = true;
-            pManager[pManager.AddBooleanParameter("connect", "connect", "Set to true to start connection. If you recompute the component it will reconnect using same password," +
-                "however if you set connect to false, then it will remove the password.", GH_ParamAccess.item, false)].Optional = true;
+            connectID = pManager.AddBooleanParameter("connect", "connect", "Set to true to start connection. If you recompute the component it will reconnect using same password," +
+                "however if you set connect to false, then it will remove the password.", GH_ParamAccess.item, false);
+            pManager[connectID].Optional = true;
             pManager[pManager.AddTextParameter("prefixes", "Prefixes", "Prefixes can be used to set paths etc.This 'CAN' be executed on all components where 'use prefix' is set.\n" +
                 "i added the prefixes because depending on the SSH setup then the paths may or may not be set up correctly\n" +
                 "\n\nOn our local setup i added the file '/etc/profile' and added my paths to that.\n" +
@@ -181,7 +183,7 @@ namespace MantaRay.Components
                     SSH_Helper.WindowsParentPath = SSH_Helper.DefaultWindowsParentPath;
                 }
 
-                
+
 
                 if (!string.IsNullOrEmpty(linDir))
                 {
@@ -210,7 +212,7 @@ namespace MantaRay.Components
                     SSH_Helper.ProjectSubPath = SSH_Helper.DefaultProjectSubFolder;
                 }
 
-                
+
                 sb.AppendFormat("SSH:  Setup <WinHome> to {0}\n", SSH_Helper.WindowsFullpath);
                 sb.AppendFormat("SSH:  Setup <LinuxHome> to {0}\n", SSH_Helper.LinuxFullpath);
                 sb.AppendFormat("SSH:  Setup <Project> to {0}\n", SSH_Helper.ProjectSubPath);
@@ -243,11 +245,11 @@ namespace MantaRay.Components
                             _pw = pw;
                             this.ExpireSolution(true);
                         }
-                        
+
                     }
                 }
 
-                
+
                 catch (System.Net.Sockets.SocketException e)
                 {
                     sb.AppendFormat("SSH:  Could not find the SSH server\n      {0}\n      Try restarting it locally in " +
@@ -360,7 +362,48 @@ namespace MantaRay.Components
         {
             if (document.Objects.Contains(this))
             {
-                document.ScheduleSolution(100, (e) => this.ExpireSolution(true));
+
+                var allData = this.Params.Input[connectID].VolatileData.AllData(false);
+                bool isRunSet = allData.Count() > 0;
+
+
+                if (Params.Input[connectID].Phase == GH_SolutionPhase.Blank)
+                {
+                    this.Params.Input[connectID].CollectData();
+
+                }
+                foreach (IGH_Goo data in allData)
+                {
+                    switch (data)
+                    {
+                        case GH_Boolean b:
+                            if (!b.IsValid || b.Value == false) { isRunSet = false; }
+                            break;
+                        case GH_Integer @int:
+                            if (!@int.IsValid || @int.Value == 0) { isRunSet = false; }
+                            break;
+                        case GH_Number num:
+                            if (!num.IsValid || num.Value == 0) { isRunSet = false; }
+                            break;
+                        case GH_String text:
+                            if (!text.IsValid || !string.Equals("true", text.Value, StringComparison.InvariantCultureIgnoreCase)) { isRunSet = false; }
+                            break;
+                        default:
+                            isRunSet = false;
+                            break;
+                    }
+                    if (!isRunSet)
+                        break;
+                }
+
+                this.Params.Input[connectID].ClearData();
+
+                if (isRunSet && SSH_Helper.CheckConnection() != SSH_Helper.ConnectionDetails.Connected)
+                {
+
+                    document.ScheduleSolution(100, (e) => this.ExpireSolution(true));
+                }
+
 
             }
             else
