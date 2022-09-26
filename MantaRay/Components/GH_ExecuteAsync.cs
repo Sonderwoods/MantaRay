@@ -127,7 +127,7 @@ namespace MantaRay
             }
             //Params.Input[0].Phase = paramPhase;
 
-            
+
 
 
 
@@ -226,7 +226,7 @@ namespace MantaRay
                     Params.Output[1].ClearData();
 
 
-                    
+
                 }
 
                 if (Results.Count > RunCount - 1)
@@ -266,8 +266,32 @@ namespace MantaRay
                 Message = LastRun.TotalMilliseconds > 0 ? $"Ran in {RunTime.ToShortString()} (last was {LastRun.ToShortString()})" : $"Ran in {RunTime.ToShortString()}";
                 LastRun = RunTime;
                 this.Hidden = false;
+
+                SetPanelColors();
             }
 
+        }
+
+        public void SetPanelColors()
+        {
+            System.Drawing.Color color = RuntimeMessages(GH_RuntimeMessageLevel.Error).Count > 0 ? Color.FromArgb(255, 220, 190, 190) : Color.FromArgb(255, 160, 190, 160);
+            foreach (var panel in Grasshopper.Instances.ActiveCanvas.Document.Objects
+                .OfType<Grasshopper.Kernel.Special.GH_Panel>())
+            {
+                var param = (GH_Param<GH_String>)panel;
+                foreach (IGH_Param src in param.Sources)
+                {
+                    if(src.Attributes.GetTopLevel.InstanceGuid == this.InstanceGuid && object.ReferenceEquals(Params.Output[1], src))
+                    {
+                        panel.Properties.Colour = color;
+                    }
+                    if (src.Attributes.GetTopLevel.InstanceGuid == this.InstanceGuid && object.ReferenceEquals(Params.Output[0], src))
+                    {
+                        panel.Properties.Colour = Color.FromArgb(200, 255,255,255);
+                    }
+                }
+
+            }
         }
 
         public override bool Read(GH_IReader reader)
@@ -413,7 +437,7 @@ namespace MantaRay
 
                     string command = String.Join(";echo _JOIN_;", commands).Replace("\r\n", "\n").ApplyGlobals();
 
-                    
+
 
 
                     Renci.SshNet.SshCommand cmd = null;
@@ -503,7 +527,7 @@ namespace MantaRay
 
                 foreach (var command in commands)
                 {
-                    if(command.EndsWith("Execute component"))
+                    if (command.EndsWith("Execute component"))
                     {
                         Parent.AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "There's a risk that you are using a manipulated text output from ApplyOverrides.\n" +
                             "You should connect the component directly to this one and not do any editing between them");
