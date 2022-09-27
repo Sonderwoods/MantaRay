@@ -49,7 +49,7 @@ namespace MantaRay
 
                 Match m = filter.Match(content);
 
-                m = m.NextMatch(); // skip first link
+                //m = m.NextMatch(); // skip first link
 
                 while (m.Success)
                 {
@@ -64,7 +64,8 @@ namespace MantaRay
                     m = m.NextMatch();
                 }
 
-                AllRadiancePrograms.Add("rtpict", "https://www.radiance-online.org/learning/documentation/manual-pages/pdfs/rtpict.pdf/at_download/file");
+                AllRadiancePrograms["rtpict"] = "https://www.radiance-online.org/learning/documentation/manual-pages/pdfs/rtpict.pdf/at_download/file";
+                AllRadiancePrograms["falsecolor"] = "https://floyd.lbl.gov/radiance/man_html/falsecolor.1.html";
 
                 Debug.WriteLine("successfully created díct");
 
@@ -136,8 +137,18 @@ namespace MantaRay
 
 
             Instance = new ManPageHelper();
-
+            try
+            {
             Task.Run(async () => await Task.Run(() => Instance.Fetch().ConfigureAwait(false)));
+
+            }
+            catch (AggregateException ae)
+            {
+                foreach (var e in ae.InnerExceptions)
+                {
+                    Rhino.RhinoApp.WriteLine("[MantaRay.ManPageHelper]: " + e.Message);
+                }
+            }
 
 #endif
 
