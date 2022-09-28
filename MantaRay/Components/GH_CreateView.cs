@@ -2,14 +2,19 @@
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
+using ClipperLib;
+using Grasshopper.GUI;
+using Grasshopper.GUI.Canvas;
 using Grasshopper.Kernel;
+using Grasshopper.Kernel.Types;
 using MantaRay.Components;
+using MantaRay.Components.Templates;
 using MantaRay.Helpers;
 using Rhino.Geometry;
 
 namespace MantaRay.Components
 {
-    public class GH_CreateView : GH_Template
+    public class GH_CreateView : GH_Template, IHasDoubleClick
     {
         public GH_CreateView()
           : base("CreateView", "View",
@@ -26,127 +31,141 @@ namespace MantaRay.Components
 
 
 
+
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
-            pManager[pManager.AddTextParameter("Viewport", "Viewport", "Viewport name from rhino", GH_ParamAccess.item, "")].Optional = true;
-            pManager[pManager.AddGenericParameter("Update", "Update", "Update. Input a boolean to me to make sure im updated whenever you fire the run. Optional", GH_ParamAccess.tree)].Optional = true;
+            pManager[pManager.AddTextParameter("Viewport", "Viewport", "Viewport name from rhino", GH_ParamAccess.list, "")].Optional = true;
+            pManager[pManager.AddBooleanParameter("Update", "Update", "Update. Input a boolean to me to make sure im updated whenever you fire the run. Optional", GH_ParamAccess.tree)].Optional = true;
         }
 
 
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
-            pManager.AddTextParameter("viewfile content", "viewfile content", "View file content.\nEcho me into a viewfile", GH_ParamAccess.item);
-            pManager.AddNumberParameter("ImageRatio", "ImageRatio", "ImageRatio", GH_ParamAccess.item);
+            pManager.AddTextParameter("viewfile content", "viewfile content", "View file content.\nEcho me into a viewfile", GH_ParamAccess.list);
+            pManager.AddNumberParameter("ImageRatio", "ImageRatio", "ImageRatio", GH_ParamAccess.list);
         }
 
         protected override void SolveInstance(IGH_DataAccess DA)
         {
-            int index = Rhino.RhinoDoc.ActiveDoc.NamedViews.FindByName(DA.Fetch<string>("Viewport"));
-            Rhino.DocObjects.ViewportInfo vpInfo;
+            List<GH_Boolean> _runs = DA.FetchTree<GH_Boolean>(1).FlattenData();
+            List<string> outputs = new List<string>();
 
-            if (this.RunCount == 1)
+            bool run = _runs.Count > 0 && _runs.All(g => g?.Value == true);
+
+
+            PointsTo.Clear();
+            Vp.Clear();
+            Length.Clear();
+            Names.Clear();
+            clippingBox = BoundingBox.Unset;
+            List<Rectangle> ports = new List<Rectangle>();
+
+
+            foreach (string _name in DA.FetchList<string>("Viewport"))
             {
-                PointsTo.Clear();
-                Vp.Clear();
-                Length.Clear();
-                Names.Clear();
-                clippingBox = new BoundingBox();
-
-            }
+                int index = Rhino.RhinoDoc.ActiveDoc.NamedViews.FindByName(_name);
+                Rhino.DocObjects.ViewportInfo vpInfo;
 
 
+                if (index == -1)
+                {
+                    vpInfo = new Rhino.DocObjects.ViewportInfo(Rhino.RhinoDoc.ActiveDoc.Views.ActiveView.ActiveViewport);
+                    Names.Add(Rhino.RhinoDoc.ActiveDoc.Views.ActiveView.ActiveViewport.Name);
+                }
+                else
+                {
+                    vpInfo = Rhino.RhinoDoc.ActiveDoc.NamedViews[index].Viewport;
+                    Names.Add(_name);
+                }
 
-            if (index == -1)
-            {
 
-                vpInfo = new Rhino.DocObjects.ViewportInfo(Rhino.RhinoDoc.ActiveDoc.Views.ActiveView.ActiveViewport);
-                Names.Add(Rhino.RhinoDoc.ActiveDoc.Views.ActiveView.ActiveViewport.Name);
-            }
-            else
-            {
 
-                vpInfo = Rhino.RhinoDoc.ActiveDoc.NamedViews[index].Viewport;
-                Names.Add(DA.Fetch<string>("Viewport"));
-                
+                var _vp = vpInfo.CameraLocation;
+                Vp.Add(_vp);
+
+                Vector3d vu = vpInfo.CameraUp;
+                Vector3d vd = vpInfo.CameraDirection;
+                vpInfo.GetCameraAngles(out _, out double vv, out double vh);
+
+                double _length = 10.0.FromMeter();
+                Length.Add(_length);
+
+
+
+                Point3d[] _pointsTo = vpInfo.GetFarPlaneCorners();
+
+                for (int i = 0; i < _pointsTo.Length; i++)
+                {
+                    _pointsTo[i] = _vp + (_pointsTo[i] - _vp) / (_pointsTo[i] - _vp).Length * _length;
+                }
+
+                PointsTo.Add(_pointsTo);
+
+                ports.Add(vpInfo.GetScreenPort());
+
+
+
+
+                /*
+                 https://floyd.lbl.gov/radiance/digests_html/v2n7.html#VIEW_ANGLES
+
+                The relationship between perspective view angles and image size is
+                determined by tangents, i.e.:
+
+                    tan(vh/2)/tan(vv/2) == hres/vres
+
+                Note that the angles must be divided in half (and expressed in radians
+                if you use the standard library functions).  If you know what horizontal
+                and vertical resolution you want, and you know what horizontal view angle
+                you want (and your pixels are square), you can compute the corresponding
+                vertical view angle like so:
+
+                    % calc
+                    hres = 1024
+                    vres = 676
+                    vh = 40
+                    vv = 180/PI*2 * atan(tan(vh*PI/180/2)*vres/hres)
+                    vv
+                (resp)	$1=27.0215022
+                */
+
+
+                if (vpInfo.IsPerspectiveProjection)
+                {
+                    if (_pointsTo.Length > 2)
+                    {
+                        clippingBox.Union(new BoundingBox(new Point3d[] { _pointsTo[0], _pointsTo[1], _pointsTo[2], _vp }));
+
+
+                    }
+
+                    string output = $"rvu -vtv " +
+                    $"-vp {_vp.X} {_vp.Y} {_vp.Z} " +
+                    $"-vd {vd.X} {vd.Y} {vd.Z} " +
+                    $"-vu {vu.X} {vu.Y} {vu.Z} " +
+                    $"-vh {vh * 2.0 * 180.0 / Math.PI:0.000} " +
+                    $"-vv {vv * 2.0 * 180.0 / Math.PI:0.000}";
+
+                    outputs.Add(output);
+
+
+                }
+                else if (vpInfo.IsParallelProjection)
+                {
+                    throw new NotImplementedException("View type not supported. Please use perspective view or parallel view. For now");
+                }
+                else
+                {
+                    throw new NotImplementedException("View type not supported. Please use perspective view or parallel view. For now");
+                }
+
             }
 
             Message = string.Join(", ", Names);
 
-            var _vp = vpInfo.CameraLocation;
-            Vp.Add(_vp);
+            DA.SetDataList(1, ports.Select(p => p.Width / (double)p.Height));
+            DA.SetDataList(0, outputs);
 
-            Vector3d vu = vpInfo.CameraUp;
-            Vector3d vd = vpInfo.CameraDirection;
-            vpInfo.GetCameraAngles(out _, out double vv, out double vh);
-
-            double _length = 10.0.FromMeter();
-            Length.Add(_length);
-
-
-
-            Point3d[] _pointsTo = vpInfo.GetFarPlaneCorners();
-
-            for (int i = 0; i < _pointsTo.Length; i++)
-            {
-                _pointsTo[i] = _vp + (_pointsTo[i] - _vp) / (_pointsTo[i] - _vp).Length * _length;
-            }
-
-            PointsTo.Add(_pointsTo);
-
-            System.Drawing.Rectangle port = vpInfo.GetScreenPort();
-            DA.SetData(1, port.Width / (double)port.Height);
-
-            /*
-             https://floyd.lbl.gov/radiance/digests_html/v2n7.html#VIEW_ANGLES
-
-            The relationship between perspective view angles and image size is
-            determined by tangents, i.e.:
-
-	            tan(vh/2)/tan(vv/2) == hres/vres
-
-            Note that the angles must be divided in half (and expressed in radians
-            if you use the standard library functions).  If you know what horizontal
-            and vertical resolution you want, and you know what horizontal view angle
-            you want (and your pixels are square), you can compute the corresponding
-            vertical view angle like so:
-
-	            % calc
-	            hres = 1024
-	            vres = 676
-	            vh = 40
-	            vv = 180/PI*2 * atan(tan(vh*PI/180/2)*vres/hres)
-	            vv
-            (resp)	$1=27.0215022
-            */
-
-
-            if (vpInfo.IsPerspectiveProjection)
-            {
-                if (_pointsTo.Length > 2)
-                {
-                    clippingBox.Union(new BoundingBox(new Point3d[] { _pointsTo[0], _pointsTo[1], _pointsTo[2], _vp }));
-
-
-                }
-
-                string output = $"rvu -vtv " +
-                $"-vp {_vp.X} {_vp.Y} {_vp.Z} " +
-                $"-vd {vd.X} {vd.Y} {vd.Z} " +
-                $"-vu {vu.X} {vu.Y} {vu.Z} " +
-                $"-vh {vh * 2.0 * 180.0 / Math.PI:0.000} " +
-                $"-vv {vv * 2.0 * 180.0 / Math.PI:0.000}";
-
-                DA.SetData(0, output);
-
-            }
-            else if (vpInfo.IsParallelProjection)
-            {
-                throw new NotImplementedException("View type not supported. Please use perspective view or parallel view. For now");
-            }
-            else
-            {
-                throw new NotImplementedException("View type not supported. Please use perspective view or parallel view. For now");
-            }
 
 
 
@@ -160,10 +179,11 @@ namespace MantaRay.Components
                 DrawCamera(Vp[i], PointsTo[i], this.Attributes.Selected ? System.Drawing.Color.DarkGreen : System.Drawing.Color.DarkRed, Names[i], args);
             }
 
-            
+
 
             base.DrawViewportWires(args);
         }
+        
 
         /// <summary>
         /// 
@@ -195,6 +215,19 @@ namespace MantaRay.Components
                 args.Display.DrawLine(startPt, (avgPoint / endPts.Length), color, 3);
                 args.Display.DrawDot(startPt, name, System.Drawing.Color.Black, this.Attributes.Selected ? System.Drawing.Color.Green : System.Drawing.Color.Red);
             }
+        }
+
+        public override void CreateAttributes()
+        {
+            //base.CreateAttributes();
+            m_attributes = new GH_DoubleClickAttributes(this);
+
+        }
+
+        public GH_ObjectResponse OnDoubleClick(GH_Canvas sender, GH_CanvasMouseEvent e)
+        {
+            this.ExpireSolution(true);
+            return GH_ObjectResponse.Handled;
         }
 
         public override BoundingBox ClippingBox => clippingBox;
