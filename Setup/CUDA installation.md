@@ -14,6 +14,7 @@ Now accelerad finds the driver, but says no available GPUS. My P1000 is on the l
 
 
 next up trying this one  Linux->WSL
+https://developer.nvidia.com/cuda-downloads?target_os=Linux&target_arch=x86_64&Distribution=WSL-Ubuntu&target_version=2.0&target_type=deb_local
 ![image](https://user-images.githubusercontent.com/19936679/192715972-60e4e754-8ef4-443d-8b83-057ebd4a45a8.png)
 
 ```
