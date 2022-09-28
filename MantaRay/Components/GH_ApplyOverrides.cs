@@ -220,8 +220,17 @@ namespace MantaRay.Components
 
         IGH_Param IGH_VariableParameterComponent.CreateParameter(GH_ParameterSide side, int index)
         {
-            var param = new Param_String { NickName = "-" };
-            return param;
+            if (side == GH_ParameterSide.Input)
+            {
+                var param = new Param_String { NickName = "-" };
+                return param;
+            }
+            else
+            {
+                var param = new Param_GenericObject { NickName = "-" };
+                return param;
+            }
+            
         }
 
         bool IGH_VariableParameterComponent.DestroyParameter(GH_ParameterSide side, int index)
