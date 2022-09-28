@@ -25,3 +25,9 @@ sudo cp /var/cuda-repo-wsl-ubuntu-11-7-local/cuda-*-keyring.gpg /usr/share/keyri
 sudo apt-get update
 sudo apt-get -y install cuda
 ```
+
+
+tried the 
+linux driver through the .run file and getting this error
+https://www.nvidia.com/download/driverResults.aspx/193095/en-us/
+![image](https://user-images.githubusercontent.com/19936679/192716451-ce9f51b7-6bbb-4ec2-9168-0a3539b827f3.png)
