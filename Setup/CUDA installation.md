@@ -35,3 +35,6 @@ https://www.nvidia.com/download/driverResults.aspx/193095/en-us/
 
 
 ![image](https://user-images.githubusercontent.com/19936679/192758653-d6038a18-afbd-4316-85db-c2eedeaabcbb.png)
+
+![image](https://user-images.githubusercontent.com/19936679/192759509-e1a48bc3-eac7-454c-b8f8-0db66a03da4a.png)
+
