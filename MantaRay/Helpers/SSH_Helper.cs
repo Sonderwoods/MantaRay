@@ -51,16 +51,18 @@ namespace MantaRay
         /// The suffixes to setup before any commands. Temporary fix untill we get .bashrc correctly setup.
         /// </summary>
         public static string ExportPrefixes { get; set; } =
-            "export PATH=$PATH:/usr/local/radiance/bin;" +
-            "export RAYPATH=.:/usr/local/radiance/lib;" + //including local dir
+            "export PATH=$PATH:/usr/local/radiance/bin:/usr/local/accelerad/bin;" +
+            "export RAYPATH=.:/usr/local/radiance/lib:/usr/local/accelerad/lib;" + //including local dir
             "export DISPLAY=$(ip route list default | awk '{print $3}'):0;" +
+            "export LD_lIBRARY_PATH=/uusr/local/accelerad/bin:$LD_LIBRARY_PATH;" +
             "export LIBGL_ALWAYS_INDIRECT=1";
 
 
         public static string ExportPrefixesDefault { get; } =
-            "export PATH=$PATH:/usr/local/radiance/bin;" +
-            "export RAYPATH=.:/usr/local/radiance/lib;" + //including local dir
+            "export PATH=$PATH:/usr/local/radiance/bin:/usr/local/accelerad/bin;" +
+            "export RAYPATH=.:/usr/local/radiance/lib:/usr/local/accelerad/lib;" + //including local dir
             "export DISPLAY=$(ip route list default | awk '{print $3}'):0;" +
+            "export LD_lIBRARY_PATH=/uusr/local/accelerad/bin:$LD_LIBRARY_PATH;" +
             "export LIBGL_ALWAYS_INDIRECT=1";
 
 
