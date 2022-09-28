@@ -31,3 +31,6 @@ tried the
 linux driver through the .run file and getting this error
 https://www.nvidia.com/download/driverResults.aspx/193095/en-us/
 ![image](https://user-images.githubusercontent.com/19936679/192716451-ce9f51b7-6bbb-4ec2-9168-0a3539b827f3.png)
+
+
+![image](https://user-images.githubusercontent.com/19936679/192758653-d6038a18-afbd-4316-85db-c2eedeaabcbb.png)
