@@ -172,16 +172,16 @@ namespace MantaRay
             #endregion updateInputs
 
             //bool caps = DA.Fetch<bool>("Cap");
-            Color? maxColor = DA.Fetch<Color?>(i_inputSelecterMax);
-            Color? minColor = DA.Fetch<Color?>(i_inputSelectorMin);
-            var allResults = DA.FetchTree<GH_Number>("Results");
-            var grids = DA.FetchList<Grid>("Grids");
+            Color? maxColor = DA.Fetch<Color?>(this, i_inputSelecterMax);
+            Color? minColor = DA.Fetch<Color?>(this, i_inputSelectorMin);
+            var allResults = DA.FetchTree<GH_Number>(this, "Results");
+            var grids = DA.FetchList<Grid>(this, "Grids");
             //var gradientRange = DA.Fetch<string>("GradientRange");
             //int maxCount = DA.Fetch<int>("MaxCount");
             int maxCount = 200;
             //var inStepSize = DA.Fetch<int>("StepSize");
             //var inSteps = DA.Fetch<int>("Steps");
-            GridTypeSelector inputSelector = DA.Fetch<GridTypeSelector>("_Section Type");
+            GridTypeSelector inputSelector = DA.Fetch<GridTypeSelector>(this, "_Section Type");
 
             double globalMin = double.MaxValue;
             double globalMax = double.MinValue;

@@ -50,7 +50,7 @@ namespace MantaRay.Components
         protected override void SolveInstance(IGH_DataAccess DA)
         {
             List<Plane> planes = new List<Plane>();
-            List<string> ptsFiles = DA.FetchList<string>("PtsString");
+            List<string> ptsFiles = DA.FetchList<string>(this, "PtsString");
 
             foreach (var ptsFile in ptsFiles)
             {

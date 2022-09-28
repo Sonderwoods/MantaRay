@@ -80,8 +80,8 @@ namespace MantaRay.Components
             int dynamicParameterCount = Params.Input.Count - staticParameterCount;
 
 
-            List<string> keys = DA.FetchList<string>("Keys");
-            List<string> values = DA.FetchList<string>("Values");
+            List<string> keys = DA.FetchList<string>(this, "Keys");
+            List<string> values = DA.FetchList<string>(this, "Values");
             List<string> outPairs = new List<string>(keys.Count);
 
             if (keys.Count != values.Count) throw new ArgumentOutOfRangeException("The list lengths do not match in Keys/Values inputs");

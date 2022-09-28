@@ -72,7 +72,7 @@ namespace MantaRay.Components
             CheckIfRunOrUseOldResults(DA, 0); //template
             if (!CheckIfRunOrUseOldResults(DA, 1, OldNumberResults)) return; //template
 
-            if (!DA.Fetch<bool>("Run"))
+            if (!DA.Fetch<bool>(this, "Run"))
             {
 
                 DA.SetData("Ran", false);
@@ -81,11 +81,11 @@ namespace MantaRay.Components
             }
 
 
-            double max = DA.Fetch<double>("max");
+            double max = DA.Fetch<double>(this, "max");
             if (max <= 0)
                 max = double.MaxValue;
 
-            double min = DA.Fetch<double>("min");
+            double min = DA.Fetch<double>(this, "min");
 
             if (min != lastMin || max != lastMax)
             {
@@ -99,10 +99,10 @@ namespace MantaRay.Components
 
 
             //List<int> pointsPerFile = new List<int>();
-            List<string> illFiles = DA.FetchList<string>("illFile");
+            List<string> illFiles = DA.FetchList<string>(this, "illFile");
             List<string> headerLines = new List<string>(8);
             var linesPerHour = new BlockingCollection<string>();
-            bool[] schedule = DA.FetchList<int>("schedule").AsParallel().AsOrdered().Select(s => s >= 1).ToArray();
+            bool[] schedule = DA.FetchList<int>(this, "schedule").AsParallel().AsOrdered().Select(s => s >= 1).ToArray();
             int headerRows = 0;
             List<int> headerColumns = new List<int>();
             //int dataLineCount = 0;

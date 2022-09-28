@@ -33,11 +33,11 @@ namespace MantaRay
         {
             //Read and parse the input.
             var runTree = new GH_Structure<GH_Boolean>();
-            runTree.Append(new GH_Boolean(DA.Fetch<bool>("Run")));
+            runTree.Append(new GH_Boolean(DA.Fetch<bool>(this, "Run")));
             Params.Output[Params.Output.Count - 1].ClearData();
             DA.SetDataTree(Params.Output.Count - 1, runTree);
 
-            if (!DA.Fetch<bool>("Run"))
+            if (!DA.Fetch<bool>(this, "Run"))
             {
 
                 if (objs != null && objs.Count() > 0)
@@ -61,11 +61,11 @@ namespace MantaRay
         {
             //Read and parse the input.
             var runTree = new GH_Structure<GH_Boolean>();
-            runTree.Append(new GH_Boolean(DA.Fetch<bool>("Run")));
+            runTree.Append(new GH_Boolean(DA.Fetch<bool>(this, "Run")));
             Params.Output[Params.Output.Count - 1].ClearData();
             DA.SetDataTree(Params.Output.Count - 1, runTree);
 
-            if (!DA.Fetch<bool>("Run"))
+            if (!DA.Fetch<bool>(this, "Run"))
             {
                 if (OldResults != null && OldResults.Length > 0)
                 {

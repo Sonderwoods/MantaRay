@@ -63,10 +63,10 @@ namespace MantaRay.OldComponents
         {
 
             int dynamicParameterCount = Params.Input.Count - staticParameterCount;
-            List<string> keys = DA.FetchList<string>("Additional Keys");
-            List<string> values = DA.FetchList<string>("Additional Values");
+            List<string> keys = DA.FetchList<string>(this, "Additional Keys");
+            List<string> values = DA.FetchList<string>(this, "Additional Values");
             List<string> outPairs = new List<string>(keys.Count);
-            List<string> inputs = DA.FetchList<string>("Input");
+            List<string> inputs = DA.FetchList<string>(this, "Input");
             missingInputs.Clear();
 
 

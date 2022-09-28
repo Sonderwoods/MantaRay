@@ -60,7 +60,7 @@ namespace MantaRay.Components
         protected override void SolveInstance(IGH_DataAccess DA)
         {
 
-            List<string>[] inLists = new List<string>[3] { DA.FetchList<string>(0), DA.FetchList<string>(1), DA.FetchList<string>(2) };
+            List<string>[] inLists = new List<string>[3] { DA.FetchList<string>(this, 0), DA.FetchList<string>(this, 1), DA.FetchList<string>(this, 2) };
             bool[][] outBools = new bool[3][] { new bool[12], new bool[31], new bool[24] };
             List<GH_Time> dates = new List<GH_Time>();
 

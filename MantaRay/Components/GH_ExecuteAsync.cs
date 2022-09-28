@@ -523,7 +523,7 @@ namespace MantaRay
                 //if (CancellationToken.IsCancellationRequested) return;
 
                 //By calling ToString on the overridable text we make sure that the overrides are done.
-                commands = DA.FetchList<OverridableText>(0).Select(s => s.Value).ToList();
+                commands = DA.FetchList<OverridableText>(Parent, 0).Select(s => s.Value).ToList();
 
                 foreach (var command in commands)
                 {
@@ -557,7 +557,7 @@ namespace MantaRay
                 }
                 ((GH_ExecuteAsync)Parent).LogDescriptionDynamic = sb.ToString();
 
-                List<GH_Boolean> _runs = DA.FetchTree<GH_Boolean>(1).FlattenData();
+                List<GH_Boolean> _runs = DA.FetchTree<GH_Boolean>(Parent, 1).FlattenData();
 
                 run = _runs.Count > 0 && _runs.All(g => g?.Value == true);
 

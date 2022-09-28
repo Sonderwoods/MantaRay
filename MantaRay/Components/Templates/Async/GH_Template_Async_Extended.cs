@@ -388,7 +388,7 @@ namespace MantaRay
 
             if (runParam != null)
             {
-                List<GH_Boolean> runInputs = DA.FetchTree<GH_Boolean>("Run").FlattenData();
+                List<GH_Boolean> runInputs = DA.FetchTree<GH_Boolean>(this, "Run").FlattenData();
 
                 if (runInputs.Count == 0 || !runInputs.All(x => x.Value == true))
                 {

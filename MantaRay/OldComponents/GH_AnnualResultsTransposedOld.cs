@@ -59,25 +59,25 @@ namespace MantaRay.Components
         protected override void SolveInstance(IGH_DataAccess DA)
         {
 
-            if (!DA.Fetch<bool>("Run"))
+            if (!DA.Fetch<bool>(this, "Run"))
             {
                 DA.SetData("Ran", false);
             }
             else
             {
 
-                double max = DA.Fetch<double>("max");
+                double max = DA.Fetch<double>(this, "max");
                 if (max <= 0)
                     max = double.MaxValue;
 
-                double min = DA.Fetch<double>("min");
+                double min = DA.Fetch<double>(this, "min");
 
-                bool[] schedule = DA.FetchList<int>("schedule").AsParallel().AsOrdered().Select(s => s >= 1).ToArray();
+                bool[] schedule = DA.FetchList<int>(this, "schedule").AsParallel().AsOrdered().Select(s => s >= 1).ToArray();
 
                 int totalHours = schedule.Count(s => s);
 
 
-                string illFile = DA.Fetch<string>("illFile");
+                string illFile = DA.Fetch<string>(this, "illFile");
 
                 var inputLines = new BlockingCollection<string>();
 

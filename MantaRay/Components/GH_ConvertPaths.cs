@@ -43,7 +43,7 @@ namespace MantaRay.Components
         /// <param name="DA">The DA object is used to retrieve from inputs and store in outputs.</param>
         protected override void SolveInstance(IGH_DataAccess DA)
         {
-            string path = DA.Fetch<string>(0);
+            string path = DA.Fetch<string>(this, 0);
 
             
             DA.SetData(0, path.ToLinuxPath());

@@ -56,7 +56,7 @@ namespace MantaRay.Components
             if (!CheckIfRunOrUseOldResults(DA, 0)) return; //template
 
 
-            string targetFolder = DA.Fetch<string>("Target local folder");
+            string targetFolder = DA.Fetch<string>(this, "Target local folder");
 
             if (targetFolder == null || String.IsNullOrEmpty(targetFolder))
             {
@@ -65,7 +65,7 @@ namespace MantaRay.Components
 
             string localTargetFolder = targetFolder; // Path.GetDirectoryName(targetFolder);
 
-            List<string> allFilePaths = DA.FetchList<string>("Linux File Paths");
+            List<string> allFilePaths = DA.FetchList<string>(this, "Linux File Paths");
             List<string> localFilePaths = new List<string>(allFilePaths.Count);
 
             StringBuilder sb = new StringBuilder();

@@ -55,10 +55,10 @@ namespace MantaRay.Components
             
 
 
-            string name = DA.Fetch<string>("Name").ApplyGlobals();
+            string name = DA.Fetch<string>(this, "Name").ApplyGlobals();
 
-            List<Point3d> pts = DA.FetchList<Point3d>("Points");
-            List<Vector3d> vects = DA.FetchList<Vector3d>("Vectors");
+            List<Point3d> pts = DA.FetchList<Point3d>(this, "Points");
+            List<Vector3d> vects = DA.FetchList<Vector3d>(this, "Vectors");
             StringBuilder ptsFile = new StringBuilder();
             StringBuilder sb = new StringBuilder();
             
@@ -88,7 +88,7 @@ namespace MantaRay.Components
 
             string workingDir;
 
-            string subfolderOverride = DA.Fetch<string>("Subfolder Override").ApplyGlobals().Replace('\\','/').Trim('/');
+            string subfolderOverride = DA.Fetch<string>(this, "Subfolder Override").ApplyGlobals().Replace('\\','/').Trim('/');
 
 
             if (string.IsNullOrEmpty(subfolderOverride))
@@ -139,11 +139,11 @@ namespace MantaRay.Components
 
             //Read and parse the input.
             var runTree = new GH_Structure<GH_Boolean>();
-            runTree.Append(new GH_Boolean(DA.Fetch<bool>("Run")));
+            runTree.Append(new GH_Boolean(DA.Fetch<bool>(this, "Run")));
             Params.Output[Params.Output.Count - 1].ClearData();
             DA.SetDataTree(Params.Output.Count - 1, runTree);
 
-            if (DA.Fetch<bool>("Run"))
+            if (DA.Fetch<bool>(this, "Run"))
             {
                 System.IO.File.WriteAllText(ptsFilePath, ptsFile.ToString());
 

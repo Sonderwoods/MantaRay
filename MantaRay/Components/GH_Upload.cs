@@ -57,11 +57,11 @@ namespace MantaRay.Components
 
             if (!CheckIfRunOrUseOldResults(DA, 1)) return; //template
 
-            List<string> allFilePaths = DA.FetchList<string>("Local File Paths");
+            List<string> allFilePaths = DA.FetchList<string>(this, "Local File Paths");
 
             List<string> outFilePaths = new List<string>(allFilePaths.Count);
 
-            string subfolderOverride = DA.Fetch<string>("Subfolder Override").Replace('\\', '/').Trim('/');
+            string subfolderOverride = DA.Fetch<string>(this, "Subfolder Override").Replace('\\', '/').Trim('/');
 
             StringBuilder sb = new StringBuilder();
 

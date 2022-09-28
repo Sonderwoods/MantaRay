@@ -48,10 +48,10 @@ namespace MantaRay.OldComponents
         protected override void SolveInstance(IGH_DataAccess DA)
         {
 
-            List<string> keys = DA.FetchList<string>("Additional Keys");
-            List<string> values = DA.FetchList<string>("Additional Values");
+            List<string> keys = DA.FetchList<string>(this, "Additional Keys");
+            List<string> values = DA.FetchList<string>(this, "Additional Values");
             List<string> outPairs = new List<string>(keys.Count);
-            List<string> inputs = DA.FetchList<string>("Input");
+            List<string> inputs = DA.FetchList<string>(this, "Input");
             List<string> missingInputs = new List<string>();
 
 

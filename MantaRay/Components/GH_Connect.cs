@@ -74,7 +74,7 @@ namespace MantaRay.Components
         {
 
             ManPageHelper.Initiate();
-            bool run = DA.Fetch<bool>("connect");
+            bool run = DA.Fetch<bool>(this, "connect");
 
 
             // Moving to back will make sure this expires/runs before other objects when you load the file
@@ -98,15 +98,15 @@ namespace MantaRay.Components
 
             }
 
-            string username = DA.Fetch<string>("user");
-            string password = DA.Fetch<string>("password");
-            string linDir = DA.Fetch<string>("LinuxDir");
-            string winDir = DA.Fetch<string>("WindowsDir");
-            string sftpDir = DA.Fetch<string>("SftpDir");
-            string subfolder = DA.Fetch<string>("ProjectName", "Subfolder");
-            string ip = DA.Fetch<string>("ip");
-            int port = DA.Fetch<int>("_port");
-            string prefixes = DA.Fetch<string>("prefixes");
+            string username = DA.Fetch<string>(this, "user");
+            string password = DA.Fetch<string>(this, "password");
+            string linDir = DA.Fetch<string>(this, "LinuxDir");
+            string winDir = DA.Fetch<string>(this, "WindowsDir");
+            string sftpDir = DA.Fetch<string>(this, "SftpDir");
+            string subfolder = DA.Fetch<string>(this, "ProjectName", "Subfolder");
+            string ip = DA.Fetch<string>(this, "ip");
+            int port = DA.Fetch<int>(this, "_port");
+            string prefixes = DA.Fetch<string>(this, "prefixes");
 
             StringBuilder sb = new StringBuilder();
 

@@ -78,13 +78,13 @@ namespace Grasshopper_Doodles_Public
         protected override void SolveInstance(IGH_DataAccess DA)
         {
 
-            var gridSize = UnitHelper.FromMeter(DA.Fetch<double>("GridSize [m]"));
-            var edgeOffset = UnitHelper.FromMeter(DA.Fetch<double>("Edge Offset [m]"));
+            var gridSize = UnitHelper.FromMeter(DA.Fetch<double>(this, "GridSize [m]"));
+            var edgeOffset = UnitHelper.FromMeter(DA.Fetch<double>(this, "Edge Offset [m]"));
 
-            var offset = UnitHelper.FromMeter(DA.Fetch<double>("Vertical Offset [m]"));
-            var useCenters = DA.Fetch<bool>("IsoCurves");
-            var geometries = DA.FetchList<IGH_GeometricGoo>("Geometry");
-            var goLarge = DA.Fetch<bool>("GoLarge");
+            var offset = UnitHelper.FromMeter(DA.Fetch<double>(this, "Vertical Offset [m]"));
+            var useCenters = DA.Fetch<bool>(this, "IsoCurves");
+            var geometries = DA.FetchList<IGH_GeometricGoo>(this, "Geometry");
+            var goLarge = DA.Fetch<bool>(this, "GoLarge");
 
             List<GH_Point> centers = new List<GH_Point>();
             List<GH_Vector> normals = new List<GH_Vector>();

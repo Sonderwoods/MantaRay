@@ -67,7 +67,7 @@ namespace MantaRay.Components
         {
 
             int dynamicParameterCount = Params.Input.Count - staticParameterCount;
-            List<OverridableText> inputs = DA.FetchList<OverridableText>("Input").Select(o => (OverridableText)o.Duplicate()).ToList();
+            List<OverridableText> inputs = DA.FetchList<OverridableText>(this, "Input").Select(o => (OverridableText)o.Duplicate()).ToList();
             missingInputs.Clear();
 
 

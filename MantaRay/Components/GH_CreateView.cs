@@ -47,7 +47,7 @@ namespace MantaRay.Components
 
         protected override void SolveInstance(IGH_DataAccess DA)
         {
-            List<GH_Boolean> _runs = DA.FetchTree<GH_Boolean>(1).FlattenData();
+            List<GH_Boolean> _runs = DA.FetchTree<GH_Boolean>(this, 1).FlattenData();
             List<string> outputs = new List<string>();
 
             bool run = _runs.Count > 0 && _runs.All(g => g?.Value == true);
@@ -61,7 +61,7 @@ namespace MantaRay.Components
             List<Rectangle> ports = new List<Rectangle>();
 
 
-            foreach (string _name in DA.FetchList<string>("Viewport"))
+            foreach (string _name in DA.FetchList<string>(this, "Viewport"))
             {
                 int index = Rhino.RhinoDoc.ActiveDoc.NamedViews.FindByName(_name);
                 Rhino.DocObjects.ViewportInfo vpInfo;

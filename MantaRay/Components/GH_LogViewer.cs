@@ -56,13 +56,13 @@ namespace MantaRay.Components
 
             UnsubscribeAll(); // in case name was changed - we unsubscribe everything first.
 
-            logHelper = LogHelper.GetLogHelper(DA.Fetch<string>("Name"));
+            logHelper = LogHelper.GetLogHelper(DA.Fetch<string>(this, "Name"));
 
             logHelper.LogUpdated += LogHelper_LogUpdated;
             Message = "Updated " + DateTime.Now.ToLongTimeString();
 
-            DA.SetDataList(0, logHelper.GetCurrentTasks(DA.Fetch<int>("Number"), DA.Fetch<string>("NameFilter"), DA.Fetch<string>("DescFilter")));
-            DA.SetDataList(1, logHelper.GetLatestLogs(DA.Fetch<int>("Number"), DA.Fetch<string>("NameFilter"), DA.Fetch<string>("DescFilter")));
+            DA.SetDataList(0, logHelper.GetCurrentTasks(DA.Fetch<int>(this, "Number"), DA.Fetch<string>(this, "NameFilter"), DA.Fetch<string>(this, "DescFilter")));
+            DA.SetDataList(1, logHelper.GetLatestLogs(DA.Fetch<int>(this, "Number"), DA.Fetch<string>(this, "NameFilter"), DA.Fetch<string>(this, "DescFilter")));
         }
 
 

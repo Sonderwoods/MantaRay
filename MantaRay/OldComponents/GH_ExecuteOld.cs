@@ -71,14 +71,14 @@ namespace MantaRay
             bool success = false;
 
 
-            if (DA.Fetch<bool>("Run"))
+            if (DA.Fetch<bool>(this, "Run"))
             {
                 this.Hidden = false;
 
                 StringBuilder log = new StringBuilder();
                 StringBuilder stdout = new StringBuilder();
                 StringBuilder errors = new StringBuilder();
-                List<string> commands = DA.FetchList<string>("SSH Commands");
+                List<string> commands = DA.FetchList<string>(this, "SSH Commands");
                 string command = String.Join(";", commands).ApplyGlobals();
 
 
@@ -126,7 +126,7 @@ namespace MantaRay
 
             //Read and parse the input.
             var runTree = new GH_Structure<GH_Boolean>();
-            runTree.Append(new GH_Boolean(DA.Fetch<bool>("Run") && success));
+            runTree.Append(new GH_Boolean(DA.Fetch<bool>(this, "Run") && success));
             Params.Output[Params.Output.Count - 1].ClearData();
             DA.SetDataTree(Params.Output.Count - 1, runTree);
 
