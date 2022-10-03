@@ -181,7 +181,7 @@ namespace MantaRay.Components
                 .Distinct()
                 .Where(i => !Params.Input.Select(ip => ip.NickName).Contains(i)))
             {
-                IGH_Param param = new Param_String() { NickName = missingInp, Optional = true, Access = GH_ParamAccess.item };
+                IGH_Param param = new Param_String() { NickName = missingInp, Optional = true, Access = GH_ParamAccess.item, DataMapping = GH_DataMapping.Graft };
                 Params.RegisterInputParam(param);
             }
             Params.OnParametersChanged();
