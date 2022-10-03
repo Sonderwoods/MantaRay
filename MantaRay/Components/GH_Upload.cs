@@ -32,7 +32,7 @@ namespace MantaRay.Components
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
             pManager.AddTextParameter("Local File Paths", "File", "File path", GH_ParamAccess.list);
-            pManager[pManager.AddTextParameter("Subfolder Override", "Subfolder Override", "Subfolder Override\n" +
+            pManager[pManager.AddTextParameter("Target folder", "Target folder", "Target folder\n" +
                 "Example:\n" +
                 "simulation/radFiles", GH_ParamAccess.item, "")].Optional = true;
             pManager.AddBooleanParameter("Run", "Run", "Run", GH_ParamAccess.item);
@@ -61,11 +61,11 @@ namespace MantaRay.Components
 
             List<string> outFilePaths = new List<string>(allFilePaths.Count);
 
-            string subfolderOverride = DA.Fetch<string>(this, "Subfolder Override").Replace('\\', '/').Trim('/');
+            string subfolderOverride = DA.Fetch<string>(this, "Target folder", "Subfolder Override").Replace('\\', '/').TrimEnd('/');
 
             StringBuilder sb = new StringBuilder();
 
-            string linuxPath = string.IsNullOrEmpty(subfolderOverride) ? SSH_Helper.LinuxFullpath : SSH_Helper.LinuxParentPath + "/" + subfolderOverride;
+            string linuxPath = string.IsNullOrEmpty(subfolderOverride) ? SSH_Helper.SftpPath : subfolderOverride;
 
             for (int i = 0; i < allFilePaths.Count; i++)
             {
@@ -77,8 +77,10 @@ namespace MantaRay.Components
                 }
                 catch (Renci.SshNet.Common.SftpPathNotFoundException e)
                 {
-                    sb.AppendFormat("Could not upload files - Path not found ({0})! {1}", linuxPath, e.Message);
-                    break;
+                    SSH_Helper.Upload(allFilePaths[i], null, sb);
+                    outFilePaths.Add($"{SSH_Helper.SftpClient.WorkingDirectory}/{Path.GetFileName(allFilePaths[i])}");
+                    sb.AppendFormat("\nWarning: Could not find {0} (Relocated file to: {1})\n - {2}\n", linuxPath, SSH_Helper.SftpClient.WorkingDirectory, e.Message);
+                    
                 }
 
             }
@@ -86,6 +88,11 @@ namespace MantaRay.Components
             OldResults = outFilePaths.ToArray();
             DA.SetDataList("File Paths", outFilePaths);
             DA.SetData("Status", sb.ToString());
+
+            if (sb.ToString().Contains("Warning"))
+            {
+                AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, "Some paths were missing, see output");
+            }
 
 
         }
