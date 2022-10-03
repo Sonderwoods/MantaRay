@@ -140,6 +140,8 @@ namespace MantaRay
             Tasks.Clear();
 
             Interlocked.Exchange(ref State, 0);
+
+            base.BeforeSolveInstance();
         }
 
         protected override void AfterSolveInstance()
