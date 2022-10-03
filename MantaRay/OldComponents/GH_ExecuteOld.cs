@@ -11,14 +11,14 @@ using Rhino.Geometry;
 namespace MantaRay
 {
     [Obsolete]
-    public class GH_ExecuteOld : GH_Template
+    public class GH_Execute_OBSOLETE : GH_Template
     {
         
         /// <summary>
         /// Initializes a new instance of the GH_Execute class.
         /// </summary>
         ///
-        public GH_ExecuteOld()
+        public GH_Execute_OBSOLETE()
           : base("Execute SSH", "Execute SSH",
               "Use me to execute a SSH Command",
               "1 SSH")
