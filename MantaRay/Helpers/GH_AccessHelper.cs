@@ -18,6 +18,7 @@ using System.Diagnostics;
 using System.ComponentModel;
 using System.Reflection;
 using System.Security.Cryptography;
+using static MantaRay.Helpers.ReplaceMissingComponentsHelper;
 
 namespace MantaRay
 {
@@ -93,12 +94,12 @@ namespace MantaRay
             }
             catch (System.IndexOutOfRangeException e)
             {
-                SchedulePlaceNewComponent();
+                SchedulePlaceNewComponent(obj);
                 throw new IndexOutOfRangeException($"Input parameter not found at position {position}" + msg, e);
             }
             catch (System.InvalidOperationException e)
             {
-                SchedulePlaceNewComponent();
+                SchedulePlaceNewComponent(obj);
                 throw new InvalidOperationException($"item instead of list!?: {position}" + msg, e);
             }
             return temp;
@@ -286,116 +287,5 @@ namespace MantaRay
             return temp;
         }
 
-        public static void SchedulePlaceNewComponent(IGH_DocumentObject component = null)
-        {
-            if (component == null)
-                return;
-
-            component.OnPingDocument();
-
-            GH_Document doc = Grasshopper.Instances.ActiveCanvas.Document;
-
-            //MethodInfo method = typeof(Queryable).GetMethod("OfType");
-            //MethodInfo generic = method.MakeGenericMethod(new Type[] { type });
-
-            ////https://stackoverflow.com/questions/3669760/iqueryable-oftypet-where-t-is-a-runtime-type
-            //IEnumerable<IGH_Component> objectsOfSameType = ((IEnumerable<object>)generic.Invoke
-            //      (null, new object[] { doc.Objects })).OfType<IGH_Component>();
-
-            
-            int tol = 35;
-
-            bool skipCreation = false;
-
-            Type newType = null;
-            string className = component.GetType().Name;
-            if(className.Contains("OBSOLETE"))
-            {
-                foreach (Type type in component.GetType().Assembly.GetTypes().Where(type => type.IsSubclassOf(typeof(GH_Template)) && type != component.GetType()))
-                {
-                    if(type.Name == className.Replace("_OBSOLETE",""))
-                    {
-                        skipCreation = true;
-                    }
-                }
-                
-            }
-
-            var objectsOfSameType = doc.Objects.Where(c => (c.ComponentGuid == component.ComponentGuid || c.GetType() == newType) && !object.ReferenceEquals(c, component));
-            foreach (IGH_Component obj in objectsOfSameType)
-            {
-
-                if (Math.Abs(obj.Attributes.Pivot.X - component.Attributes.Pivot.X) < tol &&
-                    Math.Abs(obj.Attributes.Pivot.Y - component.Attributes.Pivot.Y) < tol)
-                {
-                    return;
-
-                }
-            }
-
-            Task.Factory.StartNew(() => PlaceNewComponent(doc, (IGH_Component)component, skipCreation));
-
-
-        }
-
-        public static void PlaceNewComponent(GH_Document doc, IGH_Component component, bool skipCreation = false)
-        {
-            var pivot = component.Attributes.Pivot;
-
-            //* https://www.grasshopper3d.com/forum/topics/ins-and-outs-of-undo
-            //* 1. declare a new GH_UndoRecord, give it a name
-            //* 2. for all major changes to objects (ObjectsAdded, Wires, other generic changes) declare a new corresponding GH_AddObjectAction or GH_WireAction or whatever
-            //* 3. Add that Action to the GH_UndoRecord declared earlier
-            //* 4. THEN and only then actually make the change (adding the object to the doc, changing the wires, etc)
-            //* 5. after all the actions have been recorded, pass the UndoRecord to GH_Document.UndoUtil.RecordEvent. 
-
-            GH_UndoRecord record = new GH_UndoRecord();
-            record.Name = $"Create New Duplicate of {component.NickName}";
-
-
-            if(!skipCreation)
-            {
-                IGH_Component newComponent = (IGH_Component)Activator.CreateInstance(component.GetType());
-
-                GH_AddObjectAction action = new GH_AddObjectAction(newComponent);
-                record.AddAction(action);
-
-                newComponent.CreateAttributes();
-                newComponent.Attributes.Pivot = new PointF(pivot.X + 30, pivot.Y + 30);
-
-                newComponent.Attributes.ExpireLayout();
-                newComponent.Attributes.PerformLayout();
-
-
-                doc.AddObject(newComponent, false);
-
-                Grasshopper.Instances.ActiveCanvas.Document.ArrangeObject(newComponent, GH_Arrange.MoveToFront);
-            }
-            //Reflection magics!
-            
-
-
-            Guid guid = doc.Objects.Where(o => object.ReferenceEquals(o, component)).FirstOrDefault().InstanceGuid;
-
-            
-
-            Grasshopper.Kernel.Special.GH_Group newGroup = new Grasshopper.Kernel.Special.GH_Group()
-            {
-                Colour = Color.Red,
-                Name = "Outdated",
-                Border = Grasshopper.Kernel.Special.GH_GroupBorder.Rectangles,
-
-            };
-
-            newGroup.AddObject(guid);
-
-            GH_AddObjectAction action2 = new GH_AddObjectAction(newGroup);
-            record.AddAction(action2);
-
-            doc.AddObject(newGroup, false);
-
-
-            doc.UndoUtil.RecordEvent(record);
-        }
     }
 }

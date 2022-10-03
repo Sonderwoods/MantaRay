@@ -28,7 +28,7 @@ namespace MantaRay
             if (!checkedForUpdate)
             {
                 checkedForUpdate = true;
-                GH_AccessHelper.SchedulePlaceNewComponent(this);
+                Helpers.ReplaceMissingComponentsHelper.FixAbsolete(this);
 
             }
             base.BeforeSolveInstance();
