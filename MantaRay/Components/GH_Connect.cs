@@ -40,7 +40,10 @@ namespace MantaRay.Components
             pManager[pManager.AddTextParameter("ip", "ip", "input a string containing the SSH ip address.\nFor instance:\n127.0.0.1", GH_ParamAccess.item, "127.0.0.1")].Optional = true;
             pManager[pManager.AddTextParameter("LinuxDir", "LinuxDir", "Default linux dir.\nDefault is:\n'~/simulation'", GH_ParamAccess.item, "")].Optional = true;
             pManager[pManager.AddTextParameter("WindowsDir", "WindowsDir", $"WindowsDir\nDefault is:\n'C:\\users\\{System.Environment.UserName}\\MantaRay\\", GH_ParamAccess.item, "")].Optional = true;
-            pManager[pManager.AddTextParameter("SftpDir", "SftpDir", "SftpDir. This can in some cases be a windows directory even though you are SSH'ing to linux.\nThis is sometimes the case when using Windows Subsystem Linux", GH_ParamAccess.item, "")].Optional = true;
+            pManager[pManager.AddTextParameter("SftpDir", "SftpDir", "SftpDir. This can in some cases be a windows directory even though you are SSH'ing to linux.\nThis is sometimes the case when using Windows Subsystem Linux" +
+                "\nExamples:\n" +
+                "/C:/users/<username>/MantaRay   ... (I know this is weird but that's how I've seen it with this SSH client\n" +
+                "~/MantaRay/", GH_ParamAccess.item, "")].Optional = true;
             pManager[pManager.AddTextParameter("ProjectName", "ProjectName", "Subfolder for this project\n" +
                 "If none is specified, files will land in UnnamedProject folder.\nIdeas:\nMyProject\nMyAwesomeProject", GH_ParamAccess.item, "")].Optional = true;
             pManager[pManager.AddTextParameter("password", "password", "password. Leave empty to prompt.", GH_ParamAccess.item, "_prompt")].Optional = true;
@@ -176,7 +179,7 @@ namespace MantaRay.Components
 
                 if (!string.IsNullOrEmpty(winDir))
                 {
-                    SSH_Helper.WindowsParentPath = System.IO.Path.GetDirectoryName(winDir);
+                    SSH_Helper.WindowsParentPath = winDir;
                 }
                 else
                 {
@@ -187,21 +190,17 @@ namespace MantaRay.Components
 
                 if (!string.IsNullOrEmpty(linDir))
                 {
-                    SSH_Helper.LinuxParentPath = System.IO.Path.GetDirectoryName(linDir);
+                    SSH_Helper.LinuxParentPath = linDir;
                 }
                 else
                 {
                     SSH_Helper.LinuxParentPath = SSH_Helper.DefaultLinuxParentPath;
                 }
 
-                if (!string.IsNullOrEmpty(sftpDir))
-                {
-                    SSH_Helper.SftpDir = sftpDir;
-                }
-                else
-                {
-                    SSH_Helper.SftpDir = SSH_Helper.LinuxParentPath;
-                }
+
+                
+
+
 
                 if (!string.IsNullOrEmpty(subfolder))
                 {
@@ -213,15 +212,7 @@ namespace MantaRay.Components
                 }
 
 
-                sb.AppendFormat("SSH:  Setup <WinHome> to {0}\n", SSH_Helper.WindowsFullpath);
-                sb.AppendFormat("SSH:  Setup <LinuxHome> to {0}\n", SSH_Helper.LinuxFullpath);
-                sb.AppendFormat("SSH:  Setup <Project> to {0}\n", SSH_Helper.ProjectSubPath);
-                sb.AppendFormat("SSH:  Setup <cpus> to {0}\n", (Environment.ProcessorCount - 1).ToString());
 
-                GlobalsHelper.GlobalsFromConnectComponent["WinHome"] = SSH_Helper.WindowsFullpath;
-                GlobalsHelper.GlobalsFromConnectComponent["LinuxHome"] = SSH_Helper.LinuxFullpath;
-                GlobalsHelper.GlobalsFromConnectComponent["Project"] = SSH_Helper.ProjectSubPath;
-                GlobalsHelper.GlobalsFromConnectComponent["cpus"] = (Environment.ProcessorCount - 1).ToString();
 
 
 
@@ -315,6 +306,15 @@ namespace MantaRay.Components
                 }
 
                 sb.Append("\n");
+
+                if (!string.IsNullOrEmpty(sftpDir))
+                {
+                    SSH_Helper.SftpPath = linDir;
+                }
+                else
+                {
+                    SSH_Helper.SftpPath = SSH_Helper.SftpClient.WorkingDirectory;
+                }
             }
             else
             {
@@ -323,8 +323,29 @@ namespace MantaRay.Components
                 sb.Append("Sftp + SSH: Disconnected\n");
             }
 
-            SSH_Helper.Execute($"mkdir -p {SSH_Helper.LinuxFullpath}");
+            //SSH_Helper.Execute($"mkdir -p {SSH_Helper.LinuxFullpath}");
 
+
+            sb.AppendFormat("SSH:  Created directory {0}\n\n", SSH_Helper.LinuxFullpath);
+
+
+            sb.AppendFormat("SSH:  Setup <WinHome> to {0}\n", SSH_Helper.WindowsFullpath);
+            sb.AppendFormat("SSH:  Setup <LinuxHome> to {0}\n", SSH_Helper.LinuxFullpath);
+            sb.AppendFormat("SSH:  Setup <Project> to {0}\n", SSH_Helper.ProjectSubPath);
+            sb.AppendFormat("SSH:  Setup <SftpHome> to {0}\n", SSH_Helper.SftpPath);
+
+            GlobalsHelper.GlobalsFromConnectComponent["WinHome"] = SSH_Helper.WindowsFullpath;
+            GlobalsHelper.GlobalsFromConnectComponent["LinuxHome"] = SSH_Helper.LinuxFullpath;
+            GlobalsHelper.GlobalsFromConnectComponent["Project"] = SSH_Helper.ProjectSubPath;
+            GlobalsHelper.GlobalsFromConnectComponent["SftpHome"] = SSH_Helper.SftpPath;
+
+            if (SSH_Helper.CheckConnection() == SSH_Helper.ConnectionDetails.Connected)
+            {
+                string cpuSB = (int.Parse(SSH_Helper.Execute("nproc --all")) - 1).ToString();
+                GlobalsHelper.GlobalsFromConnectComponent["cpus"] = cpuSB;
+                sb.AppendFormat("SSH:  Setup <cpus> to {0} (locally you would have used {1})\n", cpuSB, (Environment.ProcessorCount - 1).ToString());
+
+            }
 
             DA.SetData("status", sb.ToString());
 
@@ -439,7 +460,7 @@ namespace MantaRay.Components
         /// </summary>
         public override Guid ComponentGuid
         {
-            get { return new Guid("1B57442F-E5FE-4462-9EB0-564497CB076D"); }
+            get { return new Guid("1B57442F-E5FE-4462-9EB0-564497CB076E"); }
         }
 
         private bool GetCredentials(string username, string ip, out string password)
