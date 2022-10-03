@@ -47,8 +47,8 @@ namespace MantaRay.Components.Templates
         /// <param name="DA">The DA object is used to retrieve from inputs and store in outputs.</param>
         protected override void SolveInstance(IGH_DataAccess DA)
         {
-            ((GH_TestComponentColor_Attr)m_attributes).Color = DA.Fetch<System.Drawing.Color>("Color");
-            ((GH_TestComponentColor_Attr)m_attributes).ColorSelected = DA.Fetch<System.Drawing.Color>("SelColor");
+            ((GH_TestComponentColor_Attr)m_attributes).Color = DA.Fetch<System.Drawing.Color>(this, "Color");
+            ((GH_TestComponentColor_Attr)m_attributes).ColorSelected = DA.Fetch<System.Drawing.Color>(this, "SelColor");
         }
 
 

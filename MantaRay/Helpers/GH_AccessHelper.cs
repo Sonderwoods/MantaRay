@@ -2,17 +2,30 @@
 using Grasshopper.Kernel.Data;
 using Grasshopper.Kernel.Parameters;
 using Grasshopper.Kernel.Types;
+using Grasshopper.Kernel.Undo;
+using Grasshopper.Kernel.Undo.Actions;
+using Rhino.DocObjects;
 using System;
+using System.CodeDom;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 using System.Xml.Linq;
+using System.Diagnostics;
+using System.ComponentModel;
+using System.Reflection;
+using System.Security.Cryptography;
+using static MantaRay.Helpers.ReplaceMissingComponentsHelper;
 
 namespace MantaRay
 {
     /// <summary>
     /// DataAccessHelper for GH. Original from Arend van Waart  arend@studioavw.nl
+    /// 
+    /// Boosted errormessages, allowing for params[] inputs for renamed params, creating duplicate components as part of MantaRay
     /// </summary>
     static class GH_AccessHelper
     {
@@ -21,7 +34,7 @@ namespace MantaRay
         // Author: Arend van Waart arend@studioavw.nl
 
         const string msg = "\nThis might be because your component is outdated. Try to drag a new component of this type to the canvas and see if it helps :-)";
-        
+
 
         /// <summary>
         /// Iterates over an Enum type to add the named values to the integer param
@@ -37,6 +50,31 @@ namespace MantaRay
             }
         }
 
+        //public static T Fetch<T>(this IGH_DataAccess da, int position)
+        //{
+        //    return Fetch<T>(da, null, position);
+        //}
+
+        //public static T Fetch<T>(this IGH_DataAccess da, params string[] names)
+        //{
+        //    return Fetch<T>(da, null, names);
+        //}
+        //public static List<T> FetchList<T>(this IGH_DataAccess da, int position)
+        //{
+        //    return FetchList<T>(da, null, position);
+        //}
+        //public static List<T> FetchList<T>(this IGH_DataAccess da, params string[] names)
+        //{
+        //    return FetchList<T>(da, null, names);
+        //}
+        //public static GH_Structure<T> FetchTree<T>(this IGH_DataAccess da, int position) where T : IGH_Goo
+        //{
+        //    return FetchTree<T>(da, null, position);
+        //}
+        //public static GH_Structure<T> FetchTree<T>(this IGH_DataAccess da, string name) where T : IGH_Goo
+        //{
+        //    return FetchTree<T>(da, null, name);
+        //}
 
         /// <summary>
         /// Fetch data at index position
@@ -45,7 +83,7 @@ namespace MantaRay
         /// <param name="da"></param>
         /// <param name="position"></param>
         /// <returns></returns>
-        public static T Fetch<T>(this IGH_DataAccess da, int position)
+        public static T Fetch<T>(this IGH_DataAccess da, IGH_DocumentObject obj, int position)
         {
 
             var temp = default(T);
@@ -56,16 +94,20 @@ namespace MantaRay
             }
             catch (System.IndexOutOfRangeException e)
             {
+                SchedulePlaceNewComponent(obj);
                 throw new IndexOutOfRangeException($"Input parameter not found at position {position}" + msg, e);
             }
             catch (System.InvalidOperationException e)
             {
+                SchedulePlaceNewComponent(obj);
                 throw new InvalidOperationException($"item instead of list!?: {position}" + msg, e);
             }
             return temp;
         }
 
-        public static T Fetch<T>(this IGH_DataAccess da, params string[] names)
+
+
+        public static T Fetch<T>(this IGH_DataAccess da, IGH_DocumentObject obj, params string[] names)
         {
             var temp = default(T);
 
@@ -76,15 +118,17 @@ namespace MantaRay
                     da.GetData(name, ref temp);
                     return temp;
                 }
-                catch(System.IndexOutOfRangeException)
+                catch (System.IndexOutOfRangeException)
                 {
                     continue;
                 }
                 catch (System.InvalidOperationException e)
                 {
+                    SchedulePlaceNewComponent(obj);
                     throw new InvalidOperationException($"item instead of list!?: {name}" + msg, e);
                 }
             }
+            SchedulePlaceNewComponent(obj);
             throw new IndexOutOfRangeException($"Input parameter not found: \"{string.Join("\", \"", names)}\"\n+{msg}");
         }
         /// <summary>
@@ -94,7 +138,7 @@ namespace MantaRay
         /// <param name="da"></param>
         /// <param name="name"></param>
         /// <returns></returns>
-        public static T Fetch<T>(this IGH_DataAccess da, string name)
+        public static T Fetch<T>(this IGH_DataAccess da, IGH_DocumentObject obj, string name)
         {
             var temp = default(T);
             try
@@ -104,14 +148,20 @@ namespace MantaRay
             }
             catch (System.IndexOutOfRangeException e)
             {
+                SchedulePlaceNewComponent(obj);
                 throw new IndexOutOfRangeException($"Input parameter not found: {name}" + msg, e);
             }
             catch (System.InvalidOperationException e)
             {
+                SchedulePlaceNewComponent(obj);
                 throw new InvalidOperationException($"item instead of list!?: {name}" + msg, e);
             }
             return temp;
         }
+
+
+
+
 
         /// <summary>
         /// Fetch data list with position
@@ -120,7 +170,7 @@ namespace MantaRay
         /// <param name="da"></param>
         /// <param name="position"></param>
         /// <returns></returns>
-        public static List<T> FetchList<T>(this IGH_DataAccess da, int position)
+        public static List<T> FetchList<T>(this IGH_DataAccess da, IGH_DocumentObject obj, int position)
         {
             var temp = new List<T>();
             try
@@ -130,14 +180,18 @@ namespace MantaRay
             }
             catch (System.IndexOutOfRangeException e)
             {
+                SchedulePlaceNewComponent(obj);
                 throw new IndexOutOfRangeException($"Input parameter not found at position {position}" + msg, e);
             }
             catch (System.InvalidOperationException e)
             {
+                SchedulePlaceNewComponent(obj);
                 throw new InvalidOperationException($"item instead of list!?: {position}" + msg, e);
             }
             return temp;
         }
+
+
 
         /// <summary>
         /// Fetch data list with name
@@ -146,24 +200,34 @@ namespace MantaRay
         /// <param name="da"></param>
         /// <param name="name"></param>
         /// <returns></returns>
-        public static List<T> FetchList<T>(this IGH_DataAccess da, string name)
+        public static List<T> FetchList<T>(this IGH_DataAccess da, IGH_DocumentObject obj, params string[] names)
         {
             var temp = new List<T>();
-            try
-            {
-                da.GetDataList(name, temp);
 
-            }
-            catch (System.IndexOutOfRangeException e)
+            foreach (var name in names)
             {
-                throw new IndexOutOfRangeException($"Input parameter not found: {name}" + msg, e);
+                try
+                {
+                    da.GetDataList(name, temp);
+                    return temp;
+                }
+                catch (System.IndexOutOfRangeException)
+                {
+                    continue;
+                }
+                catch (System.InvalidOperationException e)
+                {
+                    SchedulePlaceNewComponent(obj);
+                    throw new InvalidOperationException($"item instead of list!?: {name}" + msg, e);
+                }
             }
-            catch (System.InvalidOperationException e)
-            {
-                throw new InvalidOperationException($"item instead of list!?: {name}" + msg, e);
-            }
-            return temp;
+            SchedulePlaceNewComponent(obj);
+            throw new IndexOutOfRangeException($"Input parameter not found: \"{string.Join("\", \"", names)}\"\n+{msg}");
         }
+
+
+
+
         /// <summary>
         /// Fetch structure with position
         /// </summary>
@@ -171,7 +235,7 @@ namespace MantaRay
         /// <param name="da"></param>
         /// <param name="position"></param>
         /// <returns></returns>
-        public static GH_Structure<T> FetchTree<T>(this IGH_DataAccess da, int position) where T : IGH_Goo
+        public static GH_Structure<T> FetchTree<T>(this IGH_DataAccess da, IGH_DocumentObject obj, int position) where T : IGH_Goo
         {
             GH_Structure<T> temp = default(GH_Structure<T>);
             try
@@ -181,14 +245,18 @@ namespace MantaRay
             }
             catch (System.IndexOutOfRangeException e)
             {
+                SchedulePlaceNewComponent(obj);
                 throw new IndexOutOfRangeException($"Input parameter not found at position {position}" + msg, e);
             }
             catch (System.InvalidOperationException e)
             {
+                SchedulePlaceNewComponent(obj);
                 throw new InvalidOperationException($"item instead of list!?: {position}" + msg, e);
             }
             return temp;
         }
+
+
 
         /// <summary>
         /// Fetch structure with name
@@ -197,7 +265,7 @@ namespace MantaRay
         /// <param name="da"></param>
         /// <param name="name"></param>
         /// <returns></returns>
-        public static GH_Structure<T> FetchTree<T>(this IGH_DataAccess da, string name) where T : IGH_Goo
+        public static GH_Structure<T> FetchTree<T>(this IGH_DataAccess da, IGH_DocumentObject obj, string name) where T : IGH_Goo
         {
 
             GH_Structure<T> temp = default(GH_Structure<T>);
@@ -208,13 +276,16 @@ namespace MantaRay
             }
             catch (System.IndexOutOfRangeException e)
             {
+                SchedulePlaceNewComponent(obj);
                 throw new IndexOutOfRangeException($"Input parameter not found: {name}" + msg, e);
             }
             catch (System.InvalidOperationException e)
             {
+                SchedulePlaceNewComponent(obj);
                 throw new InvalidOperationException($"item instead of list!?: {name}" + msg, e);
             }
             return temp;
         }
+
     }
 }

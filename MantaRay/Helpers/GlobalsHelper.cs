@@ -13,6 +13,7 @@ namespace MantaRay
         public static Dictionary<string, string> GlobalsFromConnectComponent { get; set; } = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         //public static readonly Regex regexAdvanced = new Regex(@"<([\w]+?)-??([\d.]*)*?>", RegexOptions.Compiled);
         public static readonly Regex regexAdvanced = new Regex(@"<([a-zA-Z]+[\d]*)-??((?<=-)([\d]*||.))*?>", RegexOptions.Compiled);
+        
 
         public static object @Lock = new object();
         /*
@@ -33,6 +34,8 @@ namespace MantaRay
 
         private static string ApplyGlobalsOnce(string s, Dictionary<string, string> locals = null, List<string> missingKeys = null)
         {
+            if (s == null)
+                return s;
 
             lock (Lock)
             {

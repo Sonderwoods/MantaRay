@@ -74,24 +74,24 @@ namespace MantaRay
         {
             //Read and parse the input.
             var runTree = new GH_Structure<GH_Boolean>();
-            runTree.Append(new GH_Boolean(DA.Fetch<bool>("Run")));
+            runTree.Append(new GH_Boolean(DA.Fetch<bool>(this, "Run")));
             Params.Output[Params.Output.Count - 1].ClearData();
             DA.SetDataTree(Params.Output.Count - 1, runTree);
 
-            if (!DA.Fetch<bool>("Run"))
+            if (!DA.Fetch<bool>(this, "Run"))
                 return;
 
             string workingDir;
 
-            string mappingName = DA.Fetch<string>("MapFileName");
+            string mappingName = DA.Fetch<string>(this, "MapFileName");
 
-            string subfolder = DA.Fetch<string>("Target folder", "Subfolder Override").ApplyGlobals().Replace('/', '\\').Trim('\\'); //keep backslash as we're in windows.
+            string subfolder = DA.Fetch<string>(this, "Target folder", "Subfolder Override").ApplyGlobals().Replace('/', '\\').Trim('\\'); //keep backslash as we're in windows.
 
-            Grasshopper.Kernel.Data.GH_Structure<GH_Mesh> inMeshes = DA.FetchTree<GH_Mesh>("Mesh");
+            Grasshopper.Kernel.Data.GH_Structure<GH_Mesh> inMeshes = DA.FetchTree<GH_Mesh>(this, "Mesh");
 
-            Grasshopper.Kernel.Data.GH_Structure<GH_String> names = DA.FetchTree<GH_String>("Name");
+            Grasshopper.Kernel.Data.GH_Structure<GH_String> names = DA.FetchTree<GH_String>(this, "Name");
 
-            Grasshopper.Kernel.Data.GH_Structure<GH_String> modifierNames = DA.FetchTree<GH_String>("ModifierName");
+            Grasshopper.Kernel.Data.GH_Structure<GH_String> modifierNames = DA.FetchTree<GH_String>(this, "ModifierName");
 
             if (modifierNames.Branches.Count != inMeshes.Branches.Count || inMeshes.Branches.Count != names.Branches.Count)
             {

@@ -9,18 +9,18 @@ using System.Diagnostics;
 using Grasshopper.Kernel.Data;
 using Grasshopper.Kernel.Types;
 using System.Linq;
-using MantaRay.Components;
 using Rhino.Geometry;
 using MantaRay.Setup;
 
-namespace MantaRay.Components
+namespace MantaRay.OldComponents
 {
-    public class GH_Connect : GH_Template
+    [Obsolete]
+    public class GH_Connect_OBSOLETE : GH_Template
     {
         /// <summary>
         /// Initializes a new instance of the GH_Connect class.
         /// </summary>
-        public GH_Connect()
+        public GH_Connect_OBSOLETE()
           : base("Connect SSH/FTP", "Connect",
               "Connect to the SSH and FTP",
               "0 Setup")
@@ -34,16 +34,13 @@ namespace MantaRay.Components
         /// <summary>
         /// Registers all the input parameters for this component.
         /// </summary>
-        protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
+        protected override void RegisterInputParams(GH_InputParamManager pManager)
         {
-            pManager[pManager.AddTextParameter("user", "user", "input a string containing the linux user name.\nFor instance:\nmyName", GH_ParamAccess.item, System.Environment.UserName)].Optional = true;
+            pManager[pManager.AddTextParameter("user", "user", "input a string containing the linux user name.\nFor instance:\nmyName", GH_ParamAccess.item, Environment.UserName)].Optional = true;
             pManager[pManager.AddTextParameter("ip", "ip", "input a string containing the SSH ip address.\nFor instance:\n127.0.0.1", GH_ParamAccess.item, "127.0.0.1")].Optional = true;
             pManager[pManager.AddTextParameter("LinuxDir", "LinuxDir", "Default linux dir.\nDefault is:\n'~/simulation'", GH_ParamAccess.item, "")].Optional = true;
-            pManager[pManager.AddTextParameter("WindowsDir", "WindowsDir", $"WindowsDir\nDefault is:\n'C:\\users\\{System.Environment.UserName}\\MantaRay\\", GH_ParamAccess.item, "")].Optional = true;
-            pManager[pManager.AddTextParameter("SftpDir", "SftpDir", "SftpDir. This can in some cases be a windows directory even though you are SSH'ing to linux.\nThis is sometimes the case when using Windows Subsystem Linux" +
-                "\nExamples:\n" +
-                "/C:/users/<username>/MantaRay   ... (I know this is weird but that's how I've seen it with this SSH client\n" +
-                "~/MantaRay/", GH_ParamAccess.item, "")].Optional = true;
+            pManager[pManager.AddTextParameter("WindowsDir", "WindowsDir", $"WindowsDir\nDefault is:\n'C:\\users\\{Environment.UserName}\\MantaRay\\", GH_ParamAccess.item, "")].Optional = true;
+            //pManager[pManager.AddTextParameter("SftpDir", "SftpDir", "SftpDir. This can in some cases be a windows directory even though you are SSH'ing to linux.\nThis is sometimes the case when using Windows Subsystem Linux", GH_ParamAccess.item, "")].Optional = true;
             pManager[pManager.AddTextParameter("ProjectName", "ProjectName", "Subfolder for this project\n" +
                 "If none is specified, files will land in UnnamedProject folder.\nIdeas:\nMyProject\nMyAwesomeProject", GH_ParamAccess.item, "")].Optional = true;
             pManager[pManager.AddTextParameter("password", "password", "password. Leave empty to prompt.", GH_ParamAccess.item, "_prompt")].Optional = true;
@@ -60,7 +57,7 @@ namespace MantaRay.Components
         /// <summary>
         /// Registers all the output parameters for this component.
         /// </summary>
-        protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
+        protected override void RegisterOutputParams(GH_OutputParamManager pManager)
         {
             pManager.AddTextParameter("status", "status", "status", GH_ParamAccess.item);
             pManager.AddGenericParameter("prefixes", "prefixes", "Show the current prefixes.\n\nThis means that all the execute components will run these commands before the actual command.\n\nIf you remove the prefix input, then this will output the default prefix!", GH_ParamAccess.item);
@@ -84,19 +81,19 @@ namespace MantaRay.Components
             Grasshopper.Instances.ActiveCanvas.Document.ArrangeObject(this, GH_Arrange.MoveToBack);
 
             if (run && Grasshopper.Instances.ActiveCanvas.Document.Objects
-                .OfType<GH_Connect>()
-                .Where(c => !Object.ReferenceEquals(c, this) && !c.Locked)
+                .OfType<GH_Connect_OBSOLETE>()
+                .Where(c => !ReferenceEquals(c, this) && !c.Locked)
                 .Count() > 0)
             {
                 AddRuntimeMessage(GH_RuntimeMessageLevel.Error,
-                    $"There's more than one {this.NickName} component on the canvas.\n" +
+                    $"There's more than one {NickName} component on the canvas.\n" +
                     $"One will override the other!\n" +
                     $"Please only use ONE! Do you get it???\n" +
                     $"For one to live the other one has to die\n" +
                     $"It's like Harry Potter and Voldemort.\n\nDisable the other component and enable this one again. Fool.");
 
 
-                this.Locked = true;
+                Locked = true;
                 return;
 
             }
@@ -105,7 +102,7 @@ namespace MantaRay.Components
             string password = DA.Fetch<string>(this, "password");
             string linDir = DA.Fetch<string>(this, "LinuxDir");
             string winDir = DA.Fetch<string>(this, "WindowsDir");
-            string sftpDir = DA.Fetch<string>(this, "SftpDir");
+            //string sftpDir = DA.Fetch<string>(this, "SftpDir");
             string subfolder = DA.Fetch<string>(this, "ProjectName", "Subfolder");
             string ip = DA.Fetch<string>(this, "ip");
             int port = DA.Fetch<int>(this, "_port");
@@ -198,9 +195,6 @@ namespace MantaRay.Components
                 }
 
 
-                
-
-
 
                 if (!string.IsNullOrEmpty(subfolder))
                 {
@@ -234,7 +228,7 @@ namespace MantaRay.Components
                         if (GetCredentials(username, ip, out string pw))
                         {
                             _pw = pw;
-                            this.ExpireSolution(true);
+                            ExpireSolution(true);
                         }
 
                     }
@@ -246,7 +240,7 @@ namespace MantaRay.Components
                     sb.AppendFormat("SSH:  Could not find the SSH server\n      {0}\n      Try restarting it locally in " +
                         "your bash with the command:\n    $ sudo service ssh start\n", e.Message);
 
-                    if (String.Equals(ip, "127.0.0.1") || String.Equals(ip, "localhost"))
+                    if (string.Equals(ip, "127.0.0.1") || string.Equals(ip, "localhost"))
                     {
                         var mb = MessageBox.Show("No SSH, try opening it with\nsudo service ssh start\n\nWant me to start it for you??" +
                             "\n\n\nI'll simply run the below bash command for you:\n\n" +
@@ -255,7 +249,7 @@ namespace MantaRay.Components
 
                         if (mb == DialogResult.Yes)
                         {
-                            Process proc = new System.Diagnostics.Process();
+                            Process proc = new Process();
                             proc.StartInfo.FileName = @"C:\windows\system32\cmd.exe";
                             proc.StartInfo.Arguments = $"/c \"bash -c \"echo {_pw} | sudo -S service ssh start\" \"";
 
@@ -265,7 +259,7 @@ namespace MantaRay.Components
                             proc.Start();
                             proc.WaitForExit();
 
-                            this.ExpireSolution(true);
+                            ExpireSolution(true);
                         }
                     }
 
@@ -306,15 +300,6 @@ namespace MantaRay.Components
                 }
 
                 sb.Append("\n");
-
-                if (!string.IsNullOrEmpty(sftpDir))
-                {
-                    SSH_Helper.SftpPath = linDir;
-                }
-                else
-                {
-                    SSH_Helper.SftpPath = SSH_Helper.SftpClient.WorkingDirectory;
-                }
             }
             else
             {
@@ -323,8 +308,9 @@ namespace MantaRay.Components
                 sb.Append("Sftp + SSH: Disconnected\n");
             }
 
-            //SSH_Helper.Execute($"mkdir -p {SSH_Helper.LinuxFullpath}");
+            SSH_Helper.Execute($"mkdir -p {SSH_Helper.LinuxFullpath}");
 
+            string cpuSB = (int.Parse(SSH_Helper.Execute("nproc --all")) - 1).ToString();
 
             sb.AppendFormat("SSH:  Created directory {0}\n\n", SSH_Helper.LinuxFullpath);
 
@@ -332,20 +318,13 @@ namespace MantaRay.Components
             sb.AppendFormat("SSH:  Setup <WinHome> to {0}\n", SSH_Helper.WindowsFullpath);
             sb.AppendFormat("SSH:  Setup <LinuxHome> to {0}\n", SSH_Helper.LinuxFullpath);
             sb.AppendFormat("SSH:  Setup <Project> to {0}\n", SSH_Helper.ProjectSubPath);
-            sb.AppendFormat("SSH:  Setup <SftpHome> to {0}\n", SSH_Helper.SftpPath);
+            sb.AppendFormat("SSH:  Setup <cpus> to {0} (locally you would have used {1})\n", cpuSB, (Environment.ProcessorCount - 1).ToString());
 
             GlobalsHelper.GlobalsFromConnectComponent["WinHome"] = SSH_Helper.WindowsFullpath;
             GlobalsHelper.GlobalsFromConnectComponent["LinuxHome"] = SSH_Helper.LinuxFullpath;
             GlobalsHelper.GlobalsFromConnectComponent["Project"] = SSH_Helper.ProjectSubPath;
-            GlobalsHelper.GlobalsFromConnectComponent["SftpHome"] = SSH_Helper.SftpPath;
+            GlobalsHelper.GlobalsFromConnectComponent["cpus"] = cpuSB;
 
-            if (SSH_Helper.CheckConnection() == SSH_Helper.ConnectionDetails.Connected)
-            {
-                string cpuSB = (int.Parse(SSH_Helper.Execute("nproc --all")) - 1).ToString();
-                GlobalsHelper.GlobalsFromConnectComponent["cpus"] = cpuSB;
-                sb.AppendFormat("SSH:  Setup <cpus> to {0} (locally you would have used {1})\n", cpuSB, (Environment.ProcessorCount - 1).ToString());
-
-            }
 
             DA.SetData("status", sb.ToString());
 
@@ -384,13 +363,13 @@ namespace MantaRay.Components
             if (document.Objects.Contains(this))
             {
 
-                var allData = this.Params.Input[connectID].VolatileData.AllData(false);
+                var allData = Params.Input[connectID].VolatileData.AllData(false);
                 bool isRunSet = allData.Count() > 0;
 
 
                 if (Params.Input[connectID].Phase == GH_SolutionPhase.Blank)
                 {
-                    this.Params.Input[connectID].CollectData();
+                    Params.Input[connectID].CollectData();
 
                 }
                 foreach (IGH_Goo data in allData)
@@ -417,12 +396,12 @@ namespace MantaRay.Components
                         break;
                 }
 
-                this.Params.Input[connectID].ClearData();
+                Params.Input[connectID].ClearData();
 
                 if (isRunSet && SSH_Helper.CheckConnection() != SSH_Helper.ConnectionDetails.Connected)
                 {
 
-                    document.ScheduleSolution(100, (e) => this.ExpireSolution(true));
+                    document.ScheduleSolution(100, (e) => ExpireSolution(true));
                 }
 
 
@@ -460,7 +439,7 @@ namespace MantaRay.Components
         /// </summary>
         public override Guid ComponentGuid
         {
-            get { return new Guid("1B57442F-E5FE-4462-9EB0-564497CB076E"); }
+            get { return new Guid("1B57442F-E5FE-4462-9EB0-564497CB076D"); }
         }
 
         private bool GetCredentials(string username, string ip, out string password)

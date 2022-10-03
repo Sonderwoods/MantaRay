@@ -46,8 +46,8 @@ namespace MantaRay.Components
         /// <param name="DA">The DA object is used to retrieve from inputs and store in outputs.</param>
         protected override void SolveInstance(IGH_DataAccess DA)
         {
-            var names = DA.FetchList<string>("Name");
-            var transmittances = DA.FetchList<double>("Transmittance[0-1]");
+            var names = DA.FetchList<string>(this, "Name");
+            var transmittances = DA.FetchList<double>(this, "Transmittance[0-1]");
       
 
             int count = names.Count;

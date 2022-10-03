@@ -48,10 +48,10 @@ namespace MantaRay.Components
         /// <param name="DA">The DA object is used to retrieve from inputs and store in outputs.</param>
         protected override void SolveInstance(IGH_DataAccess DA)
         {
-            var names = DA.FetchList<string>("Name");
-            var reflectances = DA.FetchList<double>("Reflectance[0-1]");
-            var specularities = DA.FetchList<double>("Specularity");
-            var roughnesses = DA.FetchList<double>("Roughness");
+            var names = DA.FetchList<string>(this, "Name");
+            var reflectances = DA.FetchList<double>(this, "Reflectance[0-1]");
+            var specularities = DA.FetchList<double>(this, "Specularity");
+            var roughnesses = DA.FetchList<double>(this, "Roughness");
 
             int count = names.Count;
 

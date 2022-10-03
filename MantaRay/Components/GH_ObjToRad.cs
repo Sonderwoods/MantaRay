@@ -62,14 +62,14 @@ namespace MantaRay.Components
 
             if (!CheckIfRunOrUseOldResults(DA, 1)) return; //template
 
-            List<string> allFilePaths = DA.FetchList<string>("Obj Files");
+            List<string> allFilePaths = DA.FetchList<string>(this, "Obj Files");
 
-            allFilePaths.Add(DA.Fetch<string>("Map File"));
+            allFilePaths.Add(DA.Fetch<string>(this, "Map File"));
             allFilePaths.Reverse(); //to make sure the map comes first in the upload process.
 
             List<string> radFilePaths = new List<string>(allFilePaths.Count);
 
-            string subfolderOverride = DA.Fetch<string>("Target folder", "Subfolder Override").ApplyGlobals().Replace('\\', '/').TrimEnd('/');
+            string subfolderOverride = DA.Fetch<string>(this, "Target folder", "Subfolder Override").ApplyGlobals().Replace('\\', '/').TrimEnd('/');
 
             StringBuilder sb = new StringBuilder();
 

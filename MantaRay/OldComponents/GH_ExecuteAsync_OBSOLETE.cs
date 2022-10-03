@@ -455,7 +455,7 @@ namespace MantaRay.OldComponents
             public override void GetData(IGH_DataAccess DA, GH_ComponentParamServer Params)
             {
                 //if (CancellationToken.IsCancellationRequested) return;
-                commands = DA.FetchList<string>(0);
+                commands = DA.FetchList<string>(Parent, 0);
 
 
                 StringBuilder sb = new StringBuilder();
@@ -474,7 +474,7 @@ namespace MantaRay.OldComponents
                 }
                 ((GH_ExecuteAsync_OBSOLETE)Parent).LogDescriptionDynamic = sb.ToString();
 
-                List<GH_Boolean> _runs = DA.FetchTree<GH_Boolean>(1).FlattenData();
+                List<GH_Boolean> _runs = DA.FetchTree<GH_Boolean>(Parent, 1).FlattenData();
 
                 run = _runs.Count > 0 && _runs.All(g => g?.Value == true);
 

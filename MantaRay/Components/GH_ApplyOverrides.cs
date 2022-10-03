@@ -67,7 +67,7 @@ namespace MantaRay.Components
         {
 
             int dynamicParameterCount = Params.Input.Count - staticParameterCount;
-            List<OverridableText> inputs = DA.FetchList<OverridableText>("Input").Select(o => (OverridableText)o.Duplicate()).ToList();
+            List<OverridableText> inputs = DA.FetchList<OverridableText>(this, "Input").Select(o => (OverridableText)o.Duplicate()).ToList();
             missingInputs.Clear();
 
 
@@ -181,7 +181,7 @@ namespace MantaRay.Components
                 .Distinct()
                 .Where(i => !Params.Input.Select(ip => ip.NickName).Contains(i)))
             {
-                IGH_Param param = new Param_String() { NickName = missingInp, Optional = true, Access = GH_ParamAccess.item };
+                IGH_Param param = new Param_String() { NickName = missingInp, Optional = true, Access = GH_ParamAccess.item, DataMapping = GH_DataMapping.Graft };
                 Params.RegisterInputParam(param);
             }
             Params.OnParametersChanged();
@@ -220,8 +220,17 @@ namespace MantaRay.Components
 
         IGH_Param IGH_VariableParameterComponent.CreateParameter(GH_ParameterSide side, int index)
         {
-            var param = new Param_String { NickName = "-" };
-            return param;
+            if (side == GH_ParameterSide.Input)
+            {
+                var param = new Param_String { NickName = "-" };
+                return param;
+            }
+            else
+            {
+                var param = new Param_GenericObject { NickName = "-" };
+                return param;
+            }
+            
         }
 
         bool IGH_VariableParameterComponent.DestroyParameter(GH_ParameterSide side, int index)

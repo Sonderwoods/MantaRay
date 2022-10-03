@@ -3,27 +3,29 @@ using System.Collections.Generic;
 
 using System.Drawing;
 using Grasshopper.Kernel;
-using MantaRay.Components;
 using Rhino.Geometry;
 
-namespace MantaRay.Components
+namespace MantaRay.OldComponents
 {
-    public class GH_ConvertPaths : GH_Template
+    [Obsolete]
+    public class GH_ConvertPaths_OBSOLETE : GH_Template
     {
         /// <summary>
         /// Initializes a new instance of the GH_ToLinux class.
         /// </summary>
-        public GH_ConvertPaths()
+        public GH_ConvertPaths_OBSOLETE()
           : base("ConvertPaths", "ConvertPaths",
               "converts a windows path to linux path",
               "0 Setup")
         {
         }
 
+        public override GH_Exposure Exposure => GH_Exposure.hidden; 
+
         /// <summary>
         /// Registers all the input parameters for this component.
         /// </summary>
-        protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
+        protected override void RegisterInputParams(GH_InputParamManager pManager)
         {
             pManager.AddTextParameter("I", "I", "Input linux/windows path", GH_ParamAccess.item);
         }
@@ -31,11 +33,10 @@ namespace MantaRay.Components
         /// <summary>
         /// Registers all the output parameters for this component.
         /// </summary>
-        protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
+        protected override void RegisterOutputParams(GH_OutputParamManager pManager)
         {
             pManager.AddTextParameter("Linux", "L", "Linux", GH_ParamAccess.item);
             pManager.AddTextParameter("Windows", "W", "Windows", GH_ParamAccess.item);
-            pManager.AddTextParameter("Sftp", "F", "Sftp", GH_ParamAccess.item);
         }
 
         /// <summary>
@@ -53,7 +54,6 @@ namespace MantaRay.Components
             }
             DA.SetData(0, path.ToLinuxPath());
             DA.SetData(1, path.ToWindowsPath());
-            DA.SetData(2, path.ToSftpPath());
         }
 
         protected override Bitmap Icon => Resources.Resources.Ra_Paths_Icon;
@@ -63,7 +63,7 @@ namespace MantaRay.Components
         /// </summary>
         public override Guid ComponentGuid
         {
-            get { return new Guid("AF816E54-D307-4E15-9FDD-3DD9A0DC61EE"); }
+            get { return new Guid("AF816E54-D307-4E15-9FDD-3DD9A0DC61ED"); }
         }
     }
 }

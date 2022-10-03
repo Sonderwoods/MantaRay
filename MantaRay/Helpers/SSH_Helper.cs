@@ -3,9 +3,11 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Renci.SshNet;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement.Rebar;
 
 
 namespace MantaRay
@@ -32,7 +34,7 @@ namespace MantaRay
         /// </summary>
         public static string WindowsFullpath => _windowsFullpath;
 
-        public static string SftpDir { get; set; } = "";
+
 
         /// <summary>
         /// default subfolder WITHOUT starting slash.
@@ -48,19 +50,27 @@ namespace MantaRay
 
 
         /// <summary>
+        /// Will be set on connection
+        /// </summary>
+        public static string SftpPath { get; set; } = null;
+
+
+        /// <summary>
         /// The suffixes to setup before any commands. Temporary fix untill we get .bashrc correctly setup.
         /// </summary>
         public static string ExportPrefixes { get; set; } =
-            "export PATH=$PATH:/usr/local/radiance/bin;" +
-            "export RAYPATH=.:/usr/local/radiance/lib;" + //including local dir
+            "export PATH=$PATH:/usr/local/radiance/bin:/usr/local/accelerad/bin;" +
+            "export RAYPATH=.:/usr/local/radiance/lib:/usr/local/accelerad/lib;" + //including local dir
             "export DISPLAY=$(ip route list default | awk '{print $3}'):0;" +
+            "export LD_lIBRARY_PATH=/uusr/local/accelerad/bin:$LD_LIBRARY_PATH;" +
             "export LIBGL_ALWAYS_INDIRECT=1";
 
 
         public static string ExportPrefixesDefault { get; } =
-            "export PATH=$PATH:/usr/local/radiance/bin;" +
-            "export RAYPATH=.:/usr/local/radiance/lib;" + //including local dir
+            "export PATH=$PATH:/usr/local/radiance/bin:/usr/local/accelerad/bin;" +
+            "export RAYPATH=.:/usr/local/radiance/lib:/usr/local/accelerad/lib;" + //including local dir
             "export DISPLAY=$(ip route list default | awk '{print $3}'):0;" +
+            "export LD_lIBRARY_PATH=/uusr/local/accelerad/bin:$LD_LIBRARY_PATH;" +
             "export LIBGL_ALWAYS_INDIRECT=1";
 
 
@@ -91,6 +101,73 @@ namespace MantaRay
 
         private static readonly Random rnd = new Random();
 
+        public static string WindowsToLinux(string s)
+        {
+            Regex regexAdvanced = new Regex(@"([a-zA-Z]):\\(.*)"/*, RegexOptions.Compiled*/);
+
+            string Replacers(Match matchResult)
+            {
+                StringBuilder sb = new StringBuilder();
+                sb.Append("/mnt/");
+                sb.Append(matchResult.Groups[1].Value.ToLower());
+                if(matchResult.Groups[2].Success)
+                {
+                    sb.Append("/");
+                    sb.Append(matchResult.Groups[2].Value.Replace("\\", "/"));
+                }
+                return sb.ToString();
+                
+            }
+
+            return regexAdvanced.Replace(s.Replace('−', '-'), new MatchEvaluator((v) => Replacers(v)));
+        }
+
+        public static string LinuxToWindows(string s)
+        {
+            Regex regexAdvanced = new Regex(@"(\/mnt\/([a-z])\/)");
+
+            string Replacers(Match matchResult)
+            {
+                StringBuilder sb = new StringBuilder();
+                sb.Append(matchResult.Groups[2].Value.ToUpper());
+                sb.Append(":\\");
+
+                if (matchResult.Groups[3].Success)
+                {
+                    sb.Append(matchResult.Groups[3].Value.Replace("/", "\\"));
+                }
+                return sb.ToString();
+
+            }
+
+            return regexAdvanced.Replace(s.Replace('−', '-'), new MatchEvaluator((v) => Replacers(v))).Replace("/","\\");
+        }
+
+        public static string ToSftpPath(this string s)
+        {
+            if (sftpClient == null)
+                throw new System.NullReferenceException("No Connection");
+
+            if (s == null)
+                return null;
+
+
+
+            if (s.ToCharArray().Count(a => a == '/') > s.ToCharArray().Count(a => a == '\\'))
+            {
+                if (s.Contains(":") && s.StartsWith("/"))
+                {
+                    return s.Replace("\\", "/");
+                }
+
+                return s.Replace(linuxParentPath, windowsParentPath).Replace("\\", "/");
+            }
+            else
+            {
+                return "/" + s.Replace("\\", "/");
+            }
+        }
+
         public static string ToLinuxPath(this string s)
         {
 
@@ -102,9 +179,14 @@ namespace MantaRay
 
             HomeDirectory = HomeDirectory ?? sftpClient.WorkingDirectory;
 
-            if (s.StartsWith(WindowsParentPath))
+            if (s.StartsWith("/") && s.Contains(":")) //sftpdir
             {
-                return (linuxParentPath + s.Substring(WindowsParentPath.Length)).Replace(@"\", "/").Replace("~", HomeDirectory);
+                string winPath = s.TrimStart('/').Replace("/", "\\");
+                return WindowsToLinux(winPath);
+            }
+            else if (s.StartsWith(WindowsParentPath))
+            {
+                return (linuxParentPath + s.Substring(WindowsParentPath.Length)).Replace(@"\", "/").Replace("~", LinuxParentPath);
             }
             else
                 return s.Replace(@"\", "/");
@@ -118,7 +200,11 @@ namespace MantaRay
             if (s == null)
                 return null;
 
-            if (s.StartsWith(LinuxParentPath))
+            if (s.StartsWith("/") && s.Contains(":")) //sftpdir
+            {
+                return s.TrimStart('/').Replace("/", "\\");
+            }
+            else if (s.StartsWith(LinuxParentPath))
             {
                 return (windowsParentPath + s.Substring(LinuxParentPath.Length)).Replace("/", @"\");
             }
@@ -127,28 +213,12 @@ namespace MantaRay
                 return (windowsParentPath + s.Substring(HomeDirectory.Length)).Replace("/", @"\");
             }
             else
-                return s.Replace("/", @"\");
+            {
+                return LinuxToWindows(s);
+            }
+                //return s.Replace("/", @"\");
         }
 
-        public static string LinuxDir(string subfolderOverride = null)
-        {
-            if (!string.IsNullOrEmpty(subfolderOverride))
-            {
-                return (linuxParentPath + "/" + subfolderOverride).Replace(@"\", "/");
-            }
-            else
-                return _linuxFullpath;
-        }
-
-        public static string WindowsDir(string subfolderOverride = null)
-        {
-            if (!string.IsNullOrEmpty(subfolderOverride))
-            {
-                return (windowsParentPath + @"\" + subfolderOverride).Replace("/", @"\");
-            }
-            else
-                return _windowsFullpath;
-        }
 
         static string projectSubFolder = String.Empty;
         static public string DefaultProjectSubFolder => "UnnamedProject";
@@ -245,7 +315,7 @@ namespace MantaRay
                 }
 
                 localTargetFolder = localTargetFolder.TrimEnd('\\') + "\\";
-                string targetFileName = localTargetFolder + Path.GetFileName(linuxFileName.Replace("/", "\\"));
+                string targetFileName = localTargetFolder + Path.GetFileName(linuxFileName.Trim('\n', '\r').Replace("/", "\\"));
 
 
 
@@ -351,11 +421,10 @@ namespace MantaRay
 
             //    //targetFilePath = targetFilePath.TrimEnd('/');
 
-            if (targetFilePath.Contains("~"))
+            if (targetFilePath != null && targetFilePath.Contains("~"))
             {
-                StringBuilder sb = new StringBuilder();
-                SSH_Helper.Execute($"readlink -f {targetFilePath}", null, sb, null, false, false, null);
-                targetFilePath = sb.ToString();
+                targetFilePath = SSH_Helper.Execute($"readlink -f {targetFilePath}");
+
             }
 
             //    //SSH_Helper.Execute($"mkdir -p {targetFilePath}");
@@ -384,8 +453,48 @@ namespace MantaRay
             {
                 try
                 {
-                    SSH_Helper.SftpClient.UploadFile(uplfileStream, targetFilePath + (String.IsNullOrEmpty(targetFilePath) ? "" : "/") + Path.GetFileName(localFileName), true);
+                    string path = targetFilePath + (String.IsNullOrEmpty(targetFilePath) ? "" : "/") + Path.GetFileName(localFileName);
 
+                    StringBuilder ss = new StringBuilder();
+                    Execute($"mkdir -p {targetFilePath}");
+                    Execute($"touch {path}", errors: ss);
+
+                    string v = SSH_Helper.SftpClient.WorkingDirectory;
+
+                    try
+                    {
+                        if (!String.IsNullOrEmpty(targetFilePath))
+                        {
+                            SSH_Helper.SftpClient.ChangeDirectory(targetFilePath);
+
+                        }
+
+                    }
+                    catch (Renci.SshNet.Common.SftpPathNotFoundException e)
+                    {
+                        if (SSH_Helper.SftpClient.WorkingDirectory.Contains(":"))
+                            throw new Renci.SshNet.Common.SftpPathNotFoundException(
+                                $"Could not set the target SSH directory for upload.\n" +
+
+                                (SSH_Helper.SftpClient.WorkingDirectory.Contains(":") ?
+                                "This 'could' be because the sftp connection is using windows paths." : "") +
+                                $"Your current path is {SSH_Helper.SftpClient.WorkingDirectory}" +
+                                e.Message);
+                    }
+                    catch (Renci.SshNet.Common.SshException e)
+                    {
+                        if (e.Message == "Bad message" && SSH_Helper.SftpClient.WorkingDirectory.Contains(":") && !targetFilePath.StartsWith("/"))
+                        {
+                            throw new Renci.SshNet.Common.SftpPathNotFoundException(
+                                "Looks like you tried to change directory and are working with a windows Sftp file system.\n" +
+                                "Try adding '/' in front of the path such as '/C:/Users...' even though it's not logical.\n" +
+                                $"Default path is {SftpPath}");
+                        }
+                    }
+
+                    //int x = 0;
+
+                    SSH_Helper.SftpClient.UploadFile(uplfileStream, Path.GetFileName(localFileName), true);
                 }
                 catch (Renci.SshNet.Common.SftpPermissionDeniedException e)
                 {
@@ -415,6 +524,8 @@ namespace MantaRay
                 log.Append(targetFilePath);
                 log.Append("/");
                 log.Append(Path.GetFileName(localFileName));
+                log.Append(" to ");
+                log.Append(SftpClient.WorkingDirectory);
                 log.Append("\n");
             }
 
@@ -526,6 +637,10 @@ namespace MantaRay
             }
         }
 
+        public static string Execute(string command)
+        {
+            return sshClient.CreateCommand(command.ApplyGlobals(maxDepth: 2)).Execute().Trim();
+        }
 
 
 

@@ -79,11 +79,11 @@ namespace MantaRay.Components
         /// <param name="DA">The DA object is used to retrieve from inputs and store in outputs.</param>
         protected override void SolveInstance(IGH_DataAccess DA)
         {
-            var grids = DA.FetchTree<GH_Brep>(0);
-            var names = DA.FetchTree<GH_String>(1);
-            var windows = DA.FetchTree<GH_Brep>(2);
-            double tol1 = DA.Fetch<double>("tol1");
-            double tol2 = DA.Fetch<double>("tol2");
+            var grids = DA.FetchTree<GH_Brep>(this, 0);
+            var names = DA.FetchTree<GH_String>(this, 1);
+            var windows = DA.FetchTree<GH_Brep>(this, 2);
+            double tol1 = DA.Fetch<double>(this, "tol1");
+            double tol2 = DA.Fetch<double>(this, "tol2");
 
             if (tol1 == 0)
                 tol1 = 0.1.FromMeter();

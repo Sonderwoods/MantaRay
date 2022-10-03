@@ -140,7 +140,7 @@ namespace MantaRay.Components
 
             BlockingCollection<string> linesPerObject = new BlockingCollection<string>();
 
-            List<string> radFiles = DA.FetchList<string>("RadFiles");
+            List<string> radFiles = DA.FetchList<string>(this, "RadFiles");
 
             var readLines = Task.Factory.StartNew(() =>
             {

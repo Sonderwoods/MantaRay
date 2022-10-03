@@ -60,11 +60,11 @@ namespace MantaRay
         /// <param name="DA">The DA object is used to retrieve from inputs and store in outputs.</param>
         protected override void SolveInstance(IGH_DataAccess DA)
         {
-            double? from = DA.Fetch<double?>("From");
-            double? to = DA.Fetch<double?>("To");
-            int steps = DA.Fetch<int>("A - Steps");
-            double stepSize = DA.Fetch<double>("B - StepSize");
-            List<double> manuallySteps = DA.FetchList<double>("C - Steps");
+            double? from = DA.Fetch<double?>(this, "From");
+            double? to = DA.Fetch<double?>(this, "To");
+            int steps = DA.Fetch<int>(this, "A - Steps");
+            double stepSize = DA.Fetch<double>(this, "B - StepSize");
+            List<double> manuallySteps = DA.FetchList<double>(this, "C - Steps");
 
             if ((steps > 0 && stepSize > 0) ||
                 (steps > 0 && manuallySteps.Count > 0) ||

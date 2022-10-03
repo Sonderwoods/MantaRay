@@ -235,7 +235,7 @@ namespace MantaRay.OldComponents
 
             if (runParam != null)
             {
-                List<GH_Boolean> runInputs = DA.FetchTree<GH_Boolean>("Run").FlattenData();
+                List<GH_Boolean> runInputs = DA.FetchTree<GH_Boolean>(this, "Run").FlattenData();
 
                 if (runInputs.Count == 0 || !runInputs.All(x => x != null && x.Value == true))
                 {
@@ -247,7 +247,7 @@ namespace MantaRay.OldComponents
 
             if (cmdParam != null)
             {
-                inCommands = DA.FetchTree<GH_String>(0).FlattenData().Select(v => v.Value).ToList();
+                inCommands = DA.FetchTree<GH_String>(this, 0).FlattenData().Select(v => v.Value).ToList();
 
 
             }
