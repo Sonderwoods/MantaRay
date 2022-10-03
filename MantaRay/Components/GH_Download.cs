@@ -31,7 +31,9 @@ namespace MantaRay.Components
         /// </summary>
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
-            pManager.AddTextParameter("Linux File Paths", "Linux File", "Linux file path", GH_ParamAccess.list);
+            pManager.AddTextParameter("SftpPaths", "SftpPaths", "Linux file path\nor in case you are on windows SFTP it will be a windows path\n" +
+                "however that window path will be in a weird shape such as:\n" +
+                "'/C:/Users/MyUsername'", GH_ParamAccess.list);
             pManager[pManager.AddTextParameter("Target local folder", "target folder", "Local target folder in windows", GH_ParamAccess.item, "")].Optional = true;
             pManager.AddBooleanParameter("Run", "Run", "Run", GH_ParamAccess.item);
         }
@@ -65,7 +67,7 @@ namespace MantaRay.Components
 
             string localTargetFolder = targetFolder; // Path.GetDirectoryName(targetFolder);
 
-            List<string> allFilePaths = DA.FetchList<string>(this, "Linux File Paths");
+            List<string> allFilePaths = DA.FetchList<string>(this, "SftpPaths", "Linux File Paths");
             List<string> localFilePaths = new List<string>(allFilePaths.Count);
 
             StringBuilder sb = new StringBuilder();
