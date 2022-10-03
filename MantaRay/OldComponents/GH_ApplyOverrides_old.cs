@@ -8,12 +8,12 @@ using Rhino.Geometry;
 namespace MantaRay.OldComponents
 {
     [Obsolete]
-    public class GH_ApplyOverrides_old : GH_Template
+    public class GH_ApplyOverrides_OBSOLETE_OBSOLETE : GH_Template
     {
         /// <summary>
         /// Initializes a new instance of the GH_ApplyGlobals class.
         /// </summary>
-        public GH_ApplyOverrides_old()
+        public GH_ApplyOverrides_OBSOLETE_OBSOLETE()
           : base("Apply Overrides old", "Overrides old",
               "Adds the overrides to the text element. This is mainly as a test component as it should be automatically applied to all text inputs in the other components.",
               "0 Setup")
