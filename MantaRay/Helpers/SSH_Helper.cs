@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.Remoting.Messaging;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -110,13 +111,13 @@ namespace MantaRay
                 StringBuilder sb = new StringBuilder();
                 sb.Append("/mnt/");
                 sb.Append(matchResult.Groups[1].Value.ToLower());
-                if(matchResult.Groups[2].Success)
+                if (matchResult.Groups[2].Success)
                 {
                     sb.Append("/");
                     sb.Append(matchResult.Groups[2].Value.Replace("\\", "/"));
                 }
                 return sb.ToString();
-                
+
             }
 
             return regexAdvanced.Replace(s.Replace('−', '-'), new MatchEvaluator((v) => Replacers(v)));
@@ -140,7 +141,7 @@ namespace MantaRay
 
             }
 
-            return regexAdvanced.Replace(s.Replace('−', '-'), new MatchEvaluator((v) => Replacers(v))).Replace("/","\\");
+            return regexAdvanced.Replace(s.Replace('−', '-'), new MatchEvaluator((v) => Replacers(v))).Replace("/", "\\");
         }
 
         public static string ToSftpPath(this string s)
@@ -160,7 +161,7 @@ namespace MantaRay
                     return s.Replace("\\", "/");
                 }
 
-                return s.Replace(linuxParentPath, windowsParentPath).Replace("\\", "/");
+                return "/" + LinuxToWindows(s.Replace(linuxParentPath, windowsParentPath)).Replace("\\", "/");
             }
             else
             {
@@ -188,8 +189,15 @@ namespace MantaRay
             {
                 return (linuxParentPath + s.Substring(WindowsParentPath.Length)).Replace(@"\", "/").Replace("~", LinuxParentPath);
             }
+            else if (s[0] >= 'a' && s[0] <= 'z' || s[0] >= 'A' && s[0] <= 'Z') // starts with letter -> windows
+            {
+                return WindowsToLinux(s);
+            }
             else
+            {
                 return s.Replace(@"\", "/");
+
+            }
         }
 
         public static string ToWindowsPath(this string s)
@@ -216,7 +224,7 @@ namespace MantaRay
             {
                 return LinuxToWindows(s);
             }
-                //return s.Replace("/", @"\");
+            //return s.Replace("/", @"\");
         }
 
 
