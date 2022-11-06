@@ -10,6 +10,7 @@ using Grasshopper.Kernel.Types;
 using System.Drawing;
 using GH_IO.Serialization;
 using MantaRay.Components;
+using MantaRay.Helpers;
 
 namespace MantaRay.Components
 {
@@ -62,6 +63,8 @@ namespace MantaRay.Components
 
             if (!CheckIfRunOrUseOldResults(DA, 1)) return; //template
 
+            SSH_Helper sshHelper = SSH_Helper.CurrentFromDocument(OnPingDocument());
+
             List<string> allFilePaths = DA.FetchList<string>(this, "Obj Files");
 
             allFilePaths.Add(DA.Fetch<string>(this, "Map File"));
@@ -69,11 +72,14 @@ namespace MantaRay.Components
 
             List<string> radFilePaths = new List<string>(allFilePaths.Count);
 
-            string subfolderOverride = DA.Fetch<string>(this, "Target folder", "Subfolder Override").ApplyGlobals().Replace('\\', '/').TrimEnd('/');
+            string subfolderOverride = DA.Fetch<string>(this, "Target folder", "Subfolder Override").ApplyGlobals().TrimEnd('/', '\\');
 
             StringBuilder sb = new StringBuilder();
 
-
+            for (int i = 0; i < radFilePaths.Count; i++)
+            {
+                radFilePaths[i] = radFilePaths[i].ApplyGlobals();
+            }
 
 
             //SSH_Helper.Execute("cd ~ && ls -lah", sb);
@@ -86,16 +92,18 @@ namespace MantaRay.Components
 
             //SSH_Helper.Execute($"pwd", sb);
 
-            string targetPath = string.IsNullOrEmpty(subfolderOverride) ? SSH_Helper.LinuxFullpath : subfolderOverride;
+            string intendedTargetFolder = string.IsNullOrEmpty(subfolderOverride) ? sshHelper.LinuxHome : subfolderOverride;
 
+            string mapfilePath = "";
 
             for (int i = 0; i < allFilePaths.Count; i++)
             {
-
+                
                 string filePath = allFilePaths[i];
                 //try
                 //{
-                    SSH_Helper.Upload(filePath, targetPath, sb);
+                string uploadedServerPath = sshHelper.Upload(filePath, intendedTargetFolder, sb);
+
 
                 //}
                 //catch (Renci.SshNet.Common.SftpPathNotFoundException e)
@@ -112,9 +120,13 @@ namespace MantaRay.Components
 
                     string radFilePath = Path.GetFileNameWithoutExtension(filePath);
 
-                    SSH_Helper.Execute($"obj2rad -m {targetPath}/{Path.GetFileName(allFilePaths[0].ApplyGlobals())} -f {targetPath}/{Path.GetFileName(filePath)} >{targetPath}/{radFilePath}.rad", log: sb.Length < 10 ? sb : null, errors: sb);
+                    sshHelper.Execute($"obj2rad -m {mapfilePath} -f {uploadedServerPath} > {uploadedServerPath.Replace(".obj",".rad")}", log: sb.Length < 10 ? sb : null, errors: sb);
 
-                    radFilePaths.Add($"{targetPath}/{radFilePath}.rad");
+                    radFilePaths.Add($"{intendedTargetFolder}/{radFilePath}.rad");
+                }
+                else
+                {
+                    mapfilePath = uploadedServerPath.ToLinuxPath();
                 }
             }
 

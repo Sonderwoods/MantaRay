@@ -81,9 +81,9 @@ namespace MantaRay
                 List<string> commands = DA.FetchList<string>(this, "SSH Commands");
                 string command = String.Join(";", commands).ApplyGlobals();
 
+                SSH_Helper sshHelper = SSH_Helper.CurrentFromDocument(OnPingDocument());
 
-
-                int pid = SSH_Helper.Execute(command, log, stdout, errors, prependPrefix: true);
+                int pid = sshHelper.Execute(command, log, stdout, errors, prependPrefix: true);
 
                 bool itsJustAWarning = errors.ToString().Contains("warning");
 

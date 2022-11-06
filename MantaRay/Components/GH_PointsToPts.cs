@@ -7,6 +7,7 @@ using Grasshopper.Kernel.Data;
 using Grasshopper.Kernel.Types;
 using MantaRay.Components;
 using Rhino.Geometry;
+using MantaRay.Helpers;
 
 namespace MantaRay.Components
 {
@@ -61,7 +62,9 @@ namespace MantaRay.Components
             List<Vector3d> vects = DA.FetchList<Vector3d>(this, "Vectors");
             StringBuilder ptsFile = new StringBuilder();
             StringBuilder sb = new StringBuilder();
-            
+
+            SSH_Helper sshHelper = SSH_Helper.CurrentFromDocument(OnPingDocument());
+
 
             if (pts.Count == 0)
             {
@@ -93,11 +96,11 @@ namespace MantaRay.Components
 
             if (string.IsNullOrEmpty(subfolderOverride))
             {
-                workingDir = SSH_Helper.WindowsFullpath;
+                workingDir = sshHelper.WinHome;
             }
             else
             {
-                workingDir = SSH_Helper.WindowsParentPath + "\\" + subfolderOverride;
+                workingDir = sshHelper.WindowsParentPath + "\\" + subfolderOverride;
             }
 
             workingDir = (workingDir.EndsWith("\\") || workingDir.EndsWith("/")) ? workingDir : workingDir + "\\";
@@ -147,13 +150,13 @@ namespace MantaRay.Components
             {
                 System.IO.File.WriteAllText(ptsFilePath, ptsFile.ToString());
 
-                string linuxPath = string.IsNullOrEmpty(subfolderOverride) ? SSH_Helper.LinuxFullpath : SSH_Helper.LinuxParentPath + "/" + subfolderOverride;
+                string linuxPath = string.IsNullOrEmpty(subfolderOverride) ? sshHelper.LinuxHome : sshHelper.LinuxParentPath + "/" + subfolderOverride;
 
                 try
                 {
 
                     //SSH_Helper.Upload(ptsFilePath, linuxPath, sb);
-                    SSH_Helper.Upload(ptsFilePath, linuxPath, sb);
+                    sshHelper.Upload(ptsFilePath, linuxPath, sb);
 
                 }
                 catch (Renci.SshNet.Common.SftpPathNotFoundException e)
@@ -166,7 +169,7 @@ namespace MantaRay.Components
             }
             else
             {
-                if (SSH_Helper.FileExistsInLinux(ptsFilePath.ToLinuxPath()))
+                if (sshHelper.FileExistsInLinux(ptsFilePath.ToLinuxPath()))
                 {
                     DA.SetData(0, ptsFilePath.ToLinuxPath());
                     AddRuntimeMessage(GH_RuntimeMessageLevel.Remark, "Reusing points from existing file");

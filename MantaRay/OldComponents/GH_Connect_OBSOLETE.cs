@@ -30,6 +30,8 @@ namespace MantaRay.OldComponents
         private string _pw;
         int connectID = 0;
 
+        SSH_Helper sshHelper;
+
 
         /// <summary>
         /// Registers all the input parameters for this component.
@@ -75,6 +77,8 @@ namespace MantaRay.OldComponents
 
             ManPageHelper.Initiate();
             bool run = DA.Fetch<bool>(this, "connect");
+
+            sshHelper = SSH_Helper.CurrentFromDocument(OnPingDocument());
 
 
             // Moving to back will make sure this expires/runs before other objects when you load the file
@@ -167,42 +171,42 @@ namespace MantaRay.OldComponents
 
                 );
 
-                SSH_Helper.ExportPrefixes = string.IsNullOrEmpty(prefixes) ? SSH_Helper.ExportPrefixesDefault : prefixes;
+                sshHelper.ExportPrefixes = string.IsNullOrEmpty(prefixes) ? sshHelper.ExportPrefixesDefault : prefixes;
 
 
                 Stopwatch stopwatch = new Stopwatch();
                 //Connect SSH
-                SSH_Helper.SshClient = new SshClient(ConnNfo);
+                sshHelper.SshClient = new SshClient(ConnNfo);
 
                 if (!string.IsNullOrEmpty(winDir))
                 {
-                    SSH_Helper.WindowsParentPath = winDir;
+                    sshHelper.WindowsParentPath = winDir;
                 }
                 else
                 {
-                    SSH_Helper.WindowsParentPath = SSH_Helper.DefaultWindowsParentPath;
+                    sshHelper.WindowsParentPath = SSH_Helper.DefaultWindowsParentPath;
                 }
 
 
 
                 if (!string.IsNullOrEmpty(linDir))
                 {
-                    SSH_Helper.LinuxParentPath = linDir;
+                    sshHelper.LinuxParentPath = linDir;
                 }
                 else
                 {
-                    SSH_Helper.LinuxParentPath = SSH_Helper.DefaultLinuxParentPath;
+                    sshHelper.LinuxParentPath = SSH_Helper.DefaultLinuxParentPath;
                 }
 
 
 
                 if (!string.IsNullOrEmpty(subfolder))
                 {
-                    SSH_Helper.ProjectSubPath = subfolder;
+                    sshHelper.ProjectSubPath = subfolder;
                 }
                 else
                 {
-                    SSH_Helper.ProjectSubPath = SSH_Helper.DefaultProjectSubFolder;
+                    sshHelper.ProjectSubPath = SSH_Helper.DefaultProjectSubFolder;
                 }
 
 
@@ -213,8 +217,8 @@ namespace MantaRay.OldComponents
 
                 try
                 {
-                    SSH_Helper.HomeDirectory = null;
-                    SSH_Helper.SshClient.Connect();
+                    sshHelper.HomeDirectory = null;
+                    sshHelper.SshClient.Connect();
 
                     sb.AppendFormat("SSH:  Connected in {0} ms\n", stopwatch.ElapsedMilliseconds);
 
@@ -276,11 +280,11 @@ namespace MantaRay.OldComponents
                 stopwatch.Restart();
 
                 //Connect Sftp
-                SSH_Helper.SftpClient = new SftpClient(ConnNfo);
+                sshHelper.SftpClient = new SftpClient(ConnNfo);
                 try
                 {
-                    SSH_Helper.HomeDirectory = null;
-                    SSH_Helper.SftpClient.Connect();
+                    sshHelper.HomeDirectory = null;
+                    sshHelper.SftpClient.Connect();
 
                     sb.AppendFormat("Sftp: Connected in {0} ms\n", stopwatch.ElapsedMilliseconds);
 
@@ -308,21 +312,21 @@ namespace MantaRay.OldComponents
                 sb.Append("Sftp + SSH: Disconnected\n");
             }
 
-            SSH_Helper.Execute($"mkdir -p {SSH_Helper.LinuxFullpath}");
+            sshHelper.Execute($"mkdir -p {sshHelper.LinuxHome}");
 
-            string cpuSB = (int.Parse(SSH_Helper.Execute("nproc --all")) - 1).ToString();
+            string cpuSB = (int.Parse(sshHelper.Execute("nproc --all")) - 1).ToString();
 
-            sb.AppendFormat("SSH:  Created directory {0}\n\n", SSH_Helper.LinuxFullpath);
+            sb.AppendFormat("SSH:  Created directory {0}\n\n", sshHelper.LinuxHome);
 
 
-            sb.AppendFormat("SSH:  Setup <WinHome> to {0}\n", SSH_Helper.WindowsFullpath);
-            sb.AppendFormat("SSH:  Setup <LinuxHome> to {0}\n", SSH_Helper.LinuxFullpath);
-            sb.AppendFormat("SSH:  Setup <Project> to {0}\n", SSH_Helper.ProjectSubPath);
+            sb.AppendFormat("SSH:  Setup <WinHome> to {0}\n", sshHelper.WinHome);
+            sb.AppendFormat("SSH:  Setup <LinuxHome> to {0}\n", sshHelper.LinuxHome);
+            sb.AppendFormat("SSH:  Setup <Project> to {0}\n", sshHelper.ProjectSubPath);
             sb.AppendFormat("SSH:  Setup <cpus> to {0} (locally you would have used {1})\n", cpuSB, (Environment.ProcessorCount - 1).ToString());
 
-            GlobalsHelper.GlobalsFromConnectComponent["WinHome"] = SSH_Helper.WindowsFullpath;
-            GlobalsHelper.GlobalsFromConnectComponent["LinuxHome"] = SSH_Helper.LinuxFullpath;
-            GlobalsHelper.GlobalsFromConnectComponent["Project"] = SSH_Helper.ProjectSubPath;
+            GlobalsHelper.GlobalsFromConnectComponent["WinHome"] = sshHelper.WinHome;
+            GlobalsHelper.GlobalsFromConnectComponent["LinuxHome"] = sshHelper.LinuxHome;
+            GlobalsHelper.GlobalsFromConnectComponent["Project"] = sshHelper.ProjectSubPath;
             GlobalsHelper.GlobalsFromConnectComponent["cpus"] = cpuSB;
 
 
@@ -330,12 +334,12 @@ namespace MantaRay.OldComponents
 
             //the run output
             var runTree = new GH_Structure<GH_Boolean>();
-            runTree.Append(new GH_Boolean(SSH_Helper.CheckConnection() == SSH_Helper.ConnectionDetails.Connected));
-            DA.SetData(1, SSH_Helper.ExportPrefixes);
+            runTree.Append(new GH_Boolean(sshHelper.CheckConnection() == SSH_Helper.ConnectionDetails.Connected));
+            DA.SetData(1, sshHelper.ExportPrefixes);
             Params.Output[Params.Output.Count - 1].ClearData();
             DA.SetDataTree(Params.Output.Count - 1, runTree);
 
-            if (SSH_Helper.CheckConnection() != SSH_Helper.ConnectionDetails.Connected)
+            if (sshHelper.CheckConnection() != SSH_Helper.ConnectionDetails.Connected)
                 AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Not Connected.\n\nTry restarting SSH in your bash with:\nsudo service ssh start");
 
 
@@ -347,7 +351,7 @@ namespace MantaRay.OldComponents
 
         public void TryDisconnect()
         {
-            SSH_Helper.Disconnect();
+            sshHelper?.Disconnect();
         }
 
         public override void RemovedFromDocument(GH_Document document)
@@ -398,7 +402,7 @@ namespace MantaRay.OldComponents
 
                 Params.Input[connectID].ClearData();
 
-                if (isRunSet && SSH_Helper.CheckConnection() != SSH_Helper.ConnectionDetails.Connected)
+                if (isRunSet && sshHelper.CheckConnection() != SSH_Helper.ConnectionDetails.Connected)
                 {
 
                     document.ScheduleSolution(100, (e) => ExpireSolution(true));

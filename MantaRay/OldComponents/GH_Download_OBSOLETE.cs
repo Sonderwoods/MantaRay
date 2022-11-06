@@ -55,12 +55,14 @@ namespace MantaRay.OldComponents
 
             if (!CheckIfRunOrUseOldResults(DA, 1)) return; //template
 
+            SSH_Helper sshHelper = SSH_Helper.CurrentFromDocument(OnPingDocument());
+
 
             string targetFolder = DA.Fetch<string>(this, "Target local folder");
 
             if (targetFolder == null || string.IsNullOrEmpty(targetFolder))
             {
-                targetFolder = SSH_Helper.WindowsFullpath;
+                targetFolder = sshHelper.WinHome;
             }
 
             string localTargetFolder = targetFolder; // Path.GetDirectoryName(targetFolder);
@@ -72,7 +74,7 @@ namespace MantaRay.OldComponents
 
             foreach (var file in allFilePaths)
             {
-                SSH_Helper.Download(file, localTargetFolder, sb);
+                sshHelper.Download(file, localTargetFolder, sb);
                 localFilePaths.Add(localTargetFolder + "\\" + Path.GetFileName(file));
             }
 

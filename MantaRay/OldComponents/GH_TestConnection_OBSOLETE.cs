@@ -43,14 +43,14 @@ namespace MantaRay.OldComponents
         /// <param name="DA">The DA object is used to retrieve from inputs and store in outputs.</param>
         protected override void SolveInstance(IGH_DataAccess DA)
         {
-
+            SSH_Helper sshHelper = SSH_Helper.CurrentFromDocument(OnPingDocument());
             StringBuilder sb = new StringBuilder();
 
             List<string> errors = new List<string>();
             try
             {
-                SSH_Helper.Execute("cd ~ && ls -lah | head", stdout: sb);
-                SSH_Helper.Execute("pwd", stdout: sb);
+                sshHelper.Execute("cd ~ && ls -lah | head", stdout: sb);
+                sshHelper.Execute("pwd", stdout: sb);
             }
             catch (Renci.SshNet.Common.SshConnectionException e)
             {

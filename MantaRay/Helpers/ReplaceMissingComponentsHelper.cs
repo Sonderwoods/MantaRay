@@ -12,8 +12,13 @@ using Grasshopper.Kernel.Special;
 
 namespace MantaRay.Helpers
 {
+
+    /// <summary>
+    /// A class to replace expired grasshopper components
+    /// </summary>
     public static class ReplaceMissingComponentsHelper
     {
+        // From Mantaray - https://github.com/Sonderwoods/MantaRay/blob/main/MantaRay/Helpers/ReplaceMissingComponentsHelper.cs
 
         /// <summary>
         /// Checks if the component contains obsolete and if a newer version exists.

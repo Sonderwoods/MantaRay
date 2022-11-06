@@ -81,6 +81,8 @@ namespace MantaRay
             if (!DA.Fetch<bool>(this, "Run"))
                 return;
 
+            SSH_Helper sshHelper = SSH_Helper.CurrentFromDocument(OnPingDocument());
+
             string workingDir;
 
             string mappingName = DA.Fetch<string>(this, "MapFileName");
@@ -105,11 +107,11 @@ namespace MantaRay
 
             if (string.IsNullOrEmpty(subfolder))
             {
-                workingDir = SSH_Helper.WindowsFullpath;
+                workingDir = sshHelper.WinHome;
             }
             else
             {
-                workingDir = SSH_Helper.WindowsParentPath + @"\" + subfolder;
+                workingDir = sshHelper.WindowsParentPath + @"\" + subfolder;
             }
 
             workingDir = (workingDir.EndsWith(@"\") || workingDir.EndsWith("/")) ? workingDir : workingDir + @"\";
@@ -226,6 +228,7 @@ namespace MantaRay
                     }
                     if (!File.Exists(geometryFilePath) || !IsFileLocked(new FileInfo(geometryFilePath)))
                     {
+                        Directory.CreateDirectory(Path.GetDirectoryName(geometryFilePath));
                         System.IO.File.WriteAllText(geometryFilePath, geometryFile.ToString());
                     }
                     else

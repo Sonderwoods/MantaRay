@@ -57,9 +57,11 @@ namespace MantaRay.OldComponents
             if (!DA.Fetch<bool>(this, "Run"))
                 return;
 
+            SSH_Helper sshHelper = SSH_Helper.CurrentFromDocument(OnPingDocument());
+
             string path = DA.Fetch<string>(this, "Ill file path");
 
-            var lines = SSH_Helper.ReadFile(path).Split('\n');
+            var lines = sshHelper.ReadFile(path).Split('\n');
 
 
 

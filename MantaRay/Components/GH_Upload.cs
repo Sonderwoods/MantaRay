@@ -24,7 +24,7 @@ namespace MantaRay.Components
         {
         }
 
-        
+
 
         /// <summary>
         /// Registers all the input parameters for this component.
@@ -57,41 +57,54 @@ namespace MantaRay.Components
 
             if (!CheckIfRunOrUseOldResults(DA, 1)) return; //template
 
+            SSH_Helper sshHelper = SSH_Helper.CurrentFromDocument(OnPingDocument());
+
+            
+            if (sshHelper == null)
+            {
+                AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, "No connection");
+                return;
+            }
+                
+
+
+
             List<string> allFilePaths = DA.FetchList<string>(this, "Local File Paths");
 
             List<string> outFilePaths = new List<string>(allFilePaths.Count);
 
-            string subfolderOverride = DA.Fetch<string>(this, "Target folder", "Subfolder Override").Replace('\\', '/').TrimEnd('/');
+            string subfolderOverride = DA.Fetch<string>(this, "Target folder", "Subfolder Override").TrimEnd('/', '\\');
 
-            StringBuilder sb = new StringBuilder();
+            StringBuilder log = new StringBuilder();
 
-            string linuxPath = string.IsNullOrEmpty(subfolderOverride) ? SSH_Helper.SftpPath : subfolderOverride;
+            string targetPath = string.IsNullOrEmpty(subfolderOverride) ? sshHelper.SftpHome : subfolderOverride;
 
             for (int i = 0; i < allFilePaths.Count; i++)
             {
-                try
-                {
-                    SSH_Helper.Upload(allFilePaths[i], linuxPath, sb);
-                    outFilePaths.Add($"{linuxPath}/{Path.GetFileName(allFilePaths[i])}");
+                //try
+                //{
+                outFilePaths.Add(sshHelper.Upload(allFilePaths[i], targetPath, log));
+                //outFilePaths.Add($"{linuxPath}/{Path.GetFileName(allFilePaths[i])}");
 
-                }
-                catch (Renci.SshNet.Common.SftpPathNotFoundException e)
-                {
-                    SSH_Helper.Upload(allFilePaths[i], null, sb);
-                    outFilePaths.Add($"{SSH_Helper.SftpClient.WorkingDirectory}/{Path.GetFileName(allFilePaths[i])}");
-                    sb.AppendFormat("\nWarning: Could not find {0} (Relocated file to: {1})\n - {2}\n", linuxPath, SSH_Helper.SftpClient.WorkingDirectory, e.Message);
-                    
-                }
+                //}
+                //catch (Renci.SshNet.Common.SftpPathNotFoundException e)
+                //{
+                //    outFilePaths.Add(SSH_Helper.Upload(allFilePaths[i], null, sb));
+
+                //    //outFilePaths.Add($"{SSH_Helper.SftpClient.WorkingDirectory}/{Path.GetFileName(allFilePaths[i])}");
+                //    sb.AppendFormat("\nWarning: Could not find {0}\nRelocated file to: {1})\n{2}", targetPath, SSH_Helper.SftpClient.WorkingDirectory, e.Message);
+
+                //}
 
             }
 
             OldResults = outFilePaths.ToArray();
             DA.SetDataList("File Paths", outFilePaths);
-            DA.SetData("Status", sb.ToString());
+            DA.SetData("Status", log.ToString());
 
-            if (sb.ToString().Contains("Warning"))
+            if (log.ToString().Contains("WARNING"))
             {
-                AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, "Some paths were missing, see output");
+                AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, "Paths are changed - Check the Status output.");
             }
 
 
