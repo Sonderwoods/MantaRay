@@ -5,6 +5,11 @@ VisualStudioVersion = 17.1.32228.430
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MantaRay", "MantaRay\MantaRay.csproj", "{24A544EF-FACA-4732-9B5E-2B5DCC5C817C}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UnitTests", "UnitTests\UnitTests.csproj", "{B6FFEA6A-E7C3-4447-84A0-88BD20F7F25A}"
+	ProjectSection(ProjectDependencies) = postProject
+		{24A544EF-FACA-4732-9B5E-2B5DCC5C817C} = {24A544EF-FACA-4732-9B5E-2B5DCC5C817C}
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +20,10 @@ Global
 		{24A544EF-FACA-4732-9B5E-2B5DCC5C817C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{24A544EF-FACA-4732-9B5E-2B5DCC5C817C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{24A544EF-FACA-4732-9B5E-2B5DCC5C817C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B6FFEA6A-E7C3-4447-84A0-88BD20F7F25A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B6FFEA6A-E7C3-4447-84A0-88BD20F7F25A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B6FFEA6A-E7C3-4447-84A0-88BD20F7F25A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B6FFEA6A-E7C3-4447-84A0-88BD20F7F25A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

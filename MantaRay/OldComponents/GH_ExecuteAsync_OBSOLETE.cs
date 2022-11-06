@@ -372,10 +372,10 @@ namespace MantaRay.OldComponents
 
                 if (run)
                 {
-
+                    SSH_Helper sshHelper = SSH_Helper.CurrentFromDocument(Parent.OnPingDocument());
                     string command = string.Join(";echo _JOIN_;", commands).Replace("\r\n", "\n").ApplyGlobals();
                     Renci.SshNet.SshCommand cmd = null;
-                    (asyncResult, cmd, pid) = SSH_Helper.ExecuteAsync(command, prependPrefix: ((GH_ExecuteAsync_OBSOLETE)Parent).addPrefix, ((GH_ExecuteAsync_OBSOLETE)Parent).addSuffix, HasZeroAreaPolygons);
+                    (asyncResult, cmd, pid) = sshHelper.ExecuteAsync(command, prependPrefix: ((GH_ExecuteAsync_OBSOLETE)Parent).addPrefix, ((GH_ExecuteAsync_OBSOLETE)Parent).addSuffix, HasZeroAreaPolygons);
 
 
                     // TODO Need to get pid through "beginexecute" instead of "execute" of SSH.
@@ -423,7 +423,7 @@ namespace MantaRay.OldComponents
                             break;
                         }
 
-                        if (SSH_Helper.CheckConnection() != SSH_Helper.ConnectionDetails.Connected && waitingForNewConnection-- <= 0)
+                        if (sshHelper.CheckConnection() != SSH_Helper.ConnectionDetails.Connected && waitingForNewConnection-- <= 0)
                         {
                             ((GH_ExecuteAsync_OBSOLETE)Parent).RequestCancellation();
                             //ran = false;

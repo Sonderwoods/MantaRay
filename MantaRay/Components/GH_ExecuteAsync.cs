@@ -441,11 +441,11 @@ namespace MantaRay
 
                     string command = String.Join(";echo _JOIN_;", commands).Replace("\r\n", "\n").ApplyGlobals();
 
-
+                    SSH_Helper sshHelper = SSH_Helper.CurrentFromDocument(Parent.OnPingDocument());
 
 
                     Renci.SshNet.SshCommand cmd = null;
-                    (asyncResult, cmd, pid) = SSH_Helper.ExecuteAsync(command, prependPrefix: ((GH_ExecuteAsync)Parent).addPrefix, ((GH_ExecuteAsync)Parent).addSuffix, HasZeroAreaPolygons);
+                    (asyncResult, cmd, pid) = sshHelper.ExecuteAsync(command, prependPrefix: ((GH_ExecuteAsync)Parent).addPrefix, ((GH_ExecuteAsync)Parent).addSuffix, HasZeroAreaPolygons);
 
 
                     // TODO Need to get pid through "beginexecute" instead of "execute" of SSH.
@@ -493,7 +493,7 @@ namespace MantaRay
                             break;
                         }
 
-                        if (SSH_Helper.CheckConnection() != SSH_Helper.ConnectionDetails.Connected && waitingForNewConnection-- <= 0)
+                        if (sshHelper.CheckConnection() != SSH_Helper.ConnectionDetails.Connected && waitingForNewConnection-- <= 0)
                         {
                             ((GH_ExecuteAsync)Parent).RequestCancellation();
                             //ran = false;

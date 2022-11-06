@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Drawing;
 using Grasshopper.Kernel;
 using Rhino.Geometry;
+using MantaRay.Helpers;
 
 namespace MantaRay.OldComponents
 {
@@ -47,7 +48,9 @@ namespace MantaRay.OldComponents
         {
             string path = DA.Fetch<string>(this, 0);
 
-            if (SSH_Helper.CheckConnection() != SSH_Helper.ConnectionDetails.Connected)
+            SSH_Helper sshHelper = SSH_Helper.CurrentFromDocument(OnPingDocument());
+
+            if (sshHelper != null && sshHelper.CheckConnection() != SSH_Helper.ConnectionDetails.Connected)
             {
                 AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "No Connection");
                 return;

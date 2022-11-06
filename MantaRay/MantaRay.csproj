@@ -5,12 +5,15 @@
     <Version>1.0</Version>
     <Title>MantaRay - Grasshopper Plugin</Title>
     <Description>A framework to connect Grasshopper to Radiance through SSH</Description>
-    <TargetExt>.gha</TargetExt>
+    <TargetExt>.dll</TargetExt>
     <Authors>Mathias Sønderskov Schaltz</Authors>
     <RepositoryType>git</RepositoryType>
     <RepositoryUrl>https://github.com/Sonderwoods/MantaRay</RepositoryUrl>
-    <AssemblyVersion>1.0.0.2</AssemblyVersion>
-    <FileVersion>1.0.0.2</FileVersion>
+    <AssemblyVersion>1.0.0.3</AssemblyVersion>
+    <FileVersion>1.0.0.3</FileVersion>
+    <PackageIcon>mantarayLowres.png</PackageIcon>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageProjectUrl>https://github.com/Sonderwoods/MantaRay</PackageProjectUrl>
   </PropertyGroup>
 	
   <ItemGroup>
@@ -24,6 +27,10 @@
   </ItemGroup>
 	
   <ItemGroup>
+    <None Include="..\README.md">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
     <None Include="OldComponents\GH_AnnualResultsTransposedOld.cs" />
   </ItemGroup>
   
@@ -53,6 +60,13 @@
     </EmbeddedResource>
   </ItemGroup>
   
+  <ItemGroup>
+    <None Update="Resources\mantarayLowres.png">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+  </ItemGroup>
+  
   <PropertyGroup Condition="$(Configuration) == 'Debug' AND $([MSBuild]::IsOSPlatform(Windows))">
     <StartProgram>C:\Program Files\Rhino 7\System\Rhino.exe</StartProgram>
     <StartArguments></StartArguments>
@@ -60,7 +74,7 @@
   </PropertyGroup>
   
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">
-    <Exec Command="XCOPY &quot;$(OutDir)&quot; &quot;%25appdata%25\Grasshopper\Libraries\MantaRay&quot; /R /Y /I&#xD;&#xA;XCOPY &quot;$(OutDir)\MantaRay.gha&quot; &quot;%25appdata%25\Grasshopper\Libraries\MantaRay\MantaRay.gha&quot; /R /Y /I" />
+    <Exec Command="Copy &quot;$(TargetPath)&quot; &quot;$(TargetDir)$(ProjectName).gha&quot;&#xD;&#xA;C:\Windows\System32\xcopy &quot;$(OutDir)MantaRay.gha&quot; &quot;%25appdata%25\Grasshopper\Libraries\MantaRay\MantaRay.gha&quot; /r /y /i&#xD;&#xA;" />
   </Target>
 
 </Project>

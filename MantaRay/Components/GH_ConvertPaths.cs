@@ -2,13 +2,16 @@
 using System.Collections.Generic;
 
 using System.Drawing;
+using ClipperLib;
 using Grasshopper.Kernel;
+using Grasshopper.Kernel.Parameters;
 using MantaRay.Components;
 using Rhino.Geometry;
+using MantaRay.Helpers;
 
 namespace MantaRay.Components
 {
-    public class GH_ConvertPaths : GH_Template
+    public class GH_ConvertPaths : GH_Template, IGH_VariableParameterComponent
     {
         /// <summary>
         /// Initializes a new instance of the GH_ToLinux class.
@@ -35,7 +38,7 @@ namespace MantaRay.Components
         {
             pManager.AddTextParameter("Linux", "L", "Linux", GH_ParamAccess.item);
             pManager.AddTextParameter("Windows", "W", "Windows", GH_ParamAccess.item);
-            pManager.AddTextParameter("Sftp", "F", "Sftp", GH_ParamAccess.item);
+            //pManager.AddTextParameter("Sftp", "F", "Sftp", GH_ParamAccess.item);
         }
 
         /// <summary>
@@ -46,14 +49,66 @@ namespace MantaRay.Components
         {
             string path = DA.Fetch<string>(this, 0);
 
-            if (SSH_Helper.CheckConnection() != SSH_Helper.ConnectionDetails.Connected)
+            SSH_Helper sshHelper = SSH_Helper.CurrentFromDocument(OnPingDocument());
+            if (sshHelper == null)
+            {
+                AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, "No connection");
+                return;
+            }
+
+            if (sshHelper.CheckConnection() != SSH_Helper.ConnectionDetails.Connected)
             {
                 AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "No Connection");
                 return;
             }
             DA.SetData(0, path.ToLinuxPath());
             DA.SetData(1, path.ToWindowsPath());
-            DA.SetData(2, path.ToSftpPath());
+
+            if (Params.Output.Count == 3)
+            {
+                DA.SetData(2, path.ToSftpPath());
+            }
+
+        }
+
+        bool IGH_VariableParameterComponent.CanInsertParameter(GH_ParameterSide side, int index)
+        {
+            return side == GH_ParameterSide.Output && index == 2 && Params.Output.Count == 2;
+        }
+
+        bool IGH_VariableParameterComponent.CanRemoveParameter(GH_ParameterSide side, int index)
+        {
+            return side == GH_ParameterSide.Output && index == 2;
+        }
+
+        IGH_Param IGH_VariableParameterComponent.CreateParameter(GH_ParameterSide side, int index)
+        {
+
+            var param = new Param_String { NickName = "-" };
+            return param;
+
+
+        }
+
+        bool IGH_VariableParameterComponent.DestroyParameter(GH_ParameterSide side, int index)
+        {
+            return true;
+        }
+
+        void IGH_VariableParameterComponent.VariableParameterMaintenance()
+        {
+
+            if (Params.Output.Count == 3)
+            {
+                var param = Params.Output[2];
+                if (param.NickName == "-")
+                {
+                    param.NickName = "F";
+                    param.Name = "Sftp";
+                    param.Access = GH_ParamAccess.item;
+                }
+            }
+
         }
 
         protected override Bitmap Icon => Resources.Resources.Ra_Paths_Icon;

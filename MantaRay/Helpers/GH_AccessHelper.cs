@@ -50,31 +50,6 @@ namespace MantaRay
             }
         }
 
-        //public static T Fetch<T>(this IGH_DataAccess da, int position)
-        //{
-        //    return Fetch<T>(da, null, position);
-        //}
-
-        //public static T Fetch<T>(this IGH_DataAccess da, params string[] names)
-        //{
-        //    return Fetch<T>(da, null, names);
-        //}
-        //public static List<T> FetchList<T>(this IGH_DataAccess da, int position)
-        //{
-        //    return FetchList<T>(da, null, position);
-        //}
-        //public static List<T> FetchList<T>(this IGH_DataAccess da, params string[] names)
-        //{
-        //    return FetchList<T>(da, null, names);
-        //}
-        //public static GH_Structure<T> FetchTree<T>(this IGH_DataAccess da, int position) where T : IGH_Goo
-        //{
-        //    return FetchTree<T>(da, null, position);
-        //}
-        //public static GH_Structure<T> FetchTree<T>(this IGH_DataAccess da, string name) where T : IGH_Goo
-        //{
-        //    return FetchTree<T>(da, null, name);
-        //}
 
         /// <summary>
         /// Fetch data at index position
