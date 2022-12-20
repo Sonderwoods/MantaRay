@@ -177,6 +177,11 @@ add to path:
 change the paths to include it. Add this line in the end:
 
       export PATH=/usr/local/OpenImageDenoiser/bin:$PATH
+      
+test that it works (takes 1-2 min to run):
+
+      $ cd /usr/local/OpenImageDenoiser/bin/
+      $ ./oidnTest
   
 
 
