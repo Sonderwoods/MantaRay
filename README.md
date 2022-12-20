@@ -182,6 +182,9 @@ test that it works (takes 1-2 min to run):
 
       $ cd /usr/local/OpenImageDenoiser/bin/
       $ ./oidnTest
+      
+EDIT: I havent found a good implementation of above yet. Quick fix is to use their CLI locally on the windows computer
+https://github.com/DeclanRussell/IntelOIDenoiser
   
 
 
