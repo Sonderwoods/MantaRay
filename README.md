@@ -164,14 +164,19 @@ If it prompts you for your password you should be good!
 
 Download the tar.gz [here](https://www.openimagedenoise.org/downloads.html)
 Place it somewhere on your linux machine, for instance in /usr/local/OpenImageDenoiser
-  $ sudo mkdir /usr/local/OpenImageDenoiser
-  $ sudo tar –xvzf /mnt/c/oidn-1.4.3.x86_64.linux.tar.gz –C /usr/local/OpenImageDenoiser
+
+    $ sudo mkdir /usr/local/OpenImageDenoiser
+    $ sudo tar –xvzf /mnt/c/oidn-1.4.3.x86_64.linux.tar.gz –C /usr/local/OpenImageDenoiser
+  
 Move from /usr/OpenImageDenoiser/ to /usr/OpenImageDenoiser/oidn-1.4.3.x86_64.linux to /usr/OpenImageDenoiser:
-  $ sudo mv -v /usr/local/OpenImageDenoiser/oidn-1.4.3.x86_64.linux/* /usr/local/OpenImageDenoiser
+
+      $ sudo mv -v /usr/local/OpenImageDenoiser/oidn-1.4.3.x86_64.linux/* /usr/local/OpenImageDenoiser
 add to path:
-  $ sudo nano ~/.bashrc
+
+      $ sudo nano ~/.bashrc
 change the paths to include it. Add this line in the end:
-  $ export PATH=/usr/local/OpenImageDenoiser/bin:$PATH
+
+      export PATH=/usr/local/OpenImageDenoiser/bin:$PATH
   
 
 
