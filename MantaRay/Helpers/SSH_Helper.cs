@@ -232,7 +232,7 @@ namespace MantaRay
                 {
                     StringBuilder sb = new StringBuilder();
                     Execute($"readlink -f {serverFilePath}", null, sb, null, false, false, null);
-                    serverFilePath = sb.ToString();
+                    serverFilePath = sb.Length > 0 ? sb.ToString() : serverFilePath;
                 }
 
 
@@ -255,6 +255,10 @@ namespace MantaRay
                             throw e;
                         }
 
+                    }
+                    catch (Renci.SshNet.Common.SftpPathNotFoundException e)
+                    {
+                        throw new FileNotFoundException($"Could not find {serverFilePath} on host"); 
                     }
 
                 }
