@@ -15,8 +15,8 @@ using Grasshopper.Kernel;
 
 using Rhino.Geometry;
 
-using MantaRay.RadViewer;
-using MantaRay.RadViewer.HeadsUpDisplay;
+using MantaRay.Radiance;
+using MantaRay.Radiance.HeadsUpDisplay;
 using Grasshopper.Kernel.Data;
 using Grasshopper.Kernel.Types;
 using MantaRay.Helpers;
@@ -52,7 +52,7 @@ namespace MantaRay.Components
         /// A list of all objects sort by modifier name
         /// </summary>
         readonly Dictionary<string, RadianceObjectCollection> objects = new Dictionary<string, RadianceObjectCollection>();
-        readonly Dictionary<string, RadianceMaterial> modifiers = new Dictionary<string, RadianceMaterial>();
+        readonly Dictionary<string, Material> modifiers = new Dictionary<string, Material>();
 
         BoundingBox? bb { get; set; } = null;
 
@@ -227,7 +227,7 @@ namespace MantaRay.Components
                         radianceObjects.Add(RadianceObject.FromString(line));
 
                     }
-                    catch (RaPolygon.PolygonException ex)
+                    catch (Polygon.PolygonException ex)
                     {
                         failedCurves.AddRange(GetFailedLines(line));
                         //radianceObjects.CompleteAdding();
@@ -235,7 +235,7 @@ namespace MantaRay.Components
                         //ErrorMsgs.Add(ex.Message);
                         //throw ex;
                     }
-                    catch (RaPolygon.SyntaxException e)
+                    catch (Polygon.SyntaxException e)
                     {
                         AddRuntimeMessage(GH_RuntimeMessageLevel.Remark, e.Message.Substring(0, 100) + "\nWrong syntax in rad file? Or unknown...");
                         //ErrorMsgs.Add("SyntaxError: " + e.Message);
@@ -295,7 +295,7 @@ namespace MantaRay.Components
 
                             break;
 
-                        case RadianceMaterial mat:
+                        case Material mat:
                             if (!modifiers.ContainsKey(mat.Name))
                             {
                                 modifiers.Add(mat.Name, mat);
@@ -429,7 +429,7 @@ namespace MantaRay.Components
             DA.SetDataTree(0, outGeo);
             DA.SetDataList(1, objects.OrderBy(o => o.Key).Select(o => o.Value.GetName()));
             //DA.SetDataList(2, objects.OrderBy(o => o.Key).Select(o => o.Value.ModifierName));
-            DA.SetDataList(2, objects.OrderBy(o => o.Key).Select(o => (o.Value.Modifier)).Select(m => m is RadianceMaterial ? (m as RadianceMaterial).MaterialDefinition : null));
+            DA.SetDataList(2, objects.OrderBy(o => o.Key).Select(o => (o.Value.Modifier)).Select(m => m is Material ? (m as Material).Definition : null));
             DA.SetDataList(3, failedCurves);
 
 
@@ -495,7 +495,7 @@ namespace MantaRay.Components
 
             var segs = new Polyline(ptList2).ToNurbsCurve().DuplicateSegments();
 
-            return Curve.JoinCurves(segs.AsParallel().AsOrdered().Where(s => !RaPolygon.IsCurveDup(s, segs)));
+            return Curve.JoinCurves(segs.AsParallel().AsOrdered().Where(s => !Polygon.IsCurveDup(s, segs)));
 
         }
 
