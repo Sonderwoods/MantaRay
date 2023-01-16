@@ -6,6 +6,7 @@ using Grasshopper.Kernel.Data;
 using Grasshopper.Kernel.Types;
 using MantaRay.Components;
 using MantaRay.Helpers;
+using MantaRay.Radiance;
 using Rhino.Geometry;
 
 namespace MantaRay.Components
@@ -86,10 +87,7 @@ namespace MantaRay.Components
                 if (roughness >= 0.2)
                     this.AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, "Roughness above 0.2 are uncommon");
 
-                materialList.Add($"void plastic {name}\n" +
-                $"0\n" +
-                $"0\n" +
-                $"5 {color.R / 255.0:0.000} {color.G / 255.0:0.000} {color.B / 255.0:0.000} {specularity:0.000} {roughness:0.000}");
+                materialList.Add(Material.CreateOpaqueFromColor(name, color, out _, roughness, specularity).ToString());
             }
 
             DA.SetData(0, String.Join("\n", materialList));
