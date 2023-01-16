@@ -179,7 +179,7 @@ namespace MantaRay
 
         public static Brep TurnUp(this Brep brep)
         {
-            var props = AreaMassProperties.Compute(brep);
+            var props = AreaMassProperties.Compute(brep, false, true, false, false);
             Point3d center = props.Centroid;
             BrepFace face = brep.Faces[0];
 
