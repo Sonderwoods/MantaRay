@@ -9,19 +9,19 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace MantaRay.RadViewer
+namespace MantaRay.Radiance
 {
 
 
-    public class RaPolygon : RadianceGeometry
+    public class Polygon : RadianceGeometry
     {
 
         public Mesh Mesh { get; set; }
 
 
-        protected List<Mesh> meshes = new List<Mesh>(64);
+        protected List<Mesh> meshes = new List<Mesh>(32);
 
-        public RaPolygon(string[] data) : base(data)
+        public Polygon(string[] data) : base(data)
         {
             int skip = 6;
             IEnumerable<string> dataNoHeader = data.Skip(skip); // skip header
@@ -159,16 +159,6 @@ namespace MantaRay.RadViewer
 
             return count > 1;
         }
-
-
-
-        //public void DrawObject(IGH_PreviewArgs args, double alpha = 1.0)
-        //{
-        //    double oldTrans = Material.Transparency;
-        //    Material.Transparency = 1.0 - alpha;
-        //    args.Display.DrawMeshShaded(Mesh, Material); //works with twosided
-        //    Material.Transparency = oldTrans;
-        //}
 
         public override void DrawPreview(IGH_PreviewArgs args, DisplayMaterial material, double? transparency = null)
         {

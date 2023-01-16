@@ -7,18 +7,18 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace MantaRay.RadViewer
+namespace MantaRay.Radiance
 {
 
     /// <summary>
-    /// For the inverse, check out the <see cref="RaBubble"/>
+    /// For the inverse, check out the <see cref="Bubble"/>
     /// </summary>
-    public class RaSphere : RaPolygon
+    public class Sphere : Polygon
     {
 
-        Sphere? sphere;
+        Rhino.Geometry.Sphere? sphere;
 
-        public RaSphere(string[] data, bool flipNormals = false) : base(data)
+        public Sphere(string[] data, bool flipNormals = false) : base(data)
         {
             double[] dataNoHeader = data.Skip(6).Select(i => double.Parse(i)).ToArray(); // skip header
 
@@ -27,7 +27,7 @@ namespace MantaRay.RadViewer
                 throw new SyntaxException("Wrong number of parameters in the sphere (should be 4) " + data[3]);
             }
 
-            sphere = new Sphere(
+            sphere = new Rhino.Geometry.Sphere(
                 new Point3d(dataNoHeader[0], dataNoHeader[1], dataNoHeader[2]),
                 dataNoHeader[3]);
 

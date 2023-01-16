@@ -4,14 +4,14 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace MantaRay.RadViewer
+namespace MantaRay.Radiance
 {
     /// <summary>
     /// An inverse sphere
     /// </summary>
-    public class RaBubble : RaSphere
+    public class Bubble : Sphere
     {
-        public RaBubble(string[] data) : base(data, true) //<-- true on the boolean means invert normals
+        public Bubble(string[] data) : base(data, true) //<-- true on the boolean means invert normals
         {
 
         }

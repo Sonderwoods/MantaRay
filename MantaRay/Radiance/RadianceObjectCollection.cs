@@ -1,6 +1,6 @@
 ﻿using Grasshopper.Kernel;
 using Grasshopper.Kernel.Types;
-using MantaRay.RadViewer.HeadsUpDisplay;
+using MantaRay.Radiance.HeadsUpDisplay;
 using Rhino.Display;
 using Rhino.Geometry;
 using System;
@@ -9,7 +9,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace MantaRay.RadViewer
+namespace MantaRay.Radiance
 {
     /// <summary>
     /// A collection of radiance objects (typically with the same modifier name)
@@ -33,9 +33,9 @@ namespace MantaRay.RadViewer
 
         public void AddObject(RadianceGeometry obj)
         {
-            if (obj is RaPolygon p && objects.OfType<RaPolygon>().Any())
+            if (obj is Polygon p && objects.OfType<Polygon>().Any())
             {
-                objects.OfType<RaPolygon>().First().AddTempMesh(p.Mesh);
+                objects.OfType<Polygon>().First().AddTempMesh(p.Mesh);
             }
             else
             {
@@ -45,7 +45,7 @@ namespace MantaRay.RadViewer
 
         public void UpdateMesh()
         {
-            var item = objects.OfType<RaPolygon>().FirstOrDefault();
+            var item = objects.OfType<Polygon>().FirstOrDefault();
             if (item != null)
             {
                 item.UpdateMesh();

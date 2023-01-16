@@ -4,14 +4,14 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace MantaRay.RadViewer
+namespace MantaRay.Radiance
 {
     /// <summary>
     /// An inverse cylinder
     /// </summary>
-    public class RaTube : RaCylinder
+    public class Tube : Cylinder
     {
-        public RaTube(string[] data) : base(data, true)
+        public Tube(string[] data) : base(data, true)
         {
 
         }

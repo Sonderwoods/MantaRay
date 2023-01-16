@@ -1,6 +1,6 @@
 ﻿using Grasshopper.Kernel;
 using Grasshopper.Kernel.Types;
-using MantaRay.RadViewer.HeadsUpDisplay;
+using MantaRay.Radiance.HeadsUpDisplay;
 using Rhino.Display;
 using Rhino.Geometry;
 using System;
@@ -9,7 +9,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace MantaRay.RadViewer
+namespace MantaRay.Radiance
 {
 
     public abstract class RadianceGeometry : RadianceObject, IHasPreview
@@ -38,9 +38,9 @@ namespace MantaRay.RadViewer
         public virtual string GetName() => Name;
         public virtual string GetDescription()
         {
-            if (Modifier != null && Modifier is RadianceMaterial m)
+            if (Modifier != null && Modifier is Material m)
             {
-                return m.MaterialDefinition ?? "No Modifiers found";
+                return m.Definition ?? "No Modifiers found";
             }
              return "No Modifiers found";
         }

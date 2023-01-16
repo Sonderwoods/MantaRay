@@ -1,4 +1,4 @@
-﻿using MantaRay.RadViewer.HeadsUpDisplay;
+﻿using MantaRay.Radiance.HeadsUpDisplay;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.Contracts;
@@ -10,22 +10,27 @@ using Rhino.Display;
 using Rhino.Geometry;
 using Grasshopper.Kernel;
 
-namespace MantaRay.RadViewer
+namespace MantaRay.Radiance
 {
 
     public abstract class RadianceObject
     {
-        public string ModifierName;
-        public string ObjectType;
-        public string Name;
+        public virtual string ModifierName => modifierName;
+        public virtual string Type => type;
+        public virtual string Name => name;
+
         public RadianceObject Modifier;
+
+        string modifierName;
+        string type;
+        string name;
 
 
         public RadianceObject(string[] data)
         {
-            ModifierName = data[0];
-            ObjectType = data[1];
-            Name = data[2];
+            modifierName = data[0];
+            type = data[1];
+            name = data[2];
         }
 
         public RadianceObject()
@@ -51,15 +56,15 @@ namespace MantaRay.RadViewer
             switch (type)
             {
                 case "polygon":
-                    return new RaPolygon(data);
+                    return new Polygon(data);
                 case "sphere":
-                    return new RaSphere(data);
+                    return new Sphere(data);
                 case "cylinder":
-                    return new RaCylinder(data);
+                    return new Cylinder(data);
                 case "tube":
-                    return new RaTube(data);
+                    return new Tube(data);
                 case "bubble":
-                    return new RaBubble(data);
+                    return new Bubble(data);
                 case "cone":
                 case "plastic":
                 case "glass":
@@ -69,7 +74,7 @@ namespace MantaRay.RadViewer
                 case "mirror":
                 case "bsdf":
                 default:
-                    return new RadianceMaterial(data);
+                    return new Material(data);
             }
 
         }

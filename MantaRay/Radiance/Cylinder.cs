@@ -8,19 +8,19 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace MantaRay.RadViewer
+namespace MantaRay.Radiance
 {
     /// <summary>
-    /// A cylinder .. For the inverse check out the <see cref="RaTube"/>
+    /// A cylinder .. For the inverse check out the <see cref="Tube"/>
     /// </summary>
-    public class RaCylinder : RaPolygon
+    public class Cylinder : Polygon
     {
         public virtual void FlipNormals() { }
-        Cylinder? cylinder;
+        Rhino.Geometry.Cylinder? cylinder;
         Point3d StartPoint;
         Point3d EndPoint;
 
-        public RaCylinder(string[] data, bool flipNormals = false) : base(data)
+        public Cylinder(string[] data, bool flipNormals = false) : base(data)
         {
             double[] dataNoHeader = data.Skip(6).Select(i => double.Parse(i)).ToArray(); // skip header
 
@@ -35,7 +35,7 @@ namespace MantaRay.RadViewer
             EndPoint = new Point3d(dataNoHeader[3], dataNoHeader[4], dataNoHeader[5]);
             Vector3d dir = EndPoint - StartPoint;
 
-            cylinder = new Cylinder(
+            cylinder = new Rhino.Geometry.Cylinder(
                 new Circle(
                     new Plane(
                         new Point3d(dataNoHeader[0], dataNoHeader[1], dataNoHeader[2]),
