@@ -82,7 +82,7 @@ namespace MantaRay.Components
             ManPageHelper.Initiate();
             bool run = DA.Fetch<bool>(this, "connect");
 
-            
+
 
 
             // Moving to back will make sure this expires/runs before other objects when you load the file
@@ -318,7 +318,36 @@ namespace MantaRay.Components
                 }
                 else
                 {
-                    sshHelper.SftpHome = sshHelper.SftpClient.WorkingDirectory;
+
+                    //sshHelper.SftpHome = sshHelper.SftpClient.WorkingDirectory;
+                    sshHelper.SftpHome = sshHelper.LinuxHome;
+                }
+
+
+                //sshHelper.Execute($"mkdir -p {sshHelper.LinuxFullpath}");
+
+
+                sb.AppendFormat("SSH:  Created server directory {0}\n\n", sshHelper.LinuxHome);
+
+                int pad = 45;
+
+
+                sb.AppendFormat("SSH:  Set   <WinHome> to {0}\n", sshHelper.WinHome);
+                sb.AppendFormat("SSH:  Set <LinuxHome> to {0}\n", sshHelper.LinuxHome);
+                sb.AppendFormat("SSH:  Set   <Project> to {0}\n", sshHelper.ProjectSubPath);
+                sb.AppendFormat("SSH:  Set  <SftpHome> to {0} This is used in the upload components\n", sshHelper.SftpHome.PadRight(pad, '.'));
+
+                GlobalsHelper.GlobalsFromConnectComponent["WinHome"] = sshHelper.WinHome;
+                GlobalsHelper.GlobalsFromConnectComponent["LinuxHome"] = sshHelper.LinuxHome;
+                GlobalsHelper.GlobalsFromConnectComponent["Project"] = sshHelper.ProjectSubPath;
+                GlobalsHelper.GlobalsFromConnectComponent["SftpHome"] = sshHelper.SftpHome;
+
+                if (sshHelper.CheckConnection() == SSH_Helper.ConnectionDetails.Connected)
+                {
+                    string cpuSB = (int.Parse(sshHelper.Execute("nproc --all")) - 1).ToString();
+                    GlobalsHelper.GlobalsFromConnectComponent["cpus"] = cpuSB;
+                    sb.AppendFormat("SSH:  Set      <cpus> to {0} Locally you would have used {1}\n", cpuSB.PadRight(pad, '.'), (Environment.ProcessorCount - 1).ToString());
+
                 }
             }
             else
@@ -326,32 +355,6 @@ namespace MantaRay.Components
 
                 TryDisconnect();
                 sb.Append("Sftp + SSH: Disconnected\n");
-            }
-
-            //sshHelper.Execute($"mkdir -p {sshHelper.LinuxFullpath}");
-
-
-            sb.AppendFormat("SSH:  Created server directory {0}\n\n", sshHelper.LinuxHome);
-
-            int pad = 45;
-
-
-            sb.AppendFormat("SSH:  Set   <WinHome> to {0}\n", sshHelper.WinHome);
-            sb.AppendFormat("SSH:  Set <LinuxHome> to {0}\n", sshHelper.LinuxHome);
-            sb.AppendFormat("SSH:  Set   <Project> to {0}\n", sshHelper.ProjectSubPath);
-            sb.AppendFormat("SSH:  Set  <SftpHome> to {0} This is used in the upload components\n", sshHelper.SftpHome.PadRight(pad, '.'));
-
-            GlobalsHelper.GlobalsFromConnectComponent["WinHome"] = sshHelper.WinHome;
-            GlobalsHelper.GlobalsFromConnectComponent["LinuxHome"] = sshHelper.LinuxHome;
-            GlobalsHelper.GlobalsFromConnectComponent["Project"] = sshHelper.ProjectSubPath;
-            GlobalsHelper.GlobalsFromConnectComponent["SftpHome"] = sshHelper.SftpHome;
-
-            if (sshHelper.CheckConnection() == SSH_Helper.ConnectionDetails.Connected)
-            {
-                string cpuSB = (int.Parse(sshHelper.Execute("nproc --all")) - 1).ToString();
-                GlobalsHelper.GlobalsFromConnectComponent["cpus"] = cpuSB;
-                sb.AppendFormat("SSH:  Set      <cpus> to {0} Locally you would have used {1}\n", cpuSB.PadRight(pad, '.'), (Environment.ProcessorCount - 1).ToString());
-
             }
 
             DA.SetData("status", sb.ToString());
@@ -375,7 +378,7 @@ namespace MantaRay.Components
 
         public void TryDisconnect()
         {
-            sshHelper.Disconnect();
+            sshHelper?.Disconnect();
         }
 
         public override void RemovedFromDocument(GH_Document document)
@@ -470,7 +473,7 @@ namespace MantaRay.Components
             get { return new Guid("1B57442F-E5FE-4462-9EB0-564497CB076E"); }
         }
 
-        
+
 
         private bool GetCredentials(string username, string ip, out string password)
         {
