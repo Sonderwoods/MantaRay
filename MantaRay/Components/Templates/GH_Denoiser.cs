@@ -52,6 +52,11 @@ namespace MantaRay
             pManager.AddTextParameter("PathToDenoisr", "PathToDenoisr", "PathToDenoisr exe file (get it at ", GH_ParamAccess.item, "C:\\Denoiser_v1.6\\Denoiser.exe");
             pManager[1].Optional = true;
             pManager[2].Optional = true;
+            pManager.AddTextParameter("AlbedoImage", "AlbedoImage", "Optional, AlbedoImage to improve denoising results", GH_ParamAccess.item, "");
+            pManager.AddTextParameter("NormalsImage", "NormalsImage", "Optional, NormalsImage to improve denoising results", GH_ParamAccess.item, "");
+            pManager[3].Optional = true;
+            pManager[4].Optional = true;
+
         }
 
         /// <summary>
@@ -71,6 +76,8 @@ namespace MantaRay
             string imagePath = DA.Fetch<string>(this, 0);
             string @params = DA.Fetch<string>(this, 1);
             string denoisrPath = DA.Fetch<string>(this, 2);
+            string albedoImg = DA.Fetch<string>(this, 3);
+            string normalsImg = DA.Fetch<string>(this, 4);
 
             if (!string.IsNullOrEmpty(@params))
             {
@@ -85,9 +92,22 @@ namespace MantaRay
 
             string outImage = $"{Path.GetDirectoryName(imagePath)}\\{Path.GetFileNameWithoutExtension(imagePath)}_denoised{Path.GetExtension(imagePath)}";
 
-            ExecuteCommand($"{denoisrPath}");
-            ExecuteCommand($"{denoisrPath} -i \"{imagePath}\"");
-            ExecuteCommand($"{denoisrPath} {@params}-i \"{imagePath}\" -o \"{outImage}\"");
+            //ExecuteCommand($"{denoisrPath}");
+            //ExecuteCommand($"{denoisrPath} -i \"{imagePath}\"");
+            if (!string.IsNullOrEmpty(albedoImg))
+            {
+                albedoImg = $" -a \"{albedoImg}\"";
+            }
+            if (!string.IsNullOrEmpty(normalsImg))
+            {
+                normalsImg = $" -n \"{normalsImg}\"";
+                if (string.IsNullOrEmpty(albedoImg))
+                {
+                    throw new Exception("Cant use normalsImg without an albedo");
+                }
+            }
+
+            ExecuteCommand($"{denoisrPath} {@params}-i \"{imagePath}\"{albedoImg}{normalsImg} -o \"{outImage}\"");
 
             DA.SetData(0, outImage);
 
