@@ -21,9 +21,9 @@ namespace MantaRay.Radiance
 
         public RadianceObject Modifier;
 
-        string modifierName;
-        string type;
-        string name;
+        protected string modifierName;
+        protected string type;
+        protected string name;
 
 
         public RadianceObject(string[] data)
