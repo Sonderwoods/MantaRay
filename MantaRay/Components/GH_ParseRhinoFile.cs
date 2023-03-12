@@ -23,13 +23,15 @@ namespace MantaRay.Components
         {
         }
 
+        List<Brep> _grids = new List<Brep>();
+
         /// <summary>
         /// Registers all the input parameters for this component.
         /// </summary>
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
             pManager[pManager.AddTextParameter("LayerPrefix", "Prefix", "Layer prefix.\nUse the default to search for all layers\n" +
-                "that are sublayers to 'Daylight_Input' and starts with '_'.", GH_ParamAccess.item, "Daylight_Input::_")].Optional = true;
+                "that are sublayers to 'Daylight_Input' and starts with '_'.", GH_ParamAccess.item, "Daylight_Inputs::_")].Optional = true;
             pManager[pManager.AddTextParameter("Grids", "Grids", "Grids", GH_ParamAccess.item, "_Grids")].Optional = true;
         }
 
@@ -50,7 +52,9 @@ namespace MantaRay.Components
             pManager.AddTextParameter("ModifierNames", "ModifierNames", "ModifierNames", GH_ParamAccess.list);
             pManager.AddGenericParameter("-", "-", "-", GH_ParamAccess.item);
 
-            pManager.AddBrepParameter("Grids", "Grids", "Grids", GH_ParamAccess.list);
+            int gg = pManager.AddBrepParameter("Grids", "Grids", "Grids", GH_ParamAccess.list);
+            pManager.HideParameter(gg);
+
             pManager.AddTextParameter("GridNames", "GridNames", "GridNames", GH_ParamAccess.list);
             pManager.AddGenericParameter("-", "-", "-", GH_ParamAccess.item);
 
@@ -65,6 +69,8 @@ namespace MantaRay.Components
         /// <param name="DA">The DA object is used to retrieve from inputs and store in outputs.</param>
         protected override void SolveInstance(IGH_DataAccess DA)
         {
+
+            _grids.Clear();
 
             List<Mesh> glassGeometries = new List<Mesh>();
             List<Radiance.Material> glassMaterials = new List<Radiance.Material>();
@@ -98,12 +104,13 @@ namespace MantaRay.Components
                     {
 
 
-
+                        // Check for curves:
+                   
                         foreach (var obj in Rhino.RhinoDoc.ActiveDoc.Objects
                         .Where(o => o.Attributes.LayerIndex == layer.Index)
                         .Select(o => o))
                         {
-                            string _name = obj.Attributes.Name;
+                            string _name = obj.Attributes.Name ?? string.Empty;
                             switch (obj.Geometry.Duplicate())
                             {
                                 case Curve curve:
@@ -111,13 +118,14 @@ namespace MantaRay.Components
                                     {
                                         grids.Add(InputGeometryHelper.UpwardsPointingBrepsFromCurves(new List<Curve> { curve })[0]);
                                         gridNames.Add(_name);
+                                    
                                     }
                                     break;
                                 case Brep brep:
                                     brep.TurnUp();
                                     grids.Add(brep);
                                     gridNames.Add(_name);
-
+                              
                                     break;
                                 case Mesh mesh:
                                     throw new NotImplementedException("No meshes as grids. yet");
@@ -127,10 +135,14 @@ namespace MantaRay.Components
                                     b.TurnUp();
                                     grids.Add(b);
                                     gridNames.Add(_name);
-
+                            
                                     break;
                             }
                         }
+                        continue;
+
+
+
                     }
                     else if (ln.Length != 2)
                     {
@@ -159,10 +171,13 @@ namespace MantaRay.Components
 
                         }
                     }
-                    if (m.Faces.Count == 0) continue;
+                    if (m.Faces.Count == 0)
+                    {
+                        missingLayers.Add(layer.FullPath);
+                        continue;
+                    }
 
 
-                    string name = StringHelper.ToSafeName(ln[0]);
                     string layerSuffix = ln[1];
 
 
@@ -170,18 +185,18 @@ namespace MantaRay.Components
                         && double.TryParse(layerSuffix.Substring(0, layerSuffix.Length - 1), out double transmittance)) // we have a glass
                     {
                         glassGeometries.Add(m);
-                        glassMaterials.Add(Radiance.Material.CreateGlassFromTransmittance(name, transmittance, out _));
+                        glassMaterials.Add(Radiance.Material.CreateGlassFromTransmittance($"{ln[0]}_{transmittance}", transmittance, out _));
                     }
 
                     else if (double.TryParse(layerSuffix, out double reflectance))
                     {
                         opaqueGeometries.Add(m);
-                        opaqueMaterials.Add(Radiance.Material.CreateOpaqueFromReflection(name, reflectance, out _));
+                        opaqueMaterials.Add(Radiance.Material.CreateOpaqueFromReflection($"{ln[0]}_{reflectance*100:0}", reflectance, out _));
                     }
                     else
                     {
                         customGeometries.Add(m);
-                        customModifierNames.Add(name);
+                        customModifierNames.Add(ln[1]);
                     }
                 }
             }
@@ -201,6 +216,17 @@ namespace MantaRay.Components
 
             DA.SetDataList("SkippedLayers", missingLayers);
 
+
+        }
+
+        public override void DrawViewportMeshes(IGH_PreviewArgs args)
+        {
+            foreach (var item in _grids)
+            {
+                args.Display.DrawBrepShaded(item, new Rhino.Display.DisplayMaterial(System.Drawing.Color.Blue));
+
+            }
+            base.DrawViewportMeshes(args);
 
         }
 

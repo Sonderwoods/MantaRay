@@ -28,7 +28,7 @@ namespace MantaRay.Radiance
         /// <param name="groupName">Could be the shared modifier name</param>
         public RadianceObjectCollection(string groupName)
         {
-            Name = groupName;
+            name = groupName;
         }
 
         public void AddObject(RadianceGeometry obj)

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using MantaRay.Helpers;
+using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
@@ -30,9 +31,9 @@ namespace MantaRay.Radiance
         }
 
 
- 
 
-        
+
+
         [Flags]
         public enum OpaqueMessages
         {
@@ -53,6 +54,8 @@ namespace MantaRay.Radiance
 
         public static Material CreateOpaqueFromColor(string name, Color color, out OpaqueMessages messages, double roughness = 0.0, double specularity = 0.0)
         {
+            name = StringHelper.ToSafeName(name);
+
             messages = OpaqueMessages.None;
 
             if (specularity >= 0.1)
@@ -70,22 +73,41 @@ namespace MantaRay.Radiance
 
         public static Material CreateOpaqueFromReflection(string name, double reflection, out OpaqueMessages messages, double roughness = 0.0, double specularity = 0.0)
         {
-            int _refl = (int)(reflection * 255.0);
-            if (reflection > 255 || reflection < 0) throw new ArgumentOutOfRangeException(nameof(reflection));
-            return CreateOpaqueFromColor(name, Color.FromArgb(_refl, _refl, _refl), out messages, roughness, specularity);
+
+            name = StringHelper.ToSafeName(name);
+
+            reflection = reflection > 1 ? reflection : (reflection * 100.0);
+            messages = OpaqueMessages.None;
+
+            if (specularity >= 0.1)
+                messages |= OpaqueMessages.SpecularityAbove01;
+
+            if (roughness >= 0.2)
+                messages |= OpaqueMessages.RoughnessAbove02;
+
+
+            return new Material($"void plastic {name}\n" +
+            $"0\n" +
+            $"0\n" +
+            $"5 {reflection:0.000} {reflection:0.000} {reflection:0.000} {specularity:0.000} {roughness:0.000}");
         }
 
         public static Material CreateOpaqueFromReflection(string name, int reflection, out OpaqueMessages messages, double roughness = 0.0, double specularity = 0.0)
         {
+            name = StringHelper.ToSafeName(name);
+
             if (reflection > 255 || reflection < 0) throw new ArgumentOutOfRangeException(nameof(reflection));
-            return CreateOpaqueFromColor(name, Color.FromArgb(reflection, reflection, reflection), out messages, roughness, specularity);
+            return CreateOpaqueFromReflection(name, (double)reflection, out messages, roughness, specularity);
         }
 
         public static Material CreateGlassFromColor(string name, Color color, out GlassMessages messages)
         {
+
+            name = StringHelper.ToSafeName(name);
+
             messages = GlassMessages.None;
 
-            double avgTransmittance = 0.3333 * (color.R * color.G * color.B);
+            double avgTransmittance = 255.0 / 100.0 * 0.3333 * (color.R * color.G * color.B);
 
             if (avgTransmittance > 0.88)
                 messages |= GlassMessages.TransmittanceAbove088;
@@ -95,19 +117,28 @@ namespace MantaRay.Radiance
             return new Material($"void glass {name}\n" +
                 $"0\n" +
                 $"0\n" +
-                $"3 {TransmittanceToTransmissivity(color.R):0.000} {TransmittanceToTransmissivity(color.G):0.000} {TransmittanceToTransmissivity(color.B):0.000}");
+                $"3 {TransmittanceToTransmissivity(color.R / 255.0 * 100.0):0.000} {TransmittanceToTransmissivity(color.G / 255.0 * 100.0):0.000} {TransmittanceToTransmissivity(color.B / 255.0 * 100.0):0.000}");
         }
 
         public static Material CreateGlassFromTransmittance(string name, double transmittance, out GlassMessages messages)
         {
-            int _t = (int)(transmittance * 255.0);
-            return CreateGlassFromColor(name, Color.FromArgb(_t, _t, _t), out messages);
-        }
 
+            name = StringHelper.ToSafeName(name);
+
+            transmittance = transmittance > 1 ? (0.01 * transmittance) : transmittance;
+
+            messages = GlassMessages.None;
+
+            return new Material($"void glass {name}\n" +
+                $"0\n" +
+            $"0\n" +
+            $"3 {TransmittanceToTransmissivity(transmittance):0.000} {TransmittanceToTransmissivity(transmittance):0.000} {TransmittanceToTransmissivity(transmittance):0.000}");
+        }
         public static Material CreateGlassFromTransmittance(string name, int transmittance, out GlassMessages messages)
         {
+            name = StringHelper.ToSafeName(name);
 
-            return CreateGlassFromColor(name, Color.FromArgb(transmittance, transmittance, transmittance), out messages);
+            return CreateGlassFromTransmittance(name, (double)transmittance, out messages);
         }
 
         public static double TransmittanceToTransmissivity(double t)
