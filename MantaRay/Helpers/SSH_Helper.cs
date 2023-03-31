@@ -235,35 +235,69 @@ namespace MantaRay
                     serverFilePath = sb.Length > 0 ? sb.ToString() : serverFilePath;
                 }
 
-
-                using (var saveFile = File.OpenWrite(targetFileName))
+                try
                 {
-                    try
-                    {
-                        SftpClient.DownloadFile(serverFilePath, saveFile);
 
-                    }
-                    catch (Renci.SshNet.Common.SftpPermissionDeniedException e)
+
+
+                    using (var saveFile = File.OpenWrite(targetFileName))
                     {
-                        if (String.Compare(targetFileName.ToLinuxPath(), serverFilePath, StringComparison.OrdinalIgnoreCase) == 0)
+                        try
                         {
-                            log?.Append("The paths are the same, so skipping the download\n");
-                            return;
+                            SftpClient.DownloadFile(serverFilePath, saveFile);
+
                         }
-                        else
+                        catch (Renci.SshNet.Common.SftpPermissionDeniedException e)
                         {
-                            throw e;
+                            if (String.Compare(targetFileName.ToLinuxPath(), serverFilePath, StringComparison.OrdinalIgnoreCase) == 0)
+                            {
+                                log?.Append("The paths are the same, so skipping the download\n");
+                                return;
+                            }
+                            else
+                            {
+                                throw e;
+                            }
+
+                        }
+                        // Try once again but with the "pwd" prefix:
+                        catch (Renci.SshNet.Common.SftpPathNotFoundException e)
+                        {
+                            StringBuilder pwd = new StringBuilder();
+                            Execute("pwd", stdout: pwd);
+                            pwd.ToString();
+                            try
+                            {
+                                SftpClient.DownloadFile($"{pwd}/{serverFilePath}", saveFile);
+
+                            }
+                            catch (Renci.SshNet.Common.SftpPermissionDeniedException e2)
+                            {
+                                if (String.Compare(targetFileName.ToLinuxPath(), serverFilePath, StringComparison.OrdinalIgnoreCase) == 0)
+                                {
+                                    log?.Append("The paths are the same, so skipping the download\n");
+                                    return;
+                                }
+                                else
+                                {
+                                    throw e2;
+                                }
+
+                            }
+                            catch (Renci.SshNet.Common.SftpPathNotFoundException e2)
+                            {
+                                throw new FileNotFoundException($"Could not find {serverFilePath} on host");
+                            }
                         }
 
-                    }
-                    catch (Renci.SshNet.Common.SftpPathNotFoundException e)
-                    {
-                        throw new FileNotFoundException($"Could not find {serverFilePath} on host"); 
+
                     }
 
                 }
-
-
+                catch (System.IO.DirectoryNotFoundException e)
+                {
+                    throw new System.IO.DirectoryNotFoundException("Struggles finding a local file to open. Looks like you linked to a directory and not a file\n" + e.Message);
+                }
             }
             else if (SftpClient != null)
             {
