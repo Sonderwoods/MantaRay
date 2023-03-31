@@ -55,9 +55,7 @@ namespace MantaRay.Helpers
             for (int i = 0; i < chars.Length; i++)
             {
 
-                if (false == ((chars[i] >= 'a' && chars[i] <= 'z') || 
-                    chars[i] >= 'A' && chars[i] <= 'Z') ||
-                    ((chars[i] >= '0' && chars[i] <= '9')))
+                if (false == ((chars[i] >= 'a' && chars[i] <= 'z') ||  chars[i] >= 'A' && chars[i] <= 'Z' || (chars[i] >= '0' && chars[i] <= '9')))
                 {
                     chars[i] = '_';
                 }
