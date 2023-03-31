@@ -40,7 +40,9 @@ namespace MantaRay.Components
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
             pManager[pManager.AddTextParameter("user", "user", "input a string containing the linux user name.\nFor instance:\nmyName", GH_ParamAccess.item, System.Environment.UserName)].Optional = true;
-            pManager[pManager.AddTextParameter("ip", "ip", "input a string containing the SSH ip address.\nFor instance:\n127.0.0.1", GH_ParamAccess.item, "127.0.0.1")].Optional = true;
+            pManager[pManager.AddTextParameter("ip", "ip", "input a string containing the SSH ip address.\nFor instance:\n127.0.0.1" +
+                "Also works for computer names on the network in case that you don't have a fixed IP.\n" +
+                "For instance:\nmy-computer-042", GH_ParamAccess.item, "127.0.0.1")].Optional = true;
             pManager[pManager.AddTextParameter("LinuxDir", "LinuxDir", "Default linux dir.\nDefault is:\n'~/simulation'", GH_ParamAccess.item, "")].Optional = true;
             pManager[pManager.AddTextParameter("WindowsDir", "WindowsDir", $"WindowsDir\nDefault is:\n'C:\\users\\{System.Environment.UserName}\\MantaRay\\", GH_ParamAccess.item, "")].Optional = true;
             pManager[pManager.AddTextParameter("SftpDir", "SftpDir", "SftpDir. This can in some cases be a windows directory even though you are SSH'ing to linux.\nThis is sometimes the case when using Windows Subsystem Linux" +
@@ -175,7 +177,7 @@ namespace MantaRay.Components
 
                 );
 
-                sshHelper.ExportPrefixes = string.IsNullOrEmpty(prefixes) ? sshHelper.ExportPrefixesDefault : prefixes;
+                sshHelper.ExportPrefixes = string.IsNullOrEmpty(prefixes) ? sshHelper.ExportPrefixesDefault : prefixes.ApplyGlobals();
 
 
                 Stopwatch stopwatch = new Stopwatch();
