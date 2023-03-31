@@ -76,7 +76,7 @@ namespace MantaRay.Radiance
 
             name = StringHelper.ToSafeName(name);
 
-            reflection = reflection > 1 ? reflection : (reflection * 100.0);
+            reflection = reflection < 1 ? reflection : (reflection * 100.0);
             messages = OpaqueMessages.None;
 
             if (specularity >= 0.1)
@@ -120,6 +120,13 @@ namespace MantaRay.Radiance
                 $"3 {TransmittanceToTransmissivity(color.R / 255.0 * 100.0):0.000} {TransmittanceToTransmissivity(color.G / 255.0 * 100.0):0.000} {TransmittanceToTransmissivity(color.B / 255.0 * 100.0):0.000}");
         }
 
+        /// <summary>
+        /// Transmittance needs to be a double from 0 to 1.0
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="transmittance"></param>
+        /// <param name="messages"></param>
+        /// <returns></returns>
         public static Material CreateGlassFromTransmittance(string name, double transmittance, out GlassMessages messages)
         {
 
