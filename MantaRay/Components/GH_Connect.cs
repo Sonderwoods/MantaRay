@@ -177,7 +177,7 @@ namespace MantaRay.Components
 
                 );
 
-                sshHelper.ExportPrefixes = string.IsNullOrEmpty(prefixes) ? sshHelper.ExportPrefixesDefault : prefixes.ApplyGlobals();
+                
 
 
                 Stopwatch stopwatch = new Stopwatch();
@@ -220,7 +220,7 @@ namespace MantaRay.Components
 
 
 
-
+                sshHelper.ExportPrefixes = string.IsNullOrEmpty(prefixes) ? sshHelper.ExportPrefixesDefault : prefixes.Replace("<Project>", subfolder).ApplyGlobals();
 
 
 
