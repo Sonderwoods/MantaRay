@@ -12,7 +12,7 @@ namespace UnitTests
         public void WindowsPaths()
         {
 
-            MantaRay.Helpers.SSH_Helper.
+           
             string[] inputPaths = new string[]
             {
                 "/mnt/c/testPath",
