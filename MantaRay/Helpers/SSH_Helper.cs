@@ -218,7 +218,7 @@ namespace MantaRay
                     localTargetFolder = _windowsFullpath;
                 }
 
-                localTargetFolder = localTargetFolder.TrimEnd('\\') + "\\";
+                localTargetFolder = localTargetFolder.ApplyGlobals().TrimEnd('\\') + "\\";
                 string targetFileName = localTargetFolder + Path.GetFileName(serverFilePath.Trim('\n', '\r').Replace("/", "\\"));
 
 
