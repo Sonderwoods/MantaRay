@@ -72,7 +72,7 @@ namespace MantaRay.Components
                 targetFolder = sshHelper.WinHome;
             }
 
-            string localTargetFolder = targetFolder; // Path.GetDirectoryName(targetFolder);
+            string localTargetFolder = targetFolder.ApplyGlobals(); // Path.GetDirectoryName(targetFolder);
 
             List<string> allFilePaths = DA.FetchList<string>(this, "SftpPaths", "Linux File Paths");
             List<string> localFilePaths = new List<string>(allFilePaths.Count);
@@ -82,8 +82,17 @@ namespace MantaRay.Components
             foreach (var file in allFilePaths)
             {
                 var file2 = file.Trim('\r', '\n');
+                try
+                {
                 sshHelper.Download(file2, localTargetFolder, sb);
                 localFilePaths.Add(localTargetFolder + "\\" + Path.GetFileName(file2));
+
+                }
+                catch (FileNotFoundException e)
+                {
+                    AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, e.Message);
+                    localFilePaths.Add(null);
+                }
             }
 
             OldResults = localFilePaths.ToArray();
