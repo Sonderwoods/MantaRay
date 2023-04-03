@@ -4,6 +4,7 @@ using System.Linq;
 using Grasshopper.GUI;
 using Grasshopper.GUI.Canvas;
 using Grasshopper.Kernel;
+using Grasshopper.Kernel.Types;
 using MantaRay.Components.Templates;
 using MantaRay.Helpers;
 using Rhino.DocObjects;
@@ -32,9 +33,13 @@ namespace MantaRay.Components
         {
             pManager[pManager.AddTextParameter("LayerPrefix", "Prefix", "Layer prefix.\nUse the default to search for all layers\n" +
                 "that are sublayers to 'Daylight_Input' and starts with '_'.", GH_ParamAccess.item, "Daylight_Inputs::_")].Optional = true;
-            pManager[pManager.AddTextParameter("Grids", "Grids", "Grids", GH_ParamAccess.item, "_Grids")].Optional = true;
+            pManager[pManager.AddTextParameter("Grids", "Grids", "Grids", GH_ParamAccess.item, "Grids")].Optional = true;
         }
 
+        /// <summary>
+        /// Grid geometries param index
+        /// </summary>
+        int gg = 0;
         /// <summary>
         /// Registers all the output parameters for this component.
         /// </summary>
@@ -52,7 +57,7 @@ namespace MantaRay.Components
             pManager.AddTextParameter("ModifierNames", "ModifierNames", "ModifierNames", GH_ParamAccess.list);
             pManager.AddGenericParameter("-", "-", "-", GH_ParamAccess.item);
 
-            int gg = pManager.AddBrepParameter("Grids", "Grids", "Grids", GH_ParamAccess.list);
+            gg = pManager.AddBrepParameter("GridGeometries", "GridGeometries", "Grids", GH_ParamAccess.list);
             pManager.HideParameter(gg);
 
             pManager.AddTextParameter("GridNames", "GridNames", "GridNames", GH_ParamAccess.list);
@@ -83,7 +88,7 @@ namespace MantaRay.Components
 
             List<string> missingLayers = new List<string>();
 
-            List<Brep> grids = new List<Brep>();
+            List<IGH_GeometricGoo> grids = new List<IGH_GeometricGoo>();
             List<string> gridNames = new List<string>();
 
 
@@ -92,113 +97,134 @@ namespace MantaRay.Components
 
             foreach (var layer in Rhino.RhinoDoc.ActiveDoc.Layers.Where(l => l.FullPath.StartsWith(prefix)))
             {
+                IEnumerable<RhinoObject> objs = Rhino.RhinoDoc.ActiveDoc.Objects.GetObjectList(new ObjectEnumeratorSettings()
+                {
+                    ActiveObjects = true,
+                    LockedObjects = true,
+                    HiddenObjects = true,
+                    IncludeGrips = false,
+                    IncludeLights = false,
+                    IncludePhantoms = false,
+                    ReferenceObjects = true,
+                    IdefObjects = false,
+                    ObjectTypeFilter = ObjectType.Brep | ObjectType.Mesh | ObjectType.Surface | ObjectType.Extrusion,
+                    NormalObjects = true,
+                    LayerIndexFilter = layer.Index
+                });
 
+                string[] ln = layer.FullPath.Substring(prefix.Length).Split('_');
 
-                if (Rhino.RhinoDoc.ActiveDoc.Objects.Count(o => o.Attributes.LayerIndex == layer.Index) > 0)
+                if (ln.Length == 1 && string.Equals(ln[0], gridLayer, StringComparison.InvariantCulture))
                 {
 
+                    // Check for curves:
 
-                    string[] ln = layer.FullPath.Substring(prefix.Length).Split('_');
-
-                    if (ln.Length == 1 && string.Equals(ln[0], gridLayer, StringComparison.InvariantCulture))
+                    
+                    foreach (var obj in objs)
                     {
-
-
-                        // Check for curves:
-                   
-                        foreach (var obj in Rhino.RhinoDoc.ActiveDoc.Objects
-                        .Where(o => o.Attributes.LayerIndex == layer.Index)
-                        .Select(o => o))
+                        string _name = obj.Attributes.Name ?? string.Empty;
+                        switch (obj.Geometry)
                         {
-                            string _name = obj.Attributes.Name ?? string.Empty;
-                            switch (obj.Geometry.Duplicate())
-                            {
-                                case Curve curve:
-                                    if (curve.IsClosed)
-                                    {
-                                        grids.Add(InputGeometryHelper.UpwardsPointingBrepsFromCurves(new List<Curve> { curve })[0]);
-                                        gridNames.Add(_name);
-                                    
-                                    }
-                                    break;
-                                case Brep brep:
-                                    brep.TurnUp();
-                                    grids.Add(brep);
+                            case Curve curve:
+                                if (curve.IsClosed)
+                                {
+                                    grids.Add(new GH_Brep(InputGeometryHelper.UpwardsPointingBrepsFromCurves(new List<Curve> { curve.DuplicateCurve() })[0]));
                                     gridNames.Add(_name);
-                              
-                                    break;
-                                case Mesh mesh:
-                                    throw new NotImplementedException("No meshes as grids. yet");
 
-                                case Surface surface:
-                                    Brep b = Brep.CreateFromSurface(surface);
-                                    b.TurnUp();
-                                    grids.Add(b);
-                                    gridNames.Add(_name);
-                            
-                                    break;
-                            }
-                        }
-                        continue;
-
-
-
-                    }
-                    else if (ln.Length != 2)
-                    {
-                        missingLayers.Add(layer.FullPath);
-                        continue;
-                    }
-
-
-                    Mesh m = new Mesh();
-
-                    foreach (var obj in Rhino.RhinoDoc.ActiveDoc.Objects
-                        .Where(o => o.Attributes.LayerIndex == layer.Index)
-                        .Select(o => o.Geometry))
-                    {
-                        switch (obj)
-                        {
+                                }
+                                break;
                             case Brep brep:
-                                m.Append(Mesh.CreateFromBrep(brep, MeshingParameters.FastRenderMesh));
+                                brep.TurnUp();
+                                grids.Add(new GH_Brep(brep.DuplicateBrep()));
+                                gridNames.Add(_name);
+
                                 break;
                             case Mesh mesh:
-                                m.Append(mesh);
-                                break;
-                            case Surface surface:
-                                m.Append(Mesh.CreateFromSurface(surface, MeshingParameters.FastRenderMesh));
+                                grids.Add(new GH_Mesh(mesh.DuplicateMesh()));
                                 break;
 
+                            case Surface surface:
+                                Brep b = Brep.CreateFromSurface((Surface)surface.Duplicate());
+                                b.TurnUp();
+                                grids.Add(new GH_Brep(b));
+                                gridNames.Add(_name);
+
+                                break;
                         }
                     }
-                    if (m.Faces.Count == 0)
+                    continue;
+
+
+
+                }
+                else if (ln.Length != 2)
+                {
+                    missingLayers.Add(layer.FullPath);
+                    continue;
+                }
+
+
+                Mesh m = new Mesh();
+
+                
+
+
+                foreach (var obj in objs)
+                {
+
+                    switch (obj.Geometry)
                     {
-                        missingLayers.Add(layer.FullPath);
-                        continue;
-                    }
+                        case Brep brep:
+                            int count = m.Vertices.Count;
+                            m.Append(Mesh.CreateFromBrep(brep, MeshingParameters.FastRenderMesh));
 
+                            if (m.Vertices.Count == count) //didnt add anything, maybe the brep wasnt loaded.
+                            {
+                                m.Append(Mesh.CreateFromBrep(brep, MeshingParameters.Default));
+                            }
+                            break;
+                        case Mesh mesh:
+                            m.Append(mesh);
+                            break;
+                        case Surface surface:
+                            int count2 = m.Vertices.Count;
+                            m.Append(Mesh.CreateFromSurface(surface, MeshingParameters.FastRenderMesh));
+                            if (m.Vertices.Count == count2) //didnt add anything, maybe the brep wasnt loaded.
+                            {
+                                m.Append(Mesh.CreateFromSurface(surface, MeshingParameters.Default));
+                            }
+                            break;
 
-                    string layerSuffix = ln[1];
-
-
-                    if (layerSuffix[layerSuffix.Length - 1] == '%'
-                        && double.TryParse(layerSuffix.Substring(0, layerSuffix.Length - 1), out double transmittance)) // we have a glass
-                    {
-                        glassGeometries.Add(m);
-                        glassMaterials.Add(Radiance.Material.CreateGlassFromTransmittance($"{ln[0]}_{transmittance}", transmittance, out _));
-                    }
-
-                    else if (double.TryParse(layerSuffix, out double reflectance))
-                    {
-                        opaqueGeometries.Add(m);
-                        opaqueMaterials.Add(Radiance.Material.CreateOpaqueFromReflection($"{ln[0]}_{reflectance*100:0}", reflectance, out _));
-                    }
-                    else
-                    {
-                        customGeometries.Add(m);
-                        customModifierNames.Add(ln[1]);
                     }
                 }
+                if (m.Faces.Count == 0)
+                {
+                    missingLayers.Add(layer.FullPath);
+                    continue;
+                }
+
+
+                string layerSuffix = ln[1];
+
+
+                if (layerSuffix[layerSuffix.Length - 1] == '%'
+                    && double.TryParse(layerSuffix.Substring(0, layerSuffix.Length - 1), out double transmittance)) // we have a glass
+                {
+                    glassGeometries.Add(m);
+                    glassMaterials.Add(Radiance.Material.CreateGlassFromTransmittance($"{ln[0]}_{transmittance}", transmittance, out _));
+                }
+
+                else if (double.TryParse(layerSuffix, out double reflectance))
+                {
+                    opaqueGeometries.Add(m);
+                    opaqueMaterials.Add(Radiance.Material.CreateOpaqueFromReflection($"{ln[0]}_{reflectance:0}", reflectance, out _));
+                }
+                else
+                {
+                    customGeometries.Add(m);
+                    customModifierNames.Add(ln[1]);
+                }
+                //}
             }
 
             DA.SetDataList("GlassGeometries", glassGeometries);
@@ -211,7 +237,7 @@ namespace MantaRay.Components
             DA.SetDataList("CustomGeometries", customGeometries);
             DA.SetDataList("ModifierNames", customModifierNames);
 
-            DA.SetDataList("Grids", grids);
+            DA.SetDataList(gg, grids);
             DA.SetDataList("GridNames", gridNames);
 
             DA.SetDataList("SkippedLayers", missingLayers);
