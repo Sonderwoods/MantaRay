@@ -441,12 +441,14 @@ namespace MantaRay
 
                         meshFromCurves = GetMeshFromCurves(intersectedCurves, mp, in col);
 
-                        meshFromCurves.Transform(Transform.Translation(0, 0, (cuttingCount + 1) * Rhino.RhinoDoc.ActiveDoc.ModelAbsoluteTolerance * 12.0));
+
+                        
 
 
 
                         if (meshFromCurves != null)
                         {
+                            meshFromCurves.Transform(Transform.Translation(0, 0, (cuttingCount + 1) * Rhino.RhinoDoc.ActiveDoc.ModelAbsoluteTolerance * 12.0));
 
                             //oLayeredMeshes.AppendRange(meshesFromCurves.Select(m => new GH_Mesh(m)), path);
                             oLayeredMeshes.Append(new GH_Mesh(meshFromCurves), path);
