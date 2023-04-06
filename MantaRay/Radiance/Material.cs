@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -67,16 +68,25 @@ namespace MantaRay.Radiance
             return new Material($"void plastic {name}\n" +
             $"0\n" +
             $"0\n" +
-            $"5 {color.R / 255.0:0.000} {color.G / 255.0:0.000} {color.B / 255.0:0.000} {specularity:0.000} {roughness:0.000}");
+            $"5 {(color.R / 255.0).ToString(CultureInfo.InvariantCulture)} {(color.G / 255.0).ToString(CultureInfo.InvariantCulture)} {(color.B / 255.0).ToString(CultureInfo.InvariantCulture)} {specularity.ToString(CultureInfo.InvariantCulture)} {roughness.ToString(CultureInfo.InvariantCulture)}");
 
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="reflection">0 to 1.0   .. if > 1, it will be divided by 100.0</param>
+        /// <param name="messages"></param>
+        /// <param name="roughness"></param>
+        /// <param name="specularity"></param>
+        /// <returns></returns>
         public static Material CreateOpaqueFromReflection(string name, double reflection, out OpaqueMessages messages, double roughness = 0.0, double specularity = 0.0)
         {
 
             name = StringHelper.ToSafeName(name);
 
-            reflection = reflection < 1 ? reflection : (reflection * 100.0);
+            reflection = reflection > 1 ? (reflection / 100.0) : reflection;
             messages = OpaqueMessages.None;
 
             if (specularity >= 0.1)
@@ -89,7 +99,7 @@ namespace MantaRay.Radiance
             return new Material($"void plastic {name}\n" +
             $"0\n" +
             $"0\n" +
-            $"5 {reflection:0.000} {reflection:0.000} {reflection:0.000} {specularity:0.000} {roughness:0.000}");
+            $"5 {reflection.ToString(CultureInfo.InvariantCulture)} {reflection.ToString(CultureInfo.InvariantCulture)} {reflection.ToString(CultureInfo.InvariantCulture)} {specularity.ToString(CultureInfo.InvariantCulture)} {roughness.ToString(CultureInfo.InvariantCulture)}");
         }
 
         public static Material CreateOpaqueFromReflection(string name, int reflection, out OpaqueMessages messages, double roughness = 0.0, double specularity = 0.0)
@@ -117,7 +127,7 @@ namespace MantaRay.Radiance
             return new Material($"void glass {name}\n" +
                 $"0\n" +
                 $"0\n" +
-                $"3 {TransmittanceToTransmissivity(color.R / 255.0 * 100.0):0.000} {TransmittanceToTransmissivity(color.G / 255.0 * 100.0):0.000} {TransmittanceToTransmissivity(color.B / 255.0 * 100.0):0.000}");
+                $"3 {TransmittanceToTransmissivity(color.R / 255.0 * 100.0).ToString(CultureInfo.InvariantCulture)} {TransmittanceToTransmissivity(color.G / 255.0 * 100.0).ToString(CultureInfo.InvariantCulture)} {TransmittanceToTransmissivity(color.B / 255.0 * 100.0).ToString(CultureInfo.InvariantCulture)}");
         }
 
         /// <summary>
@@ -139,7 +149,7 @@ namespace MantaRay.Radiance
             return new Material($"void glass {name}\n" +
                 $"0\n" +
             $"0\n" +
-            $"3 {TransmittanceToTransmissivity(transmittance):0.000} {TransmittanceToTransmissivity(transmittance):0.000} {TransmittanceToTransmissivity(transmittance):0.000}");
+            $"3 {TransmittanceToTransmissivity(transmittance).ToString(CultureInfo.InvariantCulture)} {TransmittanceToTransmissivity(transmittance).ToString(CultureInfo.InvariantCulture)} {TransmittanceToTransmissivity(transmittance).ToString(CultureInfo.InvariantCulture)}");
         }
         public static Material CreateGlassFromTransmittance(string name, int transmittance, out GlassMessages messages)
         {
