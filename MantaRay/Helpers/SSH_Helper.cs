@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using Grasshopper.Kernel;
 using Renci.SshNet;
 using Rhino.UI;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement.TextBox;
 using static MantaRay.Helpers.PathHelper;
 
 
@@ -164,9 +165,14 @@ namespace MantaRay
 
         public bool FileExistsInLinux(string path)
         {
-            StringBuilder sb = new StringBuilder(1);
-            Execute($"[ -f {path} ] && echo \"1\" || echo \"0\"", stdout: sb);
-            return string.Equals("1", sb.ToString());
+            //(IAsyncResult asyncResult, SshCommand cmd, int pid) = ExecuteAsync($"head {path}", prependPrefix: true, true);
+            (IAsyncResult asyncResult, SshCommand cmd, int pid) = ExecuteAsync($"[ -f {path} ] && echo \"1\" || echo \"0\"", prependPrefix: true, true);
+            //StringBuilder sb = new StringBuilder();
+            //Execute($"[ -f {path} ] && echo \"1\" || echo \"0\"", stdout: sb);
+            //Execute($"head {path}", stdout: sb);
+            WaitHandle.WaitAll(new WaitHandle[] { asyncResult.AsyncWaitHandle });
+            //return cmd.Result.Length > 1;
+            return cmd.Result == "1";
         }
 
         public static bool FileExistsInWindows(string path)
