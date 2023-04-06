@@ -13,6 +13,7 @@ using MantaRay.Components;
 using Rhino.Geometry;
 using MantaRay.Setup;
 using System.Runtime.InteropServices;
+using MantaRay.Helpers;
 
 namespace MantaRay.Components
 {
@@ -40,18 +41,21 @@ namespace MantaRay.Components
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
             pManager[pManager.AddTextParameter("user", "user", "input a string containing the linux user name.\nFor instance:\nmyName", GH_ParamAccess.item, System.Environment.UserName)].Optional = true;
-            pManager[pManager.AddTextParameter("ip", "ip", "input a string containing the SSH ip address.\nFor instance:\n127.0.0.1" +
+            pManager[pManager.AddTextParameter("ip", "ip", "input a string containing the SSH ip address.\nFor instance:\n127.0.0.1\n\n" +
                 "Also works for computer names on the network in case that you don't have a fixed IP.\n" +
                 "For instance:\nmy-computer-042", GH_ParamAccess.item, "127.0.0.1")].Optional = true;
             pManager[pManager.AddTextParameter("LinuxDir", "LinuxDir", "Default linux dir.\nDefault is:\n'~/simulation'", GH_ParamAccess.item, "")].Optional = true;
             pManager[pManager.AddTextParameter("WindowsDir", "WindowsDir", $"WindowsDir\nDefault is:\n'C:\\users\\{System.Environment.UserName}\\MantaRay\\", GH_ParamAccess.item, "")].Optional = true;
-            pManager[pManager.AddTextParameter("SftpDir", "SftpDir", "SftpDir. This can in some cases be a windows directory even though you are SSH'ing to linux.\nThis is sometimes the case when using Windows Subsystem Linux" +
+            pManager[pManager.AddTextParameter("SftpDir", "SftpDir", "SftpDir. MantaRay transfers files over Sftp, which is standard protocol using SSH in SSH_Sharp.\n\n" +
+                "This can in some cases be a windows directory even though you are SSH'ing to linux.\n" +
+                "This is sometimes the case when using Windows Subsystem Linux" +
                 "\nExamples:\n" +
-                "/C:/users/<username>/MantaRay   ... (I know this is weird but that's how I've seen it with this SSH client\n" +
-                "~/MantaRay/", GH_ParamAccess.item, "")].Optional = true;
+                "'/C:/users/<username>/MantaRay'   ... (I know this is weird but that's how I've seen it with this SSH client)\n" +
+                "'~/MantaRay/'", GH_ParamAccess.item, "")].Optional = true;
             pManager[pManager.AddTextParameter("ProjectName", "ProjectName", "Subfolder for this project\n" +
                 "If none is specified, files will land in UnnamedProject folder.\nIdeas:\nMyProject\nMyAwesomeProject", GH_ParamAccess.item, "")].Optional = true;
-            pManager[pManager.AddTextParameter("password", "password", "password. Leave empty to prompt.", GH_ParamAccess.item, "_prompt")].Optional = true;
+            pManager[pManager.AddTextParameter("password", "password", "Password. Leave empty for the script to prompt on every connection.\n" +
+                "This way your passwords are not saved in your grasshopper files. You could also point it toward a local file on your drive", GH_ParamAccess.item, "_prompt")].Optional = true;
             pManager[pManager.AddIntegerParameter("_port", "_port", "_port", GH_ParamAccess.item, 22)].Optional = true;
             connectID = pManager.AddBooleanParameter("connect", "connect", "Set to true to start connection. If you recompute the component it will reconnect using same password," +
                 "however if you set connect to false, then it will remove the password.", GH_ParamAccess.item, false);
@@ -80,6 +84,7 @@ namespace MantaRay.Components
         /// <param name="DA">The DA object is used to retrieve from inputs and store in outputs.</param>
         protected override void SolveInstance(IGH_DataAccess DA)
         {
+            TimingHelper th = new TimingHelper("GH_Connect");
             sshHelper = new SSH_Helper();
             ManPageHelper.Initiate();
             bool run = DA.Fetch<bool>(this, "connect");
@@ -107,6 +112,7 @@ namespace MantaRay.Components
                 return;
 
             }
+            th.Benchmark("Checked other components");
 
             string username = DA.Fetch<string>(this, "user");
             string password = DA.Fetch<string>(this, "password");
@@ -122,7 +128,7 @@ namespace MantaRay.Components
 
             if (run)
             {
-
+                Rhino.RhinoApp.WriteLine("MantaRay: Starting connect command. This may take a while especially if there is no command or wrong password...");
 
                 if (password == "_prompt") //Default saved in the component
                 {
@@ -152,7 +158,7 @@ namespace MantaRay.Components
             }
 
 
-            if (run)
+            if (run) // if its still on.. can be disabled above.
             {
 
                 //Inspiration from https://gist.github.com/piccaso/d963331dcbf20611b094
@@ -183,6 +189,8 @@ namespace MantaRay.Components
                 Stopwatch stopwatch = new Stopwatch();
                 //Connect SSH
                 sshHelper.SshClient = new SshClient(ConnNfo);
+
+                th.Benchmark("Create Client");
 
                 if (!string.IsNullOrEmpty(winDir))
                 {
@@ -222,7 +230,7 @@ namespace MantaRay.Components
 
                 sshHelper.ExportPrefixes = string.IsNullOrEmpty(prefixes) ? sshHelper.ExportPrefixesDefault : prefixes.Replace("<Project>", subfolder).ApplyGlobals();
 
-
+                th.Benchmark("Setup Paths");
 
                 try
                 {
@@ -230,6 +238,7 @@ namespace MantaRay.Components
                     sshHelper.SshClient.Connect();
 
                     sb.AppendFormat("SSH:  Connected in {0} ms\n", stopwatch.ElapsedMilliseconds);
+                    
 
                 }
                 catch (Renci.SshNet.Common.SshAuthenticationException e)
@@ -246,6 +255,7 @@ namespace MantaRay.Components
 
                     }
                 }
+
 
 
                 catch (System.Net.Sockets.SocketException e)
@@ -282,6 +292,8 @@ namespace MantaRay.Components
                 {
                     sb.AppendFormat("SSH:  {0}\n", e.Message);
                 }
+
+                th.Benchmark("SSH Connected");
 
 
                 sb.Append("\n");
@@ -325,7 +337,7 @@ namespace MantaRay.Components
                     sshHelper.SftpHome = sshHelper.LinuxHome;
                 }
 
-
+                th.Benchmark("SFTP connected");
                 //sshHelper.Execute($"mkdir -p {sshHelper.LinuxFullpath}");
 
 
@@ -351,6 +363,8 @@ namespace MantaRay.Components
                     sb.AppendFormat("SSH:  Set      <cpus> to {0} Locally you would have used {1}\n", cpuSB.PadRight(pad, '.'), (Environment.ProcessorCount - 1).ToString());
 
                 }
+
+                th.Benchmark("SFTP connected");
             }
             else
             {
