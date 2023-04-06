@@ -57,7 +57,7 @@ namespace MantaRay
             return true;
         }
 
-        public bool CheckIfRunOrUseOldResults(IGH_DataAccess DA, int stringOutput)
+        public bool CheckIfRunOrUseOldResults(IGH_DataAccess DA, int stringOutput, bool limitToFirstRun = false)
         {
             //Read and parse the input.
             var runTree = new GH_Structure<GH_Boolean>();
@@ -67,7 +67,7 @@ namespace MantaRay
 
             if (!DA.Fetch<bool>(this, "Run"))
             {
-                if (OldResults != null && OldResults.Length > 0)
+                if (OldResults != null && OldResults.Length > 0 && !limitToFirstRun || RunCount == 1)
                 {
                     Message = "Reusing results";
                     AddRuntimeMessage(GH_RuntimeMessageLevel.Remark, "Using an old result\nThis can be convenient for opening old workflows and not running everything again.");
