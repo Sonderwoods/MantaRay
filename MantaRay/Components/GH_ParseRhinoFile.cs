@@ -1,9 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
+using System.Threading.Tasks;
 using Grasshopper.GUI;
 using Grasshopper.GUI.Canvas;
 using Grasshopper.Kernel;
+using Grasshopper.Kernel.Data;
 using Grasshopper.Kernel.Types;
 using MantaRay.Components.Templates;
 using MantaRay.Helpers;
@@ -19,7 +22,13 @@ namespace MantaRay.Components
         /// </summary>
         public GH_ParseRhinoFile()
           : base("ParseRhinoFile", "ParseRhinoFile",
-              "Reads rhino layers, gets geometry and prepares materials for radiance\n\nDouble click me to recompute",
+              "Reads rhino layers, gets geometry and prepares materials for radiance\n\n" +
+                "Double click me to recompute\n\n\n" +
+                "The layer table in Rhino (by default) could look like the below:\n" +
+                "'Daylight_Inputs' (with the below sublayers)\n" +
+                "- '_Floors_20' (will get reflectance of 0.2)\n" +
+                "- '_MyWindows_70%' (will become glass with the transmittance of 0.7, due to the '%' suffix\n" +
+                "- '_Grids' (will output grid geometries for points)",
               "1 Setup")
         {
         }
@@ -34,6 +43,7 @@ namespace MantaRay.Components
             pManager[pManager.AddTextParameter("LayerPrefix", "Prefix", "Layer prefix.\nUse the default to search for all layers\n" +
                 "that are sublayers to 'Daylight_Input' and starts with '_'.", GH_ParamAccess.item, "Daylight_Inputs::_")].Optional = true;
             pManager[pManager.AddTextParameter("Grids", "Grids", "Grids", GH_ParamAccess.item, "Grids")].Optional = true;
+            pManager[pManager.AddBooleanParameter("Run", "Run", "Run", GH_ParamAccess.item, false)].Optional = true;
         }
 
         /// <summary>
@@ -65,6 +75,8 @@ namespace MantaRay.Components
 
             pManager.AddTextParameter("SkippedLayers", "SkippedLayers", "SkippedLayers", GH_ParamAccess.list);
 
+            pManager.AddBooleanParameter("Ran", "Ran", "Ran without any err", GH_ParamAccess.tree); //always keep ran as the last parameter
+
 
         }
 
@@ -74,8 +86,13 @@ namespace MantaRay.Components
         /// <param name="DA">The DA object is used to retrieve from inputs and store in outputs.</param>
         protected override void SolveInstance(IGH_DataAccess DA)
         {
-
+            TimingHelper th = new TimingHelper("ParseRhinoFile");
             _grids.Clear();
+
+            if(!DA.Fetch<bool>(this, "Run"))
+            {
+                return;
+            }
 
             List<Mesh> glassGeometries = new List<Mesh>();
             List<Radiance.Material> glassMaterials = new List<Radiance.Material>();
@@ -95,8 +112,28 @@ namespace MantaRay.Components
             string prefix = DA.Fetch<string>(this, "LayerPrefix");
             string gridLayer = DA.Fetch<string>(this, "Grids");
 
-            foreach (var layer in Rhino.RhinoDoc.ActiveDoc.Layers.Where(l => l.FullPath.StartsWith(prefix)))
+            object opaqueLock = new object();
+            object glassLock = new object();
+            object customLock = new object();
+
+            //Parallel.ForEach<Layer>(Rhino.RhinoDoc.ActiveDoc.Layers.Where(l => l.FullPath.StartsWith(prefix)), (layer) =>
+            //{
+
+
+            th.Benchmark("Prestuff");
+
+
+
+
+
+
+
+            Parallel.ForEach<Layer>(Rhino.RhinoDoc.ActiveDoc.Layers.Where(l => l.FullPath.StartsWith(prefix)), (layer) =>
             {
+
+
+                //    foreach (Layer layer in Rhino.RhinoDoc.ActiveDoc.Layers.Where(l => l.FullPath.StartsWith(prefix)).AsParallel())
+                //{
                 IEnumerable<RhinoObject> objs = Rhino.RhinoDoc.ActiveDoc.Objects.GetObjectList(new ObjectEnumeratorSettings()
                 {
                     ActiveObjects = true,
@@ -119,7 +156,7 @@ namespace MantaRay.Components
 
                     // Check for curves:
 
-                    
+
                     foreach (var obj in objs)
                     {
                         string _name = obj.Attributes.Name ?? string.Empty;
@@ -152,21 +189,20 @@ namespace MantaRay.Components
                                 break;
                         }
                     }
-                    continue;
-
+                    //continue;
+                    return;
 
 
                 }
                 else if (ln.Length != 2)
                 {
                     missingLayers.Add(layer.FullPath);
-                    continue;
+                    //continue;
+                    return;
                 }
 
 
                 Mesh m = new Mesh();
-
-                
 
 
                 foreach (var obj in objs)
@@ -200,7 +236,8 @@ namespace MantaRay.Components
                 if (m.Faces.Count == 0)
                 {
                     missingLayers.Add(layer.FullPath);
-                    continue;
+                    return;
+
                 }
 
 
@@ -208,24 +245,42 @@ namespace MantaRay.Components
 
 
                 if (layerSuffix[layerSuffix.Length - 1] == '%'
-                    && double.TryParse(layerSuffix.Substring(0, layerSuffix.Length - 1), out double transmittance)) // we have a glass
+                    && double.TryParse(layerSuffix.Substring(0, layerSuffix.Length - 1), NumberStyles.Float | NumberStyles.AllowThousands, CultureInfo.InvariantCulture, out double transmittance)) // we have a glass
                 {
-                    glassGeometries.Add(m);
-                    glassMaterials.Add(Radiance.Material.CreateGlassFromTransmittance($"{ln[0]}_{transmittance}", transmittance, out _));
+                    lock (glassLock)
+                    {
+                        glassGeometries.Add(m);
+                        glassMaterials.Add(Radiance.Material.CreateGlassFromTransmittance($"{ln[0]}_{transmittance}", transmittance, out _));
+                    }
                 }
 
-                else if (double.TryParse(layerSuffix, out double reflectance))
+                else if (double.TryParse(layerSuffix, NumberStyles.Float | NumberStyles.AllowThousands, CultureInfo.InvariantCulture, out double reflectance))
                 {
-                    opaqueGeometries.Add(m);
-                    opaqueMaterials.Add(Radiance.Material.CreateOpaqueFromReflection($"{ln[0]}_{reflectance:0}", reflectance, out _));
+                    lock (opaqueLock)
+                    {
+                        opaqueGeometries.Add(m);
+                        opaqueMaterials.Add(Radiance.Material.CreateOpaqueFromReflection($"{ln[0]}_{reflectance:0.00}", reflectance, out _));
+                    }
                 }
                 else
                 {
-                    customGeometries.Add(m);
-                    customModifierNames.Add(ln[1]);
+                    lock (customLock)
+                    {
+                        customGeometries.Add(m);
+                        customModifierNames.Add(ln[1]);
+                    }
                 }
-                //}
-            }
+
+            }); // end loop
+            th.Benchmark("Parsed layers in parallel");
+
+
+
+
+
+
+
+
 
             DA.SetDataList("GlassGeometries", glassGeometries);
             DA.SetDataList("GlassModifiers", glassMaterials.Select(m => m.ToString()));
@@ -241,6 +296,11 @@ namespace MantaRay.Components
             DA.SetDataList("GridNames", gridNames);
 
             DA.SetDataList("SkippedLayers", missingLayers);
+
+            var runTree = new GH_Structure<GH_Boolean>();
+            runTree.Append(new GH_Boolean(DA.Fetch<bool>(this, "Run")));
+            Params.Output[Params.Output.Count - 1].ClearData();
+            DA.SetDataTree(Params.Output.Count - 1, runTree);
 
 
         }
