@@ -147,6 +147,11 @@ namespace MantaRay.Radiance
             meshes.Clear();
         }
 
+        public void Scale(double scale)
+        {
+            Mesh.Scale(scale);
+        }
+
         public static bool IsCurveDup(Curve crv, Curve[] curves)
         {
             List<Point3d> pts = new List<Point3d>(4) { crv.PointAtStart, crv.PointAtEnd };

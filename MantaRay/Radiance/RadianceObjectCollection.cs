@@ -52,6 +52,17 @@ namespace MantaRay.Radiance
             }
         }
 
+        public void Scale(double scaler)
+        {
+            if (scaler == 1.0) return;
+
+            var item = objects.OfType<Polygon>().FirstOrDefault();
+            if (item != null)
+            {
+                item.Scale(scaler);
+            }
+        }
+
         public override void DrawPreview(IGH_PreviewArgs args, DisplayMaterial material, double? transparency = null)
         {
             foreach (var obj in objects)
