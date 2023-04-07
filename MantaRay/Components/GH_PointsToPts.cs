@@ -21,7 +21,7 @@ namespace MantaRay.Components
         /// </summary>
         public GH_PointsToPts()
           : base("Points To .pts", "Points2pts",
-              "Formats list of points and vectors to a pts string. Use this to write it through the execute component",
+              "Formats list of points and vectors to a pts string. Use this to write it through the execute component\n\nNote that the string is already formatted to radiance units (meters)",
               "2 Radiance")
         {
         }
@@ -31,7 +31,7 @@ namespace MantaRay.Components
         /// </summary>
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
-            pManager.AddPointParameter("Points", "Points", "Points\nIn rhino units. Will be converted to meter!", GH_ParamAccess.list);
+            pManager.AddPointParameter("Points", "Points", "Points\nIn Rhino units. Will automatically be converted to meter in the radiance string!", GH_ParamAccess.list);
             pManager[pManager.AddVectorParameter("Vectors", "Vectors", "Vectors. Default is 0,0,1", GH_ParamAccess.list, new Vector3d(0, 0, 1))].Optional = true;
             pManager.AddBooleanParameter("Run", "Run", "Run", GH_ParamAccess.item);
 
