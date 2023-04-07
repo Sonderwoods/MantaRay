@@ -336,11 +336,14 @@ namespace MantaRay.Components
 
             Debug.WriteLine("done making objects");
 
+            double scalar = 1.0.FromMeter();
+
             var updateMeshes = Task.Factory.StartNew(() =>
             {
                 foreach (RadianceObjectCollection obj in objects.Values)
                 {
                     obj.UpdateMesh();
+                    obj.Scale(scalar);
                 }
 
             });
