@@ -13,10 +13,15 @@ using MantaRay.Components;
 using Rhino.Geometry;
 using MantaRay.Setup;
 using System.Runtime.InteropServices;
+using MantaRay.Helpers;
+using System.Threading.Tasks;
+using MantaRay.Components.Templates;
+using Grasshopper.GUI.Canvas;
+using Grasshopper.GUI;
 
 namespace MantaRay.Components
 {
-    public class GH_Connect : GH_Template, ISetConnection
+    public class GH_Connect : GH_Template, ISetConnection, IHasDoubleClick
     {
         /// <summary>
         /// Initializes a new instance of the GH_Connect class.
@@ -27,6 +32,8 @@ namespace MantaRay.Components
               "0 Setup")
         {
         }
+
+        public bool WasConnected { get; set; } = false;
 
         private string _pw;
         int connectID = 0;
@@ -40,16 +47,21 @@ namespace MantaRay.Components
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
             pManager[pManager.AddTextParameter("user", "user", "input a string containing the linux user name.\nFor instance:\nmyName", GH_ParamAccess.item, System.Environment.UserName)].Optional = true;
-            pManager[pManager.AddTextParameter("ip", "ip", "input a string containing the SSH ip address.\nFor instance:\n127.0.0.1", GH_ParamAccess.item, "127.0.0.1")].Optional = true;
+            pManager[pManager.AddTextParameter("ip", "ip", "input a string containing the SSH ip address.\nFor instance:\n127.0.0.1\n\n" +
+                "Also works for computer names on the network in case that you don't have a fixed IP.\n" +
+                "For instance:\nmy-computer-042", GH_ParamAccess.item, "127.0.0.1")].Optional = true;
             pManager[pManager.AddTextParameter("LinuxDir", "LinuxDir", "Default linux dir.\nDefault is:\n'~/simulation'", GH_ParamAccess.item, "")].Optional = true;
             pManager[pManager.AddTextParameter("WindowsDir", "WindowsDir", $"WindowsDir\nDefault is:\n'C:\\users\\{System.Environment.UserName}\\MantaRay\\", GH_ParamAccess.item, "")].Optional = true;
-            pManager[pManager.AddTextParameter("SftpDir", "SftpDir", "SftpDir. This can in some cases be a windows directory even though you are SSH'ing to linux.\nThis is sometimes the case when using Windows Subsystem Linux" +
+            pManager[pManager.AddTextParameter("SftpDir", "SftpDir", "SftpDir. MantaRay transfers files over Sftp, which is standard protocol using SSH in SSH_Sharp.\n\n" +
+                "This can in some cases be a windows directory even though you are SSH'ing to linux.\n" +
+                "This is sometimes the case when using Windows Subsystem Linux" +
                 "\nExamples:\n" +
-                "/C:/users/<username>/MantaRay   ... (I know this is weird but that's how I've seen it with this SSH client\n" +
-                "~/MantaRay/", GH_ParamAccess.item, "")].Optional = true;
+                "'/C:/users/<username>/MantaRay'   ... (I know this is weird but that's how I've seen it with this SSH client)\n" +
+                "'~/MantaRay/'", GH_ParamAccess.item, "")].Optional = true;
             pManager[pManager.AddTextParameter("ProjectName", "ProjectName", "Subfolder for this project\n" +
                 "If none is specified, files will land in UnnamedProject folder.\nIdeas:\nMyProject\nMyAwesomeProject", GH_ParamAccess.item, "")].Optional = true;
-            pManager[pManager.AddTextParameter("password", "password", "password. Leave empty to prompt.", GH_ParamAccess.item, "_prompt")].Optional = true;
+            pManager[pManager.AddTextParameter("password", "password", "Password. Leave empty for the script to prompt on every connection.\n" +
+                "This way your passwords are not saved in your grasshopper files. You could also point it toward a local file on your drive", GH_ParamAccess.item, "_prompt")].Optional = true;
             pManager[pManager.AddIntegerParameter("_port", "_port", "_port", GH_ParamAccess.item, 22)].Optional = true;
             connectID = pManager.AddBooleanParameter("connect", "connect", "Set to true to start connection. If you recompute the component it will reconnect using same password," +
                 "however if you set connect to false, then it will remove the password.", GH_ParamAccess.item, false);
@@ -78,11 +90,14 @@ namespace MantaRay.Components
         /// <param name="DA">The DA object is used to retrieve from inputs and store in outputs.</param>
         protected override void SolveInstance(IGH_DataAccess DA)
         {
-            sshHelper = new SSH_Helper();
+            TimingHelper th = new TimingHelper("GH_Connect");
+            sshHelper = sshHelper ?? new SSH_Helper();
+
             ManPageHelper.Initiate();
             bool run = DA.Fetch<bool>(this, "connect");
+            WasConnected = false;
 
-            
+
 
 
             // Moving to back will make sure this expires/runs before other objects when you load the file
@@ -105,13 +120,14 @@ namespace MantaRay.Components
                 return;
 
             }
+            th.Benchmark("Checked other components");
 
             string username = DA.Fetch<string>(this, "user");
             string password = DA.Fetch<string>(this, "password");
             string linDir = DA.Fetch<string>(this, "LinuxDir");
             string winDir = DA.Fetch<string>(this, "WindowsDir");
             string sftpDir = DA.Fetch<string>(this, "SftpDir");
-            string subfolder = DA.Fetch<string>(this, "ProjectName", "Subfolder");
+            string projectName = DA.Fetch<string>(this, "ProjectName", "ProjectName");
             string ip = DA.Fetch<string>(this, "ip");
             int port = DA.Fetch<int>(this, "_port");
             string prefixes = DA.Fetch<string>(this, "prefixes");
@@ -120,7 +136,7 @@ namespace MantaRay.Components
 
             if (run)
             {
-
+                Rhino.RhinoApp.WriteLine("MantaRay: Starting connect command. This may take a while especially if there is no command or wrong password...");
 
                 if (password == "_prompt") //Default saved in the component
                 {
@@ -147,10 +163,14 @@ namespace MantaRay.Components
             else
             {
                 _pw = null; //reset
+                sshHelper.Disconnect();
+                //sshHelper = null;
             }
 
+            th.Benchmark("...password");
 
-            if (run)
+
+            if (run) // if its still on.. can be disabled above.
             {
 
                 //Inspiration from https://gist.github.com/piccaso/d963331dcbf20611b094
@@ -175,12 +195,16 @@ namespace MantaRay.Components
 
                 );
 
-                sshHelper.ExportPrefixes = string.IsNullOrEmpty(prefixes) ? sshHelper.ExportPrefixesDefault : prefixes;
 
 
-                Stopwatch stopwatch = new Stopwatch();
+
+                Stopwatch stopwatch1 = new Stopwatch();
+                Stopwatch stopwatch2 = new Stopwatch();
                 //Connect SSH
                 sshHelper.SshClient = new SshClient(ConnNfo);
+                sshHelper.SshClient.ConnectionInfo.Timeout = new TimeSpan(0, 0, 10);
+
+                th.Benchmark("Create Client");
 
                 if (!string.IsNullOrEmpty(winDir))
                 {
@@ -207,32 +231,36 @@ namespace MantaRay.Components
 
 
 
-                if (!string.IsNullOrEmpty(subfolder))
+                if (!string.IsNullOrEmpty(projectName))
                 {
-                    sshHelper.ProjectSubPath = subfolder;
+                    sshHelper.ProjectSubPath = projectName;
                 }
                 else
                 {
                     sshHelper.ProjectSubPath = SSH_Helper.DefaultProjectSubFolder;
                 }
 
+                StringBuilder sbSSH = new StringBuilder();
 
 
 
+                th.Benchmark("Setup Paths");
 
-
+                //var ConnectSSH = Task.Factory.StartNew(() =>
+                //{
 
                 try
                 {
                     sshHelper.HomeDirectory = null;
                     sshHelper.SshClient.Connect();
 
-                    sb.AppendFormat("SSH:  Connected in {0} ms\n", stopwatch.ElapsedMilliseconds);
+                    sbSSH.AppendFormat("SSH:  Connected in {0} ms\n", stopwatch1.ElapsedMilliseconds);
+
 
                 }
                 catch (Renci.SshNet.Common.SshAuthenticationException e)
                 {
-                    sb.AppendLine("SSH: Connection Denied??\n" + e.Message);
+                    sbSSH.AppendLine("SSH: Connection Denied??\n" + e.Message);
                     var mb = MessageBox.Show("Wrong SSH Password? Wrong username? Try again?", "SSH Connection Denied", MessageBoxButtons.RetryCancel);
                     if (mb == DialogResult.Retry)
                     {
@@ -243,12 +271,19 @@ namespace MantaRay.Components
                         }
 
                     }
+                    else
+                    {
+                        sb.Append("\nCancelled!");
+                        DA.SetData("status", sb.ToString());
+                        return;
+                    }
                 }
+
 
 
                 catch (System.Net.Sockets.SocketException e)
                 {
-                    sb.AppendFormat("SSH:  Could not find the SSH server\n      {0}\n      Try restarting it locally in " +
+                    sbSSH.AppendFormat("SSH:  Could not find the SSH server\n      {0}\n      Try restarting it locally in " +
                         "your bash with the command:\n    $ sudo service ssh start\n", e.Message);
 
                     if (String.Equals(ip, "127.0.0.1") || String.Equals(ip, "localhost"))
@@ -278,80 +313,150 @@ namespace MantaRay.Components
                 }
                 catch (Exception e)
                 {
-                    sb.AppendFormat("SSH:  {0}\n", e.Message);
+                    sbSSH.AppendFormat("SSH:  {0}\n", e.Message);
                 }
+                sbSSH.Append("\n");
+
+                //});
+
+                th.Benchmark("SSH Connected");
 
 
-                sb.Append("\n");
 
-                stopwatch.Restart();
+                StringBuilder sbFTP = new StringBuilder();
 
-                //Connect Sftp
-                sshHelper.SftpClient = new SftpClient(ConnNfo);
-                try
+                //var ConnectSFTP = Task.Factory.StartNew(() =>
+                //{
+                stopwatch2.Restart();
+                if (sshHelper.SshClient != null && sshHelper.SshClient.IsConnected)
                 {
-                    sshHelper.HomeDirectory = null;
-                    sshHelper.SftpClient.Connect();
 
-                    sb.AppendFormat("Sftp: Connected in {0} ms\n", stopwatch.ElapsedMilliseconds);
+                    //Connect Sftp
+                    sshHelper.SftpClient = new SftpClient(ConnNfo);
+                    sshHelper.SshClient.ConnectionInfo.Timeout = new TimeSpan(0, 0, 10);
+                    try
+                    {
+
+                        sshHelper.HomeDirectory = null;
+                        sshHelper.SftpClient.Connect();
+
+                        sbFTP.AppendFormat("Sftp: Connected in {0} ms\n", stopwatch2.ElapsedMilliseconds);
+
+                    }
+                    catch (Renci.SshNet.Common.SftpPermissionDeniedException e)
+                    {
+                        sbFTP.AppendLine("Sftp: Wrong password??\n" + e.Message);
+                    }
+                    catch (System.Net.Sockets.SocketException e)
+                    {
+                        sbFTP.AppendFormat("Sftp: Could not find the Sftp server\n      {0}\n      Try restarting it locally in " +
+                            "your bash with the command:\n    $ sudo service ssh start\n", e.Message);
+                    }
+                    catch (Exception e)
+                    {
+                        sbFTP.AppendFormat("Sftp: {0}\n", e.Message);
+                    }
+
+                    sbFTP.Append("\n");
+
+                    if (!string.IsNullOrEmpty(sftpDir))
+                    {
+                        sshHelper.SftpHome = sftpDir + (sftpDir.Contains("/") ? "/" : "\\") + sshHelper.ProjectSubPath;
+                    }
+                    else
+                    {
+
+                        //sshHelper.SftpHome = sshHelper.SftpClient.WorkingDirectory;
+                        sshHelper.SftpHome = sshHelper.LinuxHome;
+                    }
+
+                    sbFTP.AppendFormat("SSH:  Created server directory {0}\n\n", sshHelper.LinuxHome);
 
                 }
-                catch (Renci.SshNet.Common.SftpPermissionDeniedException e)
+                //});
+
+
+
+                //try
+                //{
+                //    Task.WaitAll(new[] { ConnectSSH, ConnectSFTP });
+                //    //{
+                //    sb.Append(sbSSH);
+                //    sb.Append(sbFTP);
+
+                //    //}
+                //    //else
+                //    //{
+                //    //    sb.Append("Attempt timed out (5000ms)");
+                //    //}
+
+
+                //}
+                //catch (AggregateException ae)
+                //{
+                //    foreach (var e in ae.InnerExceptions)
+                //    {
+                //        throw e;
+                //    }
+                //}
+
+
+
+
+                int pad = 45;
+
+
+                sb.AppendFormat("SSH:  Set   <WinHome> to {0}\n", sshHelper.WinHome);
+                sb.AppendFormat("SSH:  Set <LinuxHome> to {0}\n", sshHelper.LinuxHome);
+                sb.AppendFormat("SSH:  Set   <Project> to {0}\n", sshHelper.ProjectSubPath);
+                sb.AppendFormat("SSH:  Set  <SftpHome> to {0} This is used in the upload components\n", sshHelper?.SftpHome?.PadRight(pad, '.') ?? "");
+
+                GlobalsHelper.GlobalsFromConnectComponent["WinHome"] = sshHelper.WinHome;
+                GlobalsHelper.GlobalsFromConnectComponent["LinuxHome"] = sshHelper.LinuxHome;
+                GlobalsHelper.GlobalsFromConnectComponent["Project"] = sshHelper.ProjectSubPath;
+                GlobalsHelper.GlobalsFromConnectComponent["SftpHome"] = sshHelper.SftpHome;
+
+                if (sshHelper.CheckConnection() == SSH_Helper.ConnectionDetails.Connected)
                 {
-                    sb.AppendLine("Sftp: Wrong password??\n" + e.Message);
-                }
-                catch (System.Net.Sockets.SocketException e)
-                {
-                    sb.AppendFormat("Sftp: Could not find the Sftp server\n      {0}\n      Try restarting it locally in " +
-                        "your bash with the command:\n    $ sudo service ssh start\n", e.Message);
-                }
-                catch (Exception e)
-                {
-                    sb.AppendFormat("Sftp: {0}\n", e.Message);
+                    string cpuSB = (int.Parse(sshHelper.Execute("nproc --all")) - 1).ToString();
+                    GlobalsHelper.GlobalsFromConnectComponent["cpus"] = cpuSB;
+                    sb.AppendFormat("SSH:  Set      <cpus> to {0} Locally you would have used {1}\n", cpuSB.PadRight(pad, '.'), (Environment.ProcessorCount - 1).ToString());
+
                 }
 
-                sb.Append("\n");
 
-                if (!string.IsNullOrEmpty(sftpDir))
+                sshHelper.ExportPrefixes = string.IsNullOrEmpty(prefixes) ? sshHelper.ExportPrefixesDefault : prefixes.ApplyGlobals(GlobalsHelper.GlobalsFromConnectComponent);
+
+                th.Benchmark("SFTP connected2");
+
+                WasConnected = sshHelper.SshClient.IsConnected && sshHelper.SftpClient.IsConnected;
+
+                int relComponents = OnPingDocument().Objects
+                    .OfType<GH_Template_Async_Extended>()
+                    .Where(c => c.PhaseForColors == GH_Template_Async_Extended.AestheticPhase.Disconnected).Count();
+
+
+                if (WasConnected && relComponents > 0)
                 {
-                    sshHelper.SftpHome = sftpDir + (sftpDir.Contains("/") ? "/" : "\\") + sshHelper.ProjectSubPath;
+                    var mb = MessageBox.Show($"Rerun {relComponents} disconnected Execute components?", "Rerun expired components?", MessageBoxButtons.YesNo);
+                    if (mb == DialogResult.Yes)
+                    {
+                        OnPingDocument().ScheduleSolution(20, UpdateAllExecutes);
+
+                    }
+
+
+
                 }
-                else
-                {
-                    sshHelper.SftpHome = sshHelper.SftpClient.WorkingDirectory;
-                }
+
+
+
             }
             else
             {
 
                 TryDisconnect();
                 sb.Append("Sftp + SSH: Disconnected\n");
-            }
-
-            //sshHelper.Execute($"mkdir -p {sshHelper.LinuxFullpath}");
-
-
-            sb.AppendFormat("SSH:  Created server directory {0}\n\n", sshHelper.LinuxHome);
-
-            int pad = 45;
-
-
-            sb.AppendFormat("SSH:  Set   <WinHome> to {0}\n", sshHelper.WinHome);
-            sb.AppendFormat("SSH:  Set <LinuxHome> to {0}\n", sshHelper.LinuxHome);
-            sb.AppendFormat("SSH:  Set   <Project> to {0}\n", sshHelper.ProjectSubPath);
-            sb.AppendFormat("SSH:  Set  <SftpHome> to {0} This is used in the upload components\n", sshHelper.SftpHome.PadRight(pad, '.'));
-
-            GlobalsHelper.GlobalsFromConnectComponent["WinHome"] = sshHelper.WinHome;
-            GlobalsHelper.GlobalsFromConnectComponent["LinuxHome"] = sshHelper.LinuxHome;
-            GlobalsHelper.GlobalsFromConnectComponent["Project"] = sshHelper.ProjectSubPath;
-            GlobalsHelper.GlobalsFromConnectComponent["SftpHome"] = sshHelper.SftpHome;
-
-            if (sshHelper.CheckConnection() == SSH_Helper.ConnectionDetails.Connected)
-            {
-                string cpuSB = (int.Parse(sshHelper.Execute("nproc --all")) - 1).ToString();
-                GlobalsHelper.GlobalsFromConnectComponent["cpus"] = cpuSB;
-                sb.AppendFormat("SSH:  Set      <cpus> to {0} Locally you would have used {1}\n", cpuSB.PadRight(pad, '.'), (Environment.ProcessorCount - 1).ToString());
-
             }
 
             DA.SetData("status", sb.ToString());
@@ -371,11 +476,24 @@ namespace MantaRay.Components
 
         }
 
+        public void UpdateAllExecutes(GH_Document doc)
+        {
+            
+                foreach (var obj in OnPingDocument().Objects
+                    .OfType<GH_Template_Async_Extended>()
+                    .Where(c => c.PhaseForColors == GH_Template_Async_Extended.AestheticPhase.Disconnected))
+                {
+                    obj.ExpireSolution(false);
+                }
 
+                Grasshopper.Instances.ActiveCanvas.Document.ScheduleSolution(5);
+
+            
+        }
 
         public void TryDisconnect()
         {
-            sshHelper.Disconnect();
+            sshHelper?.Disconnect();
         }
 
         public override void RemovedFromDocument(GH_Document document)
@@ -391,7 +509,7 @@ namespace MantaRay.Components
             if (document.Objects.Contains(this))
             {
 
-                var allData = this.Params.Input[connectID].VolatileData.AllData(false);
+                var allData = this.Params.Input[connectID].VolatileData.AllData(false); // run input parameter
                 bool isRunSet = allData.Count() > 0;
 
 
@@ -470,7 +588,32 @@ namespace MantaRay.Components
             get { return new Guid("1B57442F-E5FE-4462-9EB0-564497CB076E"); }
         }
 
-        
+        public static void ReconnectIfNeeded()
+        {
+            Grasshopper.Instances.ActiveCanvas.Document.ScheduleSolution(100, ReconnectIfNeeded);
+        }
+
+        public static GH_Connect GetActiveComponent(GH_Document doc)
+        {
+            return doc.Objects.OfType<GH_Connect>().FirstOrDefault(c => !c.Locked);
+        }
+
+        private static void ReconnectIfNeeded(GH_Document doc)
+        {
+            var comp = GetActiveComponent(doc);
+            if (comp != null)
+            {
+                if (comp.WasConnected && (comp.sshHelper == null || comp.sshHelper.SshClient == null || !comp.sshHelper.SshClient.IsConnected || comp.sshHelper.SftpClient == null || !comp.sshHelper.SftpClient.IsConnected))
+                {
+                    comp.ExpireSolution(true);
+                }
+
+            }
+        }
+
+
+
+
 
         private bool GetCredentials(string username, string ip, out string password)
         {
@@ -583,6 +726,18 @@ namespace MantaRay.Components
                 return false;
 
             }
+        }
+
+        public GH_ObjectResponse OnDoubleClick(GH_Canvas sender, GH_CanvasMouseEvent e)
+        {
+            this.ExpireSolution(true);
+            return GH_ObjectResponse.Handled;
+        }
+
+        public override void CreateAttributes()
+        {
+            m_attributes = new GH_DoubleClickAttributes(this);
+
         }
     }
 }

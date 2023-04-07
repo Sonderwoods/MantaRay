@@ -5,6 +5,7 @@ using Grasshopper.Kernel;
 using Grasshopper.Kernel.Data;
 using Grasshopper.Kernel.Types;
 using Grasshopper.Plugin;
+using MantaRay.Components;
 using MantaRay.Components.Templates;
 using MantaRay.Helpers;
 using MantaRay.Types;
@@ -275,7 +276,7 @@ namespace MantaRay
         public void SetPanelColors()
         {
             System.Drawing.Color color = RuntimeMessages(GH_RuntimeMessageLevel.Warning).Count + RuntimeMessages(GH_RuntimeMessageLevel.Error).Count > 0 ? Color.FromArgb(255, 250, 210, 210) : Color.FromArgb(255, 160, 190, 160);
-            if(this.PhaseForColors == AestheticPhase.NotRunning)
+            if (this.PhaseForColors == AestheticPhase.NotRunning)
             {
                 color = Color.Gray;
             }
@@ -285,17 +286,28 @@ namespace MantaRay
                 var param = (GH_Param<GH_String>)panel;
                 foreach (IGH_Param src in param.Sources)
                 {
-                    if(src.Attributes.GetTopLevel.InstanceGuid == this.InstanceGuid && object.ReferenceEquals(Params.Output[1], src))
+                    if (src.Attributes.GetTopLevel.InstanceGuid == this.InstanceGuid && object.ReferenceEquals(Params.Output[1], src))
                     {
                         panel.Properties.Colour = color;
                     }
                     if (src.Attributes.GetTopLevel.InstanceGuid == this.InstanceGuid && object.ReferenceEquals(Params.Output[0], src))
                     {
-                        panel.Properties.Colour = Color.FromArgb(200, 255,255,255);
+                        panel.Properties.Colour = Color.FromArgb(200, 255, 255, 255);
                     }
                 }
-
             }
+        }
+
+        void SetToNoConnection()
+        {
+
+
+            Message = RunTime.TotalMilliseconds > 0 ? $"No Connection, ran for {RunTime.ToShortString()}" : "No Connection";
+
+
+
+            PhaseForColors = AestheticPhase.Disconnected;
+            //AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "No Connection");
         }
 
         public override bool Read(GH_IReader reader)
@@ -443,6 +455,17 @@ namespace MantaRay
 
                     SSH_Helper sshHelper = SSH_Helper.CurrentFromDocument(Parent.OnPingDocument());
 
+                    bool isConnected = sshHelper.CheckConnection() == SSH_Helper.ConnectionDetails.Connected;
+
+                    if (!isConnected)
+                    {
+                        MantaRay.Components.GH_Connect.ReconnectIfNeeded();
+                        ((GH_Template_Async_Extended)Parent).RunTime = new TimeSpan(0);
+                        ((GH_ExecuteAsync)Parent).SetToNoConnection();
+                        return;
+                    }
+
+
 
                     Renci.SshNet.SshCommand cmd = null;
                     (asyncResult, cmd, pid) = sshHelper.ExecuteAsync(command, prependPrefix: ((GH_ExecuteAsync)Parent).addPrefix, ((GH_ExecuteAsync)Parent).addSuffix, HasZeroAreaPolygons);
@@ -451,7 +474,7 @@ namespace MantaRay
                     // TODO Need to get pid through "beginexecute" instead of "execute" of SSH.
                     int counter = 0;
                     int intervalForRefreshing = 100; //ms in each loop below.
-                    int waitingForNewConnection = 5; // max iterations after checkconnection fails before throwing cancellation (this will give 1000ms to reconnect before changing context)
+                    //int waitingForNewConnection = 5; // max iterations after checkconnection fails before throwing cancellation (this will give 1000ms to reconnect before changing context)
                     int dotCounter = 0;
                     string[] dots = new[] { "", ".", "..", "..." };
                     while (true && asyncResult != null)
@@ -493,9 +516,21 @@ namespace MantaRay
                             break;
                         }
 
-                        if (sshHelper.CheckConnection() != SSH_Helper.ConnectionDetails.Connected && waitingForNewConnection-- <= 0)
+                        //if (sshHelper.CheckConnection() != SSH_Helper.ConnectionDetails.Connected && waitingForNewConnection-- <= 0)
+                        //{
+                        //    ((GH_ExecuteAsync)Parent).RequestCancellation();
+                        //    //ran = false;
+                        //    //break;
+
+                        //    // TODO: Make an error that we lost the connection?
+
+                        //}
+
+                        if (sshHelper?.SshClient == null || !sshHelper.SshClient.IsConnected)
                         {
-                            ((GH_ExecuteAsync)Parent).RequestCancellation();
+                            ((GH_ExecuteAsync)Parent).SetToNoConnection();
+                            GH_Connect.ReconnectIfNeeded();
+                            return;
                             //ran = false;
                             //break;
 

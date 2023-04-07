@@ -172,7 +172,13 @@ namespace MantaRay.Helpers
             switch (pathType)
             {
                 case PathType.Linux:
-                    return "/" + LinuxToWindows(s).Replace("\\","/");
+                    string p = LinuxToWindows(s).Replace("\\", "/");
+                    if (p.StartsWith("/~"))
+                    {
+                        return p.Substring(1);
+                    }
+                    else
+                        return p;
 
 
                 case PathType.Windows:

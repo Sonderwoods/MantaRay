@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Windows.Forms;
 using Grasshopper.Kernel;
 using Grasshopper.Kernel.Parameters;
@@ -99,8 +100,10 @@ namespace MantaRay.Components
                 int branchIndex = input.VolatileData.PathCount == 1 ? 0 : this.RunCount - 1;
 
                 if (input.VolatileData.PathCount <= branchIndex)
-                    throw new ArgumentOutOfRangeException(input.NickName);
-
+                {
+                    AddRuntimeMessage(GH_RuntimeMessageLevel.Error, $"issues with {input.NickName}");
+                    continue;
+                }
 
                 System.Collections.IList dataList = input.VolatileData.get_Branch(branchIndex);
 
@@ -109,7 +112,7 @@ namespace MantaRay.Components
                     if (localsTest.ContainsKey(input.NickName))
                     {
                         AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, $"Key {input.NickName} (in the dynamic parameters) already exists. Overwritten to {s.Value}");
-                    }
+                    } 
 
 
                     localsTest[input.NickName] = s.Value;

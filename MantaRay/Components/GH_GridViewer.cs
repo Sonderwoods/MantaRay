@@ -186,10 +186,14 @@ namespace MantaRay
             double globalMin = double.MaxValue;
             double globalMax = double.MinValue;
 
-            for (int g = 0; g < grids.Count; g++)
+            for (int g = 0; g < allResults.Branches.Count; g++)
             {
-                globalMin = Math.Min(globalMin, ((List<GH_Number>)allResults.get_Branch(g)).Select(r => r.Value).Min());
-                globalMax = Math.Max(globalMax, ((List<GH_Number>)allResults.get_Branch(g)).Select(r => r.Value).Max());
+                if (allResults.get_Branch(g).Count > 0)
+                {
+
+                    globalMin = Math.Min(globalMin, ((List<GH_Number>)allResults.get_Branch(g)).Select(r => r.Value).Min());
+                    globalMax = Math.Max(globalMax, ((List<GH_Number>)allResults.get_Branch(g)).Select(r => r.Value).Max());
+                }
             }
 
 
@@ -201,7 +205,11 @@ namespace MantaRay
 
 
             if (allResults.Branches.Count != grids.Count)
-                throw new Exception("Grid count doesnt match results");
+            {
+                AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Grid count doesnt match results");
+                return;
+            }
+
 
 
             //var colorDomain = Misc.AutoDomain(gradientRange, allResults);
@@ -251,12 +259,20 @@ namespace MantaRay
             {
                 //AddRuntimeMessage(GH_RuntimeMessageLevel.Remark, $"Mesh vertices: {grids[i].SimMesh.Vertices.Count}, colors = {gp.GetColors(allResults.Branches[i].Select(p => p.Value).ToArray()).Length} f");
 
+                try
+                {
+                    outMeshes.Add(grids[i].GetColoredMesh(gp.GetColors(allResults.Branches[i].Select(p => p.Value).ToArray())));
+                    Mesh m = grids[i].SimMesh;
+                    Point3d[] points = grids[i].SimPoints.ToArray();
+                    outMeshes[outMeshes.Count - 1].Translate(0, 0, UnitHelper.FromMeter(0.001));
 
-                outMeshes.Add(grids[i].GetColoredMesh(gp.GetColors(allResults.Branches[i].Select(p => p.Value).ToArray())));
+                }
+                catch (ArgumentOutOfRangeException e)
+                {
+                    AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, e.Message + $"Indexed at {i}");
+                }
 
-                Mesh m = grids[i].SimMesh;
-                Point3d[] points = grids[i].SimPoints.ToArray();
-                outMeshes[outMeshes.Count - 1].Translate(0, 0, UnitHelper.FromMeter(0.001));
+
             }
 
 
@@ -284,7 +300,7 @@ namespace MantaRay
             GH_Structure<GH_String> outValues = new GH_Structure<GH_String>();
             GH_Structure<GH_Colour> outColors = new GH_Structure<GH_Colour>();
 
-            const double SCALAR = 1; // don't change.
+            const double SCALAR = 1; // don't change, its here for debugging purposes.
 
 
 
@@ -309,6 +325,11 @@ namespace MantaRay
                 {
                     results = Helpers.RTreeHelper.FindClosestWeightedValues(grids[g], results, true).ToList();
                     // ADD CONVERSION TODO:
+                }
+
+                if (results.Count == 0)
+                {
+                    continue;
                 }
 
                 inputMesh.Normals.ComputeNormals();
@@ -441,12 +462,14 @@ namespace MantaRay
 
                         meshFromCurves = GetMeshFromCurves(intersectedCurves, mp, in col);
 
-                        meshFromCurves.Transform(Transform.Translation(0, 0, (cuttingCount + 1) * Rhino.RhinoDoc.ActiveDoc.ModelAbsoluteTolerance * 12.0));
+
+
 
 
 
                         if (meshFromCurves != null)
                         {
+                            meshFromCurves.Transform(Transform.Translation(0, 0, (cuttingCount + 1) * Rhino.RhinoDoc.ActiveDoc.ModelAbsoluteTolerance * 12.0));
 
                             //oLayeredMeshes.AppendRange(meshesFromCurves.Select(m => new GH_Mesh(m)), path);
                             oLayeredMeshes.Append(new GH_Mesh(meshFromCurves), path);
@@ -570,11 +593,10 @@ namespace MantaRay
         /// Returns the mesh extruded
         /// </summary>
         /// <param name="SCALAR"></param>
-        /// <param name="OFFSET"></param>
         /// <param name="baseMesh"></param>
         /// <param name="results"></param>
         /// <param name="cuttingPlane"></param>
-        /// <returns></returns>
+        /// <returns>returns null if there are no results</returns>
         private static Mesh CreateMeshToBeCut(in double SCALAR, Mesh baseMesh, List<double> results, Plane cuttingPlane)
         {
 
@@ -582,7 +604,10 @@ namespace MantaRay
             var normal = (Vector3f)(cuttingPlane.ZAxis);
 
 
-
+            if (results.Count == 0)
+            {
+                return null;
+            }
 
             planeBottomToProjectTo.Transform(Transform.Translation(-cuttingPlane.ZAxis + cuttingPlane.ZAxis * results.Min()));
 

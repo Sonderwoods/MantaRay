@@ -43,6 +43,27 @@ namespace MantaRay.Helpers
             return false;
         }
 
+        public static string ToSafeName(this string line)
+        {
+            char[] chars = line.ToCharArray();
+
+            if (chars.Length > 0 && false == (chars[0] >= 'a' && chars[0] <= 'z' || chars[0] >= 'A' && chars[0] <= 'Z'))
+            {
+                chars[0] = '_';
+            }
+
+            for (int i = 0; i < chars.Length; i++)
+            {
+
+                if (false == ((chars[i] >= 'a' && chars[i] <= 'z') ||  chars[i] >= 'A' && chars[i] <= 'Z' || (chars[i] >= '0' && chars[i] <= '9')))
+                {
+                    chars[i] = '_';
+                }
+            }
+
+            return new string(chars);
+        }
+
         /// <summary>
         /// https://stackoverflow.com/questions/842057/how-do-i-convert-a-timespan-to-a-formatted-string
         /// </summary>

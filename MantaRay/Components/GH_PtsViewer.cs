@@ -4,6 +4,7 @@ using System.Globalization;
 using System.Linq;
 using Grasshopper.Kernel;
 using MantaRay.Components;
+using MantaRay.Helpers;
 using Rhino.Geometry;
 
 namespace MantaRay.Components
@@ -30,7 +31,8 @@ namespace MantaRay.Components
         {
             pManager.AddTextParameter("PtsString", "pts string", "EITHER\n\npoints file (Windows location)\n" +
                 "The pts file has to be locally on windows, so use the download component first\n\nOR\n\n" +
-                "A string containing the pts content (ie, from 'cat myPts.pts')", GH_ParamAccess.list);
+                "A string containing the pts content (ie, from 'cat myPts.pts')\n\n" +
+                "Note that we are assuming that the units in the pts file is in meters, no matter the units of the Rhino file!", GH_ParamAccess.list);
             
         }
 
@@ -83,7 +85,7 @@ namespace MantaRay.Components
 
                 double[] n = line.Replace('\t', ' ').Split(' ')
                     .Where(s => !String.IsNullOrEmpty(s))
-                    .Select(s => double.Parse(s, CultureInfo.InvariantCulture)).ToArray();
+                    .Select(s => double.Parse(s, CultureInfo.InvariantCulture).FromMeter()).ToArray();
                 if (n.Length == 6)
                 {
                     planes.Add(new Plane(new Point3d(n[0], n[1], n[2]), new Vector3d(n[3], n[4], n[5])));

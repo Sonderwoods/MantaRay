@@ -6,6 +6,7 @@ using Grasshopper.Kernel.Data;
 using Grasshopper.Kernel.Types;
 using MantaRay.Components;
 using MantaRay.Helpers;
+using MantaRay.Radiance;
 using Rhino.Geometry;
 
 namespace MantaRay.Components
@@ -78,10 +79,7 @@ namespace MantaRay.Components
                     this.AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, "Transmittance below 0.3 are uncommon");
 
 
-                materialList.Add($"void glass {name}\n" +
-                $"0\n" +
-                $"0\n" +
-                $"3 {TransmittanceToTransmissivity(transmittance):0.000} {TransmittanceToTransmissivity(transmittance):0.000} {TransmittanceToTransmissivity(transmittance):0.000}");
+                materialList.Add(Material.CreateGlassFromTransmittance(name, transmittance, out _).ToString());
             }
 
             DA.SetData(0, String.Join("\n", materialList));

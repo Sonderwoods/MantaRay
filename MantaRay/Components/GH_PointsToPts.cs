@@ -8,18 +8,20 @@ using Grasshopper.Kernel.Types;
 using MantaRay.Components;
 using Rhino.Geometry;
 using MantaRay.Helpers;
+using System.Globalization;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement.TextBox;
+using Renci.SshNet;
 
 namespace MantaRay.Components
 {
-    public class GH_PointsToPts : GH_Template
+    public class GH_PointsToPts : GH_Template_SaveStrings
     {
         /// <summary>
         /// Initializes a new instance of the GH_PointsToPts class.
         /// </summary>
         public GH_PointsToPts()
           : base("Points To .pts", "Points2pts",
-              "Export a list of points and vectors to a pts  file. If no vectors are supplied, we assume vect=Z.\n" +
-                "Uploads the pts file to the linux server",
+              "Formats list of points and vectors to a pts string. Use this to write it through the execute component\n\nNote that the string is already formatted to radiance units (meters)",
               "2 Radiance")
         {
         }
@@ -29,10 +31,8 @@ namespace MantaRay.Components
         /// </summary>
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
-            pManager.AddPointParameter("Points", "Points", "Points", GH_ParamAccess.list);
-            pManager[pManager.AddVectorParameter("Vectors","Vectors","Vectors. Default is 0,0,1", GH_ParamAccess.list, new Vector3d(0,0,1))].Optional = true;
-            pManager[pManager.AddTextParameter("Name", "Name", "Name (will save name.pts)", GH_ParamAccess.item, "points")].Optional = true;
-            pManager[pManager.AddTextParameter("Subfolder Override", "Subfolder Override", "Optional. Override the subfolder from the connection component.", GH_ParamAccess.item, "")].Optional = true;
+            pManager.AddPointParameter("Points", "Points", "Points\nIn Rhino units. Will automatically be converted to meter in the radiance string!", GH_ParamAccess.list);
+            pManager[pManager.AddVectorParameter("Vectors", "Vectors", "Vectors. Default is 0,0,1", GH_ParamAccess.list, new Vector3d(0, 0, 1))].Optional = true;
             pManager.AddBooleanParameter("Run", "Run", "Run", GH_ParamAccess.item);
 
         }
@@ -42,9 +42,10 @@ namespace MantaRay.Components
         /// </summary>
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
-            pManager.AddTextParameter("pts file", "pts file", "pts file", GH_ParamAccess.item);
+            pManager.AddTextParameter("pts string", "pts string", "pts string", GH_ParamAccess.list);
             pManager.AddTextParameter("Run", "Run", "Run", GH_ParamAccess.tree);
         }
+
 
         /// <summary>
         /// This is the method that actually does the work.
@@ -53,27 +54,32 @@ namespace MantaRay.Components
         protected override void SolveInstance(IGH_DataAccess DA)
         {
 
-            
-
-
-            string name = DA.Fetch<string>(this, "Name").ApplyGlobals();
+            if (!CheckIfRunOrUseOldResults(DA, 0, true)) return; //template
 
             List<Point3d> pts = DA.FetchList<Point3d>(this, "Points");
             List<Vector3d> vects = DA.FetchList<Vector3d>(this, "Vectors");
             StringBuilder ptsFile = new StringBuilder();
-            StringBuilder sb = new StringBuilder();
 
-            SSH_Helper sshHelper = SSH_Helper.CurrentFromDocument(OnPingDocument());
+
+
+            //Read and parse the input.
+            var runTree = new GH_Structure<GH_Boolean>();
+            runTree.Append(new GH_Boolean(DA.Fetch<bool>(this, "Run")));
+            Params.Output[Params.Output.Count - 1].ClearData();
+            DA.SetDataTree(Params.Output.Count - 1, runTree);
 
 
             if (pts.Count == 0)
             {
-                throw new Exception("No points");
+                AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, "No Points");
+                return;
+
             }
 
             if (pts.Count > 1 && vects.Count > 1 && pts.Count != vects.Count)
             {
-                throw new Exception("vector count and point count does not match");
+                AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "vector count and point count does not match");
+                return;
             }
 
             if (vects.Count == 0)
@@ -89,93 +95,26 @@ namespace MantaRay.Components
                 }
             }
 
-            string workingDir;
 
-            string subfolderOverride = DA.Fetch<string>(this, "Subfolder Override").ApplyGlobals().Replace('\\','/').Trim('/');
-
-
-            if (string.IsNullOrEmpty(subfolderOverride))
+            for (int i = 0; i < pts.Count; i++)
             {
-                workingDir = sshHelper.WinHome;
+                ptsFile.AppendFormat(CultureInfo.InvariantCulture, "{0} {1} {2} {3} {4} {5}\r\n", pts[i].X.ToMeter(), pts[i].Y.ToMeter(), pts[i].Z.ToMeter(), vects[i].X, vects[i].Y, vects[i].Z);
             }
-            else
+
+            DA.SetData(0, ptsFile.ToString());
+
+            if (RunCount == 1)
             {
-                workingDir = sshHelper.WindowsParentPath + "\\" + subfolderOverride;
+                OldResults = new string[Params.Input[0].VolatileData.PathCount];
             }
-
-            workingDir = (workingDir.EndsWith("\\") || workingDir.EndsWith("/")) ? workingDir : workingDir + "\\";
-
-
-            string ptsFilePath = $"{workingDir}{name}.pts";
-
-            // Create windows directories
-            if (!System.IO.Directory.Exists(System.IO.Path.GetDirectoryName(ptsFilePath)))
-                System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(ptsFilePath));
-
-
-
-
-            switch (Rhino.RhinoDoc.ActiveDoc.GetUnitSystemName(true, false, true, false))
-                {
-                case "meter":
-                    for (int i = 0; i < pts.Count; i++)
-                    {
-                        ptsFile.AppendFormat("{0:0.000} {1:0.000} {2:0.000} {3:0.000} {4:0.000} {5:0.000}\r\n", pts[i].X, pts[i].Y, pts[i].Z, vects[i].X, vects[i].Y, vects[i].Z);
-                    }
-                    break;
-                case "millimeter":
-                    for (int i = 0; i < pts.Count; i++)
-                    {
-                        ptsFile.AppendFormat("{0:0} {1:0} {2:0} {3:0} {4:0} {5:0}\r\n", pts[i].X, pts[i].Y, pts[i].Z, vects[i].X, vects[i].Y, vects[i].Z);
-                    }
-                    break;
-                default:
-                    for (int i = 0; i < pts.Count; i++)
-                    {
-                        ptsFile.AppendFormat("{0} {1} {2} {3} {4} {5}\r\n", pts[i].X, pts[i].Y, pts[i].Z, vects[i].X, vects[i].Y, vects[i].Z);
-                    }
-                    break;
-
-
-            }
-
-
-            //Read and parse the input.
-            var runTree = new GH_Structure<GH_Boolean>();
-            runTree.Append(new GH_Boolean(DA.Fetch<bool>(this, "Run")));
-            Params.Output[Params.Output.Count - 1].ClearData();
-            DA.SetDataTree(Params.Output.Count - 1, runTree);
-
-            if (DA.Fetch<bool>(this, "Run"))
+            if (OldResults != null && OldResults.Length >= RunCount)
             {
-                System.IO.File.WriteAllText(ptsFilePath, ptsFile.ToString());
 
-                string linuxPath = string.IsNullOrEmpty(subfolderOverride) ? sshHelper.LinuxHome : sshHelper.LinuxParentPath + "/" + subfolderOverride;
-
-                try
-                {
-
-                    //SSH_Helper.Upload(ptsFilePath, linuxPath, sb);
-                    sshHelper.Upload(ptsFilePath, linuxPath, sb);
-
-                }
-                catch (Renci.SshNet.Common.SftpPathNotFoundException e)
-                {
-                    sb.AppendFormat("Could not upload files - Path not found ({0})! {1}", ptsFilePath, e.Message);
-
-                }
-
-                DA.SetData(0, ptsFilePath.ToLinuxPath());
+                OldResults[RunCount - 1] = ptsFile.ToString();
             }
-            else
-            {
-                if (sshHelper.FileExistsInLinux(ptsFilePath.ToLinuxPath()))
-                {
-                    DA.SetData(0, ptsFilePath.ToLinuxPath());
-                    AddRuntimeMessage(GH_RuntimeMessageLevel.Remark, "Reusing points from existing file");
-                }
-                    
-            }
+
+
+
 
 
         }
@@ -188,7 +127,7 @@ namespace MantaRay.Components
         /// </summary>
         public override Guid ComponentGuid
         {
-            get { return new Guid("1FE05399-3EF7-4264-A811-D7AF73769D48"); }
+            get { return new Guid("1FE05399-3EF7-42A4-A811-D7AF23769D48"); }
         }
     }
 }

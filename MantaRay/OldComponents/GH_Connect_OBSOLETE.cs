@@ -27,6 +27,7 @@ namespace MantaRay.OldComponents
         {
         }
 
+        public override GH_Exposure Exposure => GH_Exposure.hidden; 
         private string _pw;
         int connectID = 0;
 

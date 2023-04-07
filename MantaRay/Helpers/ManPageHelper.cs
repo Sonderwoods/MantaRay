@@ -10,6 +10,7 @@ using System.Diagnostics;
 using System.Drawing;
 using System.Windows.Forms;
 using MantaRay.Setup;
+using System.Net;
 
 namespace MantaRay
 {
@@ -23,12 +24,23 @@ namespace MantaRay
 
 
 
+        /// <summary>
+        /// Sets paths to all the manpages from https://floyd.lbl.gov/radiance/whatis.html
+        /// </summary>
+        /// <returns></returns>
+        /// <exception cref="HttpRequestException"></exception>
         public async Task<bool> Fetch()
         {
 
             AllRadiancePrograms.Clear();
             using (var client = new HttpClient())
             {
+
+                // Ugly and perhaps dangerous way of bypassing expired SSL certificates on floyd. however we are not sending any confidential info, are we?
+                ServicePointManager.ServerCertificateValidationCallback +=
+                (sender, cert, chain, sslPolicyErrors) => true;
+
+
                 client.DefaultRequestHeaders.Add("User-Agent", ConstantsHelper.ProjectName);
                 client.Timeout = new TimeSpan(0, 0, 5);
                 string content = default;

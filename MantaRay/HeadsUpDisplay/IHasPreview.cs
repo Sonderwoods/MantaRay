@@ -8,7 +8,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace MantaRay.RadViewer.HeadsUpDisplay
+namespace MantaRay.Radiance.HeadsUpDisplay
 {
     /// <summary>
     /// IHasPreview must be used for all HUD items

@@ -12,7 +12,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
-namespace MantaRay.RadViewer.HeadsUpDisplay
+namespace MantaRay.Radiance.HeadsUpDisplay
 {
     public class HUD
     {
