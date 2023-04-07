@@ -33,6 +33,8 @@ namespace MantaRay.Components
         {
         }
 
+        public bool WasConnected { get; set; } = false;
+
         private string _pw;
         int connectID = 0;
         SSH_Helper sshHelper;
@@ -92,6 +94,7 @@ namespace MantaRay.Components
             sshHelper = new SSH_Helper();
             ManPageHelper.Initiate();
             bool run = DA.Fetch<bool>(this, "connect");
+            WasConnected = false;
 
 
 
@@ -161,6 +164,8 @@ namespace MantaRay.Components
                 _pw = null; //reset
             }
 
+            th.Benchmark("...password");
+
 
             if (run) // if its still on.. can be disabled above.
             {
@@ -187,7 +192,7 @@ namespace MantaRay.Components
 
                 );
 
-                
+
 
 
                 Stopwatch stopwatch1 = new Stopwatch();
@@ -233,76 +238,82 @@ namespace MantaRay.Components
 
                 StringBuilder sbSSH = new StringBuilder();
 
-                
+
 
                 th.Benchmark("Setup Paths");
 
-                var ConnectSSH = Task.Factory.StartNew(() =>
+                //var ConnectSSH = Task.Factory.StartNew(() =>
+                //{
+
+                try
                 {
+                    sshHelper.HomeDirectory = null;
+                    sshHelper.SshClient.Connect();
 
-                    try
+                    sbSSH.AppendFormat("SSH:  Connected in {0} ms\n", stopwatch1.ElapsedMilliseconds);
+
+
+                }
+                catch (Renci.SshNet.Common.SshAuthenticationException e)
+                {
+                    sbSSH.AppendLine("SSH: Connection Denied??\n" + e.Message);
+                    var mb = MessageBox.Show("Wrong SSH Password? Wrong username? Try again?", "SSH Connection Denied", MessageBoxButtons.RetryCancel);
+                    if (mb == DialogResult.Retry)
                     {
-                        sshHelper.HomeDirectory = null;
-                        sshHelper.SshClient.Connect();
-
-                        sbSSH.AppendFormat("SSH:  Connected in {0} ms\n", stopwatch1.ElapsedMilliseconds);
-
+                        if (GetCredentials(username, ip, out string pw))
+                        {
+                            _pw = pw;
+                            this.ExpireSolution(true);
+                        }
 
                     }
-                    catch (Renci.SshNet.Common.SshAuthenticationException e)
+                    else
                     {
-                        sbSSH.AppendLine("SSH: Connection Denied??\n" + e.Message);
-                        var mb = MessageBox.Show("Wrong SSH Password? Wrong username? Try again?", "SSH Connection Denied", MessageBoxButtons.RetryCancel);
-                        if (mb == DialogResult.Retry)
-                        {
-                            if (GetCredentials(username, ip, out string pw))
-                            {
-                                _pw = pw;
-                                this.ExpireSolution(true);
-                            }
+                        sb.Append("\nCancelled!");
+                        DA.SetData("status", sb.ToString());
+                        return;
+                    }
+                }
 
+
+
+                catch (System.Net.Sockets.SocketException e)
+                {
+                    sbSSH.AppendFormat("SSH:  Could not find the SSH server\n      {0}\n      Try restarting it locally in " +
+                        "your bash with the command:\n    $ sudo service ssh start\n", e.Message);
+
+                    if (String.Equals(ip, "127.0.0.1") || String.Equals(ip, "localhost"))
+                    {
+                        var mb = MessageBox.Show("No SSH, try opening it with\nsudo service ssh start\n\nWant me to start it for you??" +
+                            "\n\n\nI'll simply run the below bash command for you:\n\n" +
+                            "C:\\windows\\system32\\cmd.exe\n\n" +
+                            $"/c \"bash -c \"echo {{_pw}} | sudo -S service ssh start\" \"", "No SSH Found", MessageBoxButtons.YesNo);
+
+                        if (mb == DialogResult.Yes)
+                        {
+                            Process proc = new System.Diagnostics.Process();
+                            proc.StartInfo.FileName = @"C:\windows\system32\cmd.exe";
+                            proc.StartInfo.Arguments = $"/c \"bash -c \"echo {_pw} | sudo -S service ssh start\" \"";
+
+                            proc.StartInfo.UseShellExecute = true;
+                            proc.StartInfo.RedirectStandardOutput = false;
+
+                            proc.Start();
+                            proc.WaitForExit();
+
+                            this.ExpireSolution(true);
                         }
                     }
 
 
+                }
+                catch (Exception e)
+                {
+                    sbSSH.AppendFormat("SSH:  {0}\n", e.Message);
+                }
+                sbSSH.Append("\n");
 
-                    catch (System.Net.Sockets.SocketException e)
-                    {
-                        sbSSH.AppendFormat("SSH:  Could not find the SSH server\n      {0}\n      Try restarting it locally in " +
-                            "your bash with the command:\n    $ sudo service ssh start\n", e.Message);
-
-                        if (String.Equals(ip, "127.0.0.1") || String.Equals(ip, "localhost"))
-                        {
-                            var mb = MessageBox.Show("No SSH, try opening it with\nsudo service ssh start\n\nWant me to start it for you??" +
-                                "\n\n\nI'll simply run the below bash command for you:\n\n" +
-                                "C:\\windows\\system32\\cmd.exe\n\n" +
-                                $"/c \"bash -c \"echo {{_pw}} | sudo -S service ssh start\" \"", "No SSH Found", MessageBoxButtons.YesNo);
-
-                            if (mb == DialogResult.Yes)
-                            {
-                                Process proc = new System.Diagnostics.Process();
-                                proc.StartInfo.FileName = @"C:\windows\system32\cmd.exe";
-                                proc.StartInfo.Arguments = $"/c \"bash -c \"echo {_pw} | sudo -S service ssh start\" \"";
-
-                                proc.StartInfo.UseShellExecute = true;
-                                proc.StartInfo.RedirectStandardOutput = false;
-
-                                proc.Start();
-                                proc.WaitForExit();
-
-                                this.ExpireSolution(true);
-                            }
-                        }
-
-
-                    }
-                    catch (Exception e)
-                    {
-                        sbSSH.AppendFormat("SSH:  {0}\n", e.Message);
-                    }
-                    sbSSH.Append("\n");
-
-                });
+                //});
 
                 th.Benchmark("SSH Connected");
 
@@ -310,14 +321,17 @@ namespace MantaRay.Components
 
                 StringBuilder sbFTP = new StringBuilder();
 
-                var ConnectSFTP = Task.Factory.StartNew(() =>
+                //var ConnectSFTP = Task.Factory.StartNew(() =>
+                //{
+                stopwatch2.Restart();
+                if (sshHelper.SshClient != null && sshHelper.SshClient.IsConnected)
                 {
-                    stopwatch2.Restart();
 
                     //Connect Sftp
                     sshHelper.SftpClient = new SftpClient(ConnNfo);
                     try
                     {
+
                         sshHelper.HomeDirectory = null;
                         sshHelper.SftpClient.Connect();
 
@@ -353,27 +367,33 @@ namespace MantaRay.Components
 
                     sbFTP.AppendFormat("SSH:  Created server directory {0}\n\n", sshHelper.LinuxHome);
 
-                });
-
-
-                //sshHelper.Execute($"mkdir -p {sshHelper.LinuxFullpath}");
-
-
-                try
-                {
-                    Task.WaitAll(ConnectSSH, ConnectSFTP);
-
-                    sb.Append(sbSSH);
-                    sb.Append(sbFTP);
-
                 }
-                catch (AggregateException ae)
-                {
-                    foreach (var e in ae.InnerExceptions)
-                    {
-                        throw e;
-                    }
-                }
+                //});
+
+
+
+                //try
+                //{
+                //    Task.WaitAll(new[] { ConnectSSH, ConnectSFTP });
+                //    //{
+                //    sb.Append(sbSSH);
+                //    sb.Append(sbFTP);
+
+                //    //}
+                //    //else
+                //    //{
+                //    //    sb.Append("Attempt timed out (5000ms)");
+                //    //}
+
+
+                //}
+                //catch (AggregateException ae)
+                //{
+                //    foreach (var e in ae.InnerExceptions)
+                //    {
+                //        throw e;
+                //    }
+                //}
 
 
 
@@ -384,7 +404,7 @@ namespace MantaRay.Components
                 sb.AppendFormat("SSH:  Set   <WinHome> to {0}\n", sshHelper.WinHome);
                 sb.AppendFormat("SSH:  Set <LinuxHome> to {0}\n", sshHelper.LinuxHome);
                 sb.AppendFormat("SSH:  Set   <Project> to {0}\n", sshHelper.ProjectSubPath);
-                sb.AppendFormat("SSH:  Set  <SftpHome> to {0} This is used in the upload components\n", sshHelper.SftpHome.PadRight(pad, '.'));
+                sb.AppendFormat("SSH:  Set  <SftpHome> to {0} This is used in the upload components\n", sshHelper?.SftpHome?.PadRight(pad, '.') ?? "");
 
                 GlobalsHelper.GlobalsFromConnectComponent["WinHome"] = sshHelper.WinHome;
                 GlobalsHelper.GlobalsFromConnectComponent["LinuxHome"] = sshHelper.LinuxHome;
@@ -403,6 +423,8 @@ namespace MantaRay.Components
                 sshHelper.ExportPrefixes = string.IsNullOrEmpty(prefixes) ? sshHelper.ExportPrefixesDefault : prefixes.ApplyGlobals(GlobalsHelper.GlobalsFromConnectComponent);
 
                 th.Benchmark("SFTP connected2");
+
+                WasConnected = sshHelper.SshClient.IsConnected && sshHelper.SftpClient.IsConnected;
             }
             else
             {
@@ -526,6 +548,31 @@ namespace MantaRay.Components
         {
             get { return new Guid("1B57442F-E5FE-4462-9EB0-564497CB076E"); }
         }
+
+        public static void ReconnectIfNeeded()
+        {
+            Grasshopper.Instances.ActiveCanvas.Document.ScheduleSolution(100, ReconnectIfNeeded);
+        }
+
+        public static GH_Connect GetActiveComponent(GH_Document doc)
+        {
+            return doc.Objects.OfType<GH_Connect>().FirstOrDefault(c => !c.Locked);
+        }
+
+        private static void ReconnectIfNeeded(GH_Document doc)
+        {
+            var comp = GetActiveComponent(doc);
+            if (comp != null)
+            {
+                if (comp.WasConnected && (comp.sshHelper == null || comp.sshHelper.SshClient == null || !comp.sshHelper.SshClient.IsConnected || comp.sshHelper.SftpClient == null || !comp.sshHelper.SftpClient.IsConnected))
+                {
+                    comp.ExpireSolution(true);
+                }
+
+            }
+        }
+
+
 
 
 
