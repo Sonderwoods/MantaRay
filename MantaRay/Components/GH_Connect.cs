@@ -92,7 +92,7 @@ namespace MantaRay.Components
         {
             TimingHelper th = new TimingHelper("GH_Connect");
             sshHelper = sshHelper ?? new SSH_Helper();
-            
+
             ManPageHelper.Initiate();
             bool run = DA.Fetch<bool>(this, "connect");
             WasConnected = false;
@@ -430,6 +430,27 @@ namespace MantaRay.Components
                 th.Benchmark("SFTP connected2");
 
                 WasConnected = sshHelper.SshClient.IsConnected && sshHelper.SftpClient.IsConnected;
+
+                int relComponents = OnPingDocument().Objects
+                    .OfType<GH_Template_Async_Extended>()
+                    .Where(c => c.PhaseForColors == GH_Template_Async_Extended.AestheticPhase.Disconnected).Count();
+
+
+                if (WasConnected && relComponents > 0)
+                {
+                    var mb = MessageBox.Show($"Rerun {relComponents} disconnected Execute components?", "Rerun expired components?", MessageBoxButtons.YesNo);
+                    if (mb == DialogResult.Yes)
+                    {
+                        OnPingDocument().ScheduleSolution(20, UpdateAllExecutes);
+
+                    }
+
+
+
+                }
+
+
+
             }
             else
             {
@@ -455,7 +476,20 @@ namespace MantaRay.Components
 
         }
 
+        public void UpdateAllExecutes(GH_Document doc)
+        {
+            
+                foreach (var obj in OnPingDocument().Objects
+                    .OfType<GH_Template_Async_Extended>()
+                    .Where(c => c.PhaseForColors == GH_Template_Async_Extended.AestheticPhase.Disconnected))
+                {
+                    obj.ExpireSolution(false);
+                }
 
+                Grasshopper.Instances.ActiveCanvas.Document.ScheduleSolution(5);
+
+            
+        }
 
         public void TryDisconnect()
         {
