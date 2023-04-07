@@ -294,8 +294,14 @@ namespace MantaRay
                         panel.Properties.Colour = Color.FromArgb(200, 255,255,255);
                     }
                 }
-
             }
+        }
+
+        void SetToNoConnection()
+        {
+            Message = "No Connection";
+            PhaseForColors = AestheticPhase.Cancelled;
+            AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "No Connection");
         }
 
         public override bool Read(GH_IReader reader)
@@ -442,6 +448,15 @@ namespace MantaRay
                     string command = String.Join(";echo _JOIN_;", commands).Replace("\r\n", "\n").ApplyGlobals();
 
                     SSH_Helper sshHelper = SSH_Helper.CurrentFromDocument(Parent.OnPingDocument());
+
+                    bool isConnected = sshHelper.CheckConnection() == SSH_Helper.ConnectionDetails.Connected;
+
+                    if(!isConnected)
+                    {
+                        ((GH_ExecuteAsync)Parent).SetToNoConnection();
+                        return;
+                    }
+
 
 
                     Renci.SshNet.SshCommand cmd = null;
