@@ -5,6 +5,7 @@ using Grasshopper.Kernel;
 using Grasshopper.Kernel.Data;
 using Grasshopper.Kernel.Types;
 using Grasshopper.Plugin;
+using MantaRay.Components;
 using MantaRay.Components.Templates;
 using MantaRay.Helpers;
 using MantaRay.Types;
@@ -305,8 +306,8 @@ namespace MantaRay
 
 
 
-            PhaseForColors = AestheticPhase.Cancelled;
-            AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "No Connection");
+            PhaseForColors = AestheticPhase.Disconnected;
+            //AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "No Connection");
         }
 
         public override bool Read(GH_IReader reader)
@@ -458,6 +459,7 @@ namespace MantaRay
 
                     if (!isConnected)
                     {
+                        MantaRay.Components.GH_Connect.ReconnectIfNeeded();
                         ((GH_Template_Async_Extended)Parent).RunTime = new TimeSpan(0);
                         ((GH_ExecuteAsync)Parent).SetToNoConnection();
                         return;
@@ -472,7 +474,7 @@ namespace MantaRay
                     // TODO Need to get pid through "beginexecute" instead of "execute" of SSH.
                     int counter = 0;
                     int intervalForRefreshing = 100; //ms in each loop below.
-                    int waitingForNewConnection = 5; // max iterations after checkconnection fails before throwing cancellation (this will give 1000ms to reconnect before changing context)
+                    //int waitingForNewConnection = 5; // max iterations after checkconnection fails before throwing cancellation (this will give 1000ms to reconnect before changing context)
                     int dotCounter = 0;
                     string[] dots = new[] { "", ".", "..", "..." };
                     while (true && asyncResult != null)
@@ -527,6 +529,7 @@ namespace MantaRay
                         if (sshHelper?.SshClient == null || !sshHelper.SshClient.IsConnected)
                         {
                             ((GH_ExecuteAsync)Parent).SetToNoConnection();
+                            GH_Connect.ReconnectIfNeeded();
                             return;
                             //ran = false;
                             //break;
