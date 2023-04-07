@@ -21,7 +21,7 @@ namespace MantaRay.Helpers
         public void Benchmark(string s = "")
         {
 #if DEBUG
-            Rhino.RhinoApp.WriteLine($"[{DateTime.Now:T}: {Name}]: '{s}' in {(DateTime.Now - LastTime).ToShortString()}");
+            Rhino.RhinoApp.WriteLine($"[ {DateTime.Now:T} {Name} ]: '{s}' in {(DateTime.Now - LastTime).ToShortString()}");
             LastTime = DateTime.Now;
 #endif
         }
