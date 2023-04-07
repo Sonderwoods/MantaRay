@@ -267,7 +267,7 @@ namespace MantaRay
 
                         }
                         // Try once again but with the "pwd" prefix:
-                        catch (Renci.SshNet.Common.SftpPathNotFoundException e)
+                        catch (Renci.SshNet.Common.SftpPathNotFoundException)
                         {
                             StringBuilder pwd = new StringBuilder();
                             Execute("pwd", stdout: pwd);
@@ -292,7 +292,7 @@ namespace MantaRay
                             }
                             catch (Renci.SshNet.Common.SftpPathNotFoundException e2)
                             {
-                                throw new FileNotFoundException($"Could not find {serverFilePath} on host");
+                                throw new FileNotFoundException($"Could not find {serverFilePath} on host\nException: {e2.Message}");
                             }
                         }
 
