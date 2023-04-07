@@ -27,6 +27,7 @@ namespace MantaRay
             Reusing,
             NotRunning,
             Done,
+            Disconnected,
             Cancelled
         }
 
@@ -124,7 +125,7 @@ namespace MantaRay
 
             AfterDone();
 
-            
+
 
         }
 
@@ -323,7 +324,7 @@ namespace MantaRay
 
 
 
-            if (SetData == 1 || !RunInput || PhaseForColors  == AestheticPhase.Reusing || PhaseForColors == AestheticPhase.NotRunning || PhaseForColors == AestheticPhase.Done)
+            if (SetData == 1 || !RunInput || PhaseForColors == AestheticPhase.Reusing || PhaseForColors == AestheticPhase.NotRunning || PhaseForColors == AestheticPhase.Done)
             {
                 base.ForceExpireDownStreamObjects();
             }
@@ -359,7 +360,8 @@ namespace MantaRay
             //}
             //else
             //{
-            PhaseForColors = RunInput ? AestheticPhase.Done : AestheticPhase.NotRunning;
+            if (PhaseForColors == AestheticPhase.Running || PhaseForColors == AestheticPhase.Done)
+                PhaseForColors = RunInput ? AestheticPhase.Done : AestheticPhase.NotRunning;
             //((GH_ColorAttributes_Async)m_attributes).ColorSelected = new Grasshopper.GUI.Canvas.GH_PaletteStyle(Color.DarkRed);
             //((GH_ColorAttributes_Async)m_attributes).ColorUnselected = new Grasshopper.GUI.Canvas.GH_PaletteStyle(Color.DarkOrchid);
 

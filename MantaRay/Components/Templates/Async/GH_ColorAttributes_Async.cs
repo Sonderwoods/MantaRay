@@ -59,13 +59,21 @@ namespace MantaRay
         public GH_PaletteStyle AttRunningSelected = new Grasshopper.GUI.Canvas.GH_PaletteStyle(Color.MediumVioletRed);
         public GH_PaletteStyle AttRunningUnselected = new Grasshopper.GUI.Canvas.GH_PaletteStyle(Color.Purple);
 
-        // GREEN (ON)
-        public GH_PaletteStyle AttOnSelected = new Grasshopper.GUI.Canvas.GH_PaletteStyle(Color.FromArgb(76, 128, 122));
-        public GH_PaletteStyle AttOnUnselected = new Grasshopper.GUI.Canvas.GH_PaletteStyle(Color.FromArgb(95, 115, 113));
+        // DONE
+        public GH_PaletteStyle AttDoneSelected = new Grasshopper.GUI.Canvas.GH_PaletteStyle(Color.FromArgb(76, 128, 122));
+        public GH_PaletteStyle AttDoneUnselected = new Grasshopper.GUI.Canvas.GH_PaletteStyle(Color.FromArgb(95, 115, 113));
 
         // CANCELLED
         public GH_PaletteStyle AttCancelledSelected = new Grasshopper.GUI.Canvas.GH_PaletteStyle(Color.FromArgb(76, 128, 122));
         public GH_PaletteStyle AttCancelledUnselected = new Grasshopper.GUI.Canvas.GH_PaletteStyle(Color.FromArgb(95, 115, 113));
+
+        // REUSING
+        public GH_PaletteStyle AttReusingSelected = new Grasshopper.GUI.Canvas.GH_PaletteStyle(Color.FromArgb(163, 158, 121));
+        public GH_PaletteStyle AttReusingUnselected = new Grasshopper.GUI.Canvas.GH_PaletteStyle(Color.FromArgb(135, 134, 115));
+
+        // DISCONNECTED
+        public GH_PaletteStyle AttDisconnectedSelected = new Grasshopper.GUI.Canvas.GH_PaletteStyle(Color.FromArgb(94, 46, 46));
+        public GH_PaletteStyle AttDisconnectedUnselected = new Grasshopper.GUI.Canvas.GH_PaletteStyle(Color.FromArgb(138, 80, 80));
 
         public GH_PaletteStyle GetStyle(GH_Template_Async_Extended.AestheticPhase phase, bool? forceSelected = null)
         {
@@ -77,9 +85,13 @@ namespace MantaRay
                     case GH_Template_Async_Extended.AestheticPhase.Running:
                         return AttRunningSelected;
                     case GH_Template_Async_Extended.AestheticPhase.Done:
-                        return AttOnSelected;
+                        return AttDoneSelected;
                     case GH_Template_Async_Extended.AestheticPhase.Cancelled:
                         return AttCancelledSelected;
+                    case GH_Template_Async_Extended.AestheticPhase.Disconnected:
+                        return AttDisconnectedSelected;
+                    case GH_Template_Async_Extended.AestheticPhase.Reusing:
+                        return AttReusingSelected;
                     default:
                         return palette_normal_selected;
                 }
@@ -91,9 +103,13 @@ namespace MantaRay
                     case GH_Template_Async_Extended.AestheticPhase.Running:
                         return AttRunningUnselected;
                     case GH_Template_Async_Extended.AestheticPhase.Done:
-                        return AttOnUnselected;
+                        return AttDoneUnselected;
                     case GH_Template_Async_Extended.AestheticPhase.Cancelled:
                         return AttCancelledUnselected;
+                    case GH_Template_Async_Extended.AestheticPhase.Disconnected:
+                        return AttDisconnectedUnselected;
+                    case GH_Template_Async_Extended.AestheticPhase.Reusing:
+                        return AttReusingUnselected;
                     default:
                         return palette_normal_standard;
                 }
@@ -182,6 +198,8 @@ namespace MantaRay
                     case GH_Template_Async_Extended.AestheticPhase.Running:
                     case GH_Template_Async_Extended.AestheticPhase.Cancelled:
                     case GH_Template_Async_Extended.AestheticPhase.Done:
+                    case GH_Template_Async_Extended.AestheticPhase.Disconnected:
+                    case GH_Template_Async_Extended.AestheticPhase.Reusing:
 
                         GH_Skin.palette_normal_standard = GH_Skin.palette_hidden_standard = GetStyle(c.PhaseForColors, false);
                         GH_Skin.palette_normal_selected = GH_Skin.palette_hidden_selected = GetStyle(c.PhaseForColors, true);
@@ -209,10 +227,10 @@ namespace MantaRay
                     case GH_Template_Async_OBSOLETE.AestheticPhase.Running:
                     case GH_Template_Async_OBSOLETE.AestheticPhase.Reusing:
                         // Swap out palette for normal, unselected components.
-                        GH_Skin.palette_normal_standard = AttOnUnselected;
-                        GH_Skin.palette_hidden_standard = AttOnUnselected;
-                        GH_Skin.palette_normal_selected = AttOnSelected;
-                        GH_Skin.palette_hidden_selected = AttOnSelected;
+                        GH_Skin.palette_normal_standard = AttDoneUnselected;
+                        GH_Skin.palette_hidden_standard = AttDoneUnselected;
+                        GH_Skin.palette_normal_selected = AttDoneSelected;
+                        GH_Skin.palette_hidden_selected = AttDoneSelected;
 
                         base.Render(canvas, graphics, channel);
 
@@ -347,8 +365,8 @@ namespace MantaRay
         /// <param name="guid"></param>
         private void RenderText(string s, Graphics graphics)
         {
-            if (string.IsNullOrEmpty(s))
-                return;
+            //if (string.IsNullOrEmpty(s))
+            //    return;
 
             const int MAXLEN = 25;
             GH_Document doc = Owner.OnPingDocument();
@@ -362,6 +380,7 @@ namespace MantaRay
             {
                 s = s.Substring(0, MAXLEN - 1) + "...";
             }
+            
             //rectangle.Inflate(6, 6);
             graphics.DrawString(s, font, new SolidBrush(Selected ? (AttRunningSelected.Fill) : (AttRunningUnselected.Fill)), rectangle);
             //graphics.FillRectangle(fill, rectangle);
