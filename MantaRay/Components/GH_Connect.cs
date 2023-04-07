@@ -91,7 +91,8 @@ namespace MantaRay.Components
         protected override void SolveInstance(IGH_DataAccess DA)
         {
             TimingHelper th = new TimingHelper("GH_Connect");
-            sshHelper = new SSH_Helper();
+            sshHelper = sshHelper ?? new SSH_Helper();
+            
             ManPageHelper.Initiate();
             bool run = DA.Fetch<bool>(this, "connect");
             WasConnected = false;
@@ -162,6 +163,8 @@ namespace MantaRay.Components
             else
             {
                 _pw = null; //reset
+                sshHelper.Disconnect();
+                //sshHelper = null;
             }
 
             th.Benchmark("...password");
@@ -199,6 +202,7 @@ namespace MantaRay.Components
                 Stopwatch stopwatch2 = new Stopwatch();
                 //Connect SSH
                 sshHelper.SshClient = new SshClient(ConnNfo);
+                sshHelper.SshClient.ConnectionInfo.Timeout = new TimeSpan(0, 0, 10);
 
                 th.Benchmark("Create Client");
 
@@ -329,6 +333,7 @@ namespace MantaRay.Components
 
                     //Connect Sftp
                     sshHelper.SftpClient = new SftpClient(ConnNfo);
+                    sshHelper.SshClient.ConnectionInfo.Timeout = new TimeSpan(0, 0, 10);
                     try
                     {
 
