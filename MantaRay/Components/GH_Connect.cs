@@ -15,10 +15,13 @@ using MantaRay.Setup;
 using System.Runtime.InteropServices;
 using MantaRay.Helpers;
 using System.Threading.Tasks;
+using MantaRay.Components.Templates;
+using Grasshopper.GUI.Canvas;
+using Grasshopper.GUI;
 
 namespace MantaRay.Components
 {
-    public class GH_Connect : GH_Template, ISetConnection
+    public class GH_Connect : GH_Template, ISetConnection, IHasDoubleClick
     {
         /// <summary>
         /// Initializes a new instance of the GH_Connect class.
@@ -637,6 +640,18 @@ namespace MantaRay.Components
                 return false;
 
             }
+        }
+
+        public GH_ObjectResponse OnDoubleClick(GH_Canvas sender, GH_CanvasMouseEvent e)
+        {
+            this.ExpireSolution(true);
+            return GH_ObjectResponse.Handled;
+        }
+
+        public override void CreateAttributes()
+        {
+            m_attributes = new GH_DoubleClickAttributes(this);
+
         }
     }
 }
