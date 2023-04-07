@@ -14,6 +14,7 @@ using Rhino.Geometry;
 using MantaRay.Setup;
 using System.Runtime.InteropServices;
 using MantaRay.Helpers;
+using System.Threading.Tasks;
 
 namespace MantaRay.Components
 {
@@ -119,7 +120,7 @@ namespace MantaRay.Components
             string linDir = DA.Fetch<string>(this, "LinuxDir");
             string winDir = DA.Fetch<string>(this, "WindowsDir");
             string sftpDir = DA.Fetch<string>(this, "SftpDir");
-            string subfolder = DA.Fetch<string>(this, "ProjectName", "Subfolder");
+            string projectName = DA.Fetch<string>(this, "ProjectName", "ProjectName");
             string ip = DA.Fetch<string>(this, "ip");
             int port = DA.Fetch<int>(this, "_port");
             string prefixes = DA.Fetch<string>(this, "prefixes");
@@ -186,7 +187,8 @@ namespace MantaRay.Components
                 
 
 
-                Stopwatch stopwatch = new Stopwatch();
+                Stopwatch stopwatch1 = new Stopwatch();
+                Stopwatch stopwatch2 = new Stopwatch();
                 //Connect SSH
                 sshHelper.SshClient = new SshClient(ConnNfo);
 
@@ -217,131 +219,161 @@ namespace MantaRay.Components
 
 
 
-                if (!string.IsNullOrEmpty(subfolder))
+                if (!string.IsNullOrEmpty(projectName))
                 {
-                    sshHelper.ProjectSubPath = subfolder;
+                    sshHelper.ProjectSubPath = projectName;
                 }
                 else
                 {
                     sshHelper.ProjectSubPath = SSH_Helper.DefaultProjectSubFolder;
                 }
 
+                StringBuilder sbSSH = new StringBuilder();
 
-
-                sshHelper.ExportPrefixes = string.IsNullOrEmpty(prefixes) ? sshHelper.ExportPrefixesDefault : prefixes.Replace("<Project>", subfolder).ApplyGlobals();
+                
 
                 th.Benchmark("Setup Paths");
 
-                try
+                var ConnectSSH = Task.Factory.StartNew(() =>
                 {
-                    sshHelper.HomeDirectory = null;
-                    sshHelper.SshClient.Connect();
 
-                    sb.AppendFormat("SSH:  Connected in {0} ms\n", stopwatch.ElapsedMilliseconds);
-                    
-
-                }
-                catch (Renci.SshNet.Common.SshAuthenticationException e)
-                {
-                    sb.AppendLine("SSH: Connection Denied??\n" + e.Message);
-                    var mb = MessageBox.Show("Wrong SSH Password? Wrong username? Try again?", "SSH Connection Denied", MessageBoxButtons.RetryCancel);
-                    if (mb == DialogResult.Retry)
+                    try
                     {
-                        if (GetCredentials(username, ip, out string pw))
-                        {
-                            _pw = pw;
-                            this.ExpireSolution(true);
-                        }
+                        sshHelper.HomeDirectory = null;
+                        sshHelper.SshClient.Connect();
+
+                        sbSSH.AppendFormat("SSH:  Connected in {0} ms\n", stopwatch1.ElapsedMilliseconds);
+
 
                     }
-                }
-
-
-
-                catch (System.Net.Sockets.SocketException e)
-                {
-                    sb.AppendFormat("SSH:  Could not find the SSH server\n      {0}\n      Try restarting it locally in " +
-                        "your bash with the command:\n    $ sudo service ssh start\n", e.Message);
-
-                    if (String.Equals(ip, "127.0.0.1") || String.Equals(ip, "localhost"))
+                    catch (Renci.SshNet.Common.SshAuthenticationException e)
                     {
-                        var mb = MessageBox.Show("No SSH, try opening it with\nsudo service ssh start\n\nWant me to start it for you??" +
-                            "\n\n\nI'll simply run the below bash command for you:\n\n" +
-                            "C:\\windows\\system32\\cmd.exe\n\n" +
-                            $"/c \"bash -c \"echo {{_pw}} | sudo -S service ssh start\" \"", "No SSH Found", MessageBoxButtons.YesNo);
-
-                        if (mb == DialogResult.Yes)
+                        sbSSH.AppendLine("SSH: Connection Denied??\n" + e.Message);
+                        var mb = MessageBox.Show("Wrong SSH Password? Wrong username? Try again?", "SSH Connection Denied", MessageBoxButtons.RetryCancel);
+                        if (mb == DialogResult.Retry)
                         {
-                            Process proc = new System.Diagnostics.Process();
-                            proc.StartInfo.FileName = @"C:\windows\system32\cmd.exe";
-                            proc.StartInfo.Arguments = $"/c \"bash -c \"echo {_pw} | sudo -S service ssh start\" \"";
+                            if (GetCredentials(username, ip, out string pw))
+                            {
+                                _pw = pw;
+                                this.ExpireSolution(true);
+                            }
 
-                            proc.StartInfo.UseShellExecute = true;
-                            proc.StartInfo.RedirectStandardOutput = false;
-
-                            proc.Start();
-                            proc.WaitForExit();
-
-                            this.ExpireSolution(true);
                         }
                     }
 
 
-                }
-                catch (Exception e)
-                {
-                    sb.AppendFormat("SSH:  {0}\n", e.Message);
-                }
+
+                    catch (System.Net.Sockets.SocketException e)
+                    {
+                        sbSSH.AppendFormat("SSH:  Could not find the SSH server\n      {0}\n      Try restarting it locally in " +
+                            "your bash with the command:\n    $ sudo service ssh start\n", e.Message);
+
+                        if (String.Equals(ip, "127.0.0.1") || String.Equals(ip, "localhost"))
+                        {
+                            var mb = MessageBox.Show("No SSH, try opening it with\nsudo service ssh start\n\nWant me to start it for you??" +
+                                "\n\n\nI'll simply run the below bash command for you:\n\n" +
+                                "C:\\windows\\system32\\cmd.exe\n\n" +
+                                $"/c \"bash -c \"echo {{_pw}} | sudo -S service ssh start\" \"", "No SSH Found", MessageBoxButtons.YesNo);
+
+                            if (mb == DialogResult.Yes)
+                            {
+                                Process proc = new System.Diagnostics.Process();
+                                proc.StartInfo.FileName = @"C:\windows\system32\cmd.exe";
+                                proc.StartInfo.Arguments = $"/c \"bash -c \"echo {_pw} | sudo -S service ssh start\" \"";
+
+                                proc.StartInfo.UseShellExecute = true;
+                                proc.StartInfo.RedirectStandardOutput = false;
+
+                                proc.Start();
+                                proc.WaitForExit();
+
+                                this.ExpireSolution(true);
+                            }
+                        }
+
+
+                    }
+                    catch (Exception e)
+                    {
+                        sbSSH.AppendFormat("SSH:  {0}\n", e.Message);
+                    }
+                    sbSSH.Append("\n");
+
+                });
 
                 th.Benchmark("SSH Connected");
 
 
-                sb.Append("\n");
 
-                stopwatch.Restart();
+                StringBuilder sbFTP = new StringBuilder();
 
-                //Connect Sftp
-                sshHelper.SftpClient = new SftpClient(ConnNfo);
-                try
+                var ConnectSFTP = Task.Factory.StartNew(() =>
                 {
-                    sshHelper.HomeDirectory = null;
-                    sshHelper.SftpClient.Connect();
+                    stopwatch2.Restart();
 
-                    sb.AppendFormat("Sftp: Connected in {0} ms\n", stopwatch.ElapsedMilliseconds);
+                    //Connect Sftp
+                    sshHelper.SftpClient = new SftpClient(ConnNfo);
+                    try
+                    {
+                        sshHelper.HomeDirectory = null;
+                        sshHelper.SftpClient.Connect();
 
-                }
-                catch (Renci.SshNet.Common.SftpPermissionDeniedException e)
-                {
-                    sb.AppendLine("Sftp: Wrong password??\n" + e.Message);
-                }
-                catch (System.Net.Sockets.SocketException e)
-                {
-                    sb.AppendFormat("Sftp: Could not find the Sftp server\n      {0}\n      Try restarting it locally in " +
-                        "your bash with the command:\n    $ sudo service ssh start\n", e.Message);
-                }
-                catch (Exception e)
-                {
-                    sb.AppendFormat("Sftp: {0}\n", e.Message);
-                }
+                        sbFTP.AppendFormat("Sftp: Connected in {0} ms\n", stopwatch2.ElapsedMilliseconds);
 
-                sb.Append("\n");
+                    }
+                    catch (Renci.SshNet.Common.SftpPermissionDeniedException e)
+                    {
+                        sbFTP.AppendLine("Sftp: Wrong password??\n" + e.Message);
+                    }
+                    catch (System.Net.Sockets.SocketException e)
+                    {
+                        sbFTP.AppendFormat("Sftp: Could not find the Sftp server\n      {0}\n      Try restarting it locally in " +
+                            "your bash with the command:\n    $ sudo service ssh start\n", e.Message);
+                    }
+                    catch (Exception e)
+                    {
+                        sbFTP.AppendFormat("Sftp: {0}\n", e.Message);
+                    }
 
-                if (!string.IsNullOrEmpty(sftpDir))
-                {
-                    sshHelper.SftpHome = sftpDir + (sftpDir.Contains("/") ? "/" : "\\") + sshHelper.ProjectSubPath;
-                }
-                else
-                {
+                    sbFTP.Append("\n");
 
-                    //sshHelper.SftpHome = sshHelper.SftpClient.WorkingDirectory;
-                    sshHelper.SftpHome = sshHelper.LinuxHome;
-                }
+                    if (!string.IsNullOrEmpty(sftpDir))
+                    {
+                        sshHelper.SftpHome = sftpDir + (sftpDir.Contains("/") ? "/" : "\\") + sshHelper.ProjectSubPath;
+                    }
+                    else
+                    {
 
-                th.Benchmark("SFTP connected");
+                        //sshHelper.SftpHome = sshHelper.SftpClient.WorkingDirectory;
+                        sshHelper.SftpHome = sshHelper.LinuxHome;
+                    }
+
+                    sbFTP.AppendFormat("SSH:  Created server directory {0}\n\n", sshHelper.LinuxHome);
+
+                });
+
+
                 //sshHelper.Execute($"mkdir -p {sshHelper.LinuxFullpath}");
 
 
-                sb.AppendFormat("SSH:  Created server directory {0}\n\n", sshHelper.LinuxHome);
+                try
+                {
+                    Task.WaitAll(ConnectSSH, ConnectSFTP);
+
+                    sb.Append(sbSSH);
+                    sb.Append(sbFTP);
+
+                }
+                catch (AggregateException ae)
+                {
+                    foreach (var e in ae.InnerExceptions)
+                    {
+                        throw e;
+                    }
+                }
+
+
+
 
                 int pad = 45;
 
@@ -364,7 +396,10 @@ namespace MantaRay.Components
 
                 }
 
-                th.Benchmark("SFTP connected");
+
+                sshHelper.ExportPrefixes = string.IsNullOrEmpty(prefixes) ? sshHelper.ExportPrefixesDefault : prefixes.ApplyGlobals(GlobalsHelper.GlobalsFromConnectComponent);
+
+                th.Benchmark("SFTP connected2");
             }
             else
             {
@@ -410,7 +445,7 @@ namespace MantaRay.Components
             if (document.Objects.Contains(this))
             {
 
-                var allData = this.Params.Input[connectID].VolatileData.AllData(false);
+                var allData = this.Params.Input[connectID].VolatileData.AllData(false); // run input parameter
                 bool isRunSet = allData.Count() > 0;
 
 
