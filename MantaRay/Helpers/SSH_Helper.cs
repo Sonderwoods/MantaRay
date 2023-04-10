@@ -829,7 +829,16 @@ namespace MantaRay
         /// <returns></returns>
         public static SSH_Helper CurrentFromDocument(GH_Document doc)
         {
-            return doc.Objects.OfType<GH_Component>().Where(c => !c.Locked).OfType<ISetConnection>().FirstOrDefault().SshHelper;
+            SSH_Helper helper = doc.Objects.OfType<GH_Component>().Where(c => !c.Locked).OfType<ISetConnection>().FirstOrDefault()?.SshHelper ?? null;
+            if (helper != null)
+            {
+                return helper;
+            }
+            else
+            {
+                throw new System.NullReferenceException("SshHelper not found. Please deploy a 'Connect' Component");
+            }
+
         }
 
         public static SSH_Helper CurrentFromActiveDoc()
