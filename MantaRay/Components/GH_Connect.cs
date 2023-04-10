@@ -164,7 +164,7 @@ namespace MantaRay.Components
             {
                 _pw = null; //reset
                 sshHelper.Disconnect();
-                //sshHelper = null;
+                sshHelper = null;
             }
 
             th.Benchmark("...password");
@@ -463,12 +463,12 @@ namespace MantaRay.Components
 
             //the run output
             var runTree = new GH_Structure<GH_Boolean>();
-            runTree.Append(new GH_Boolean(sshHelper.CheckConnection() == SSH_Helper.ConnectionDetails.Connected));
-            DA.SetData(1, sshHelper.ExportPrefixes);
+            runTree.Append(new GH_Boolean(sshHelper != null && sshHelper.CheckConnection() == SSH_Helper.ConnectionDetails.Connected));
+            DA.SetData(1, sshHelper?.ExportPrefixes ?? "");
             Params.Output[Params.Output.Count - 1].ClearData();
             DA.SetDataTree(Params.Output.Count - 1, runTree);
 
-            if (sshHelper.CheckConnection() != SSH_Helper.ConnectionDetails.Connected)
+            if (sshHelper == null || sshHelper.CheckConnection() != SSH_Helper.ConnectionDetails.Connected)
                 AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Not Connected.\n\nTry restarting SSH in your bash with:\nsudo service ssh start");
 
 
