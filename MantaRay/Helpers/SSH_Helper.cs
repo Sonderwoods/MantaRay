@@ -423,9 +423,10 @@ namespace MantaRay
 
                     try
                     {
+                        string p = Execute("pwd");
                         if (!String.IsNullOrEmpty(targetFilePath))
                         {
-                            SftpClient.ChangeDirectory(targetFilePath);
+                            SftpClient.ChangeDirectory(p + "/" + targetFilePath);
 
                         }
 
@@ -622,7 +623,7 @@ namespace MantaRay
 
         public string Execute(string command)
         {
-            return sshClient.CreateCommand(command.ApplyGlobals(maxDepth: 2)).Execute().Trim();
+            return sshClient.CreateCommand((ExportPrefixes + ";" + command).ApplyGlobals(maxDepth: 2)).Execute().Trim();
         }
 
 
@@ -826,18 +827,11 @@ namespace MantaRay
         /// Gets the active SSH Helper from the document
         /// </summary>
         /// <param name="doc"></param>
-        /// <returns></returns>
+        /// <returns>null if no connection</returns>
         public static SSH_Helper CurrentFromDocument(GH_Document doc)
         {
-            SSH_Helper helper = doc.Objects.OfType<GH_Component>().Where(c => !c.Locked).OfType<ISetConnection>().FirstOrDefault()?.SshHelper ?? null;
-            if (helper != null)
-            {
-                return helper;
-            }
-            else
-            {
-                throw new System.NullReferenceException("SshHelper not found. Please deploy a 'Connect' Component");
-            }
+            return doc.Objects.OfType<GH_Component>().Where(c => !c.Locked).OfType<ISetConnection>().FirstOrDefault()?.SshHelper ?? null;
+ 
 
         }
 
