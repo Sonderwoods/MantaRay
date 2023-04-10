@@ -40,16 +40,16 @@ namespace MantaRay
         /// </summary>
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
-            pManager.AddMeshParameter("Mesh", "Mesh", "Mesh. It's advisable to have same material meshes joined before entering this component.\n" +
+            pManager[pManager.AddMeshParameter("Mesh", "Mesh", "Mesh. It's advisable to have same material meshes joined before entering this component.\n" +
                 "And if you graft the input per material then it will run in parallel.\n" +
                 "Example: you have 3 objects:  floor/ceiling/wall\n" +
                 "then you should join all your floor meshes into one joined floor mesh, same for the others.\n" +
-                "And input it as a grafted list. This will make the component run 3 meshing engines at the same time.", GH_ParamAccess.tree);
+                "And input it as a grafted list. This will make the component run 3 meshing engines at the same time.", GH_ParamAccess.tree)].DataMapping = GH_DataMapping.Graft;
 
             pManager[pManager.AddTextParameter("Name", "Name", "Name (will save name.rad)", GH_ParamAccess.tree)].DataMapping = GH_DataMapping.Graft;
 
-            pManager[pManager.AddTextParameter("MapFileName", "MapFileName", "name of mapping file name. Default is mapping (.map)", GH_ParamAccess.item, "mapping")].Optional = true;
             pManager[pManager.AddTextParameter("ModifierName", "ModifierName", "ModifierName - Name of the radiance material", GH_ParamAccess.tree)].DataMapping = GH_DataMapping.Graft;
+            pManager[pManager.AddTextParameter("MapFileName", "MapFileName", "name of mapping file name. Default is mapping (.map)", GH_ParamAccess.item, "mapping")].Optional = true;
 
             pManager[pManager.AddTextParameter("Target folder", "Target folder", "Optional. Override the subfolder from the connection component.\n" +
                 "Example:\n" +
@@ -83,7 +83,20 @@ namespace MantaRay
             if (!DA.Fetch<bool>(this, "Run"))
                 return;
 
-            SSH_Helper sshHelper = SSH_Helper.CurrentFromDocument(OnPingDocument());
+            SSH_Helper sshHelper;
+
+            try
+            {
+                sshHelper = SSH_Helper.CurrentFromDocument(OnPingDocument());
+
+            }
+            catch (NullReferenceException)
+            {
+                if (RunCount == 1)
+                    AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Please connect using the Connect component first.\n" +
+                        "I need a connection to correctly setup paths");
+                return;
+            }
 
             string workingDir;
 
@@ -140,6 +153,12 @@ namespace MantaRay
                 string modifierName = modifierNames[i][0].Value.Replace(" ", "_");
 
                 string name = names[i][0].Value.Replace(" ", "_");
+
+                if(name.Contains("\n"))
+                {
+                    AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Looks like you entered a full modifier and not the modifier name.\n" +
+                        "Please use the DeconstructModifier components output 'ModName'");
+                }
 
                 mapping.AppendFormat("\n{0} (Group \"{1}\");", modifierName.ApplyGlobals(), name.ApplyGlobals());
 
@@ -313,7 +332,7 @@ namespace MantaRay
         /// </summary>
         public override Guid ComponentGuid
         {
-            get { return new Guid("7262DFF6-5027-40E7-A493-840F258EFB83"); }
+            get { return new Guid("7262DFF6-5027-40E7-A493-840F238FFB83"); }
         }
 
         protected virtual bool IsFileLocked(FileInfo file)
