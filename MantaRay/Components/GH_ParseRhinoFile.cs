@@ -65,15 +65,15 @@ namespace MantaRay.Components
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
             pManager.AddMeshParameter("GlassGeometries", "GlassGeometries", "Geometries", GH_ParamAccess.list);
-            pManager.AddTextParameter("GlassModifiers", "GlassModifiers", "Modifiers", GH_ParamAccess.list);
+            pManager.AddTextParameter("GlassModifiers", "GlassModifiers", "Modifiers. Connect them to a 'Get Modifier Names' component", GH_ParamAccess.list);
             pManager.AddGenericParameter("-", "-", "-", GH_ParamAccess.item);
 
             pManager.AddMeshParameter("OpaqueGeometries", "OpaqueGeometries", "Geometries", GH_ParamAccess.list);
-            pManager.AddTextParameter("OpaqueModifiers", "OpaqueModifiers", "Modifiers", GH_ParamAccess.list);
+            pManager.AddTextParameter("OpaqueModifiers", "OpaqueModifiers", "Modifiers. Connect them to a 'Get Modifier Names' component", GH_ParamAccess.list);
             pManager.AddGenericParameter("-", "-", "-", GH_ParamAccess.item);
 
             pManager.AddMeshParameter("CustomGeometries", "CustomGeometries", "Geometries", GH_ParamAccess.list);
-            pManager.AddTextParameter("ModifierNames", "ModifierNames", "ModifierNames", GH_ParamAccess.list);
+            pManager.AddTextParameter("ModifierNames", "ModifierNames", "ModifierNames. Connect them to a 'Get Modifier Names' component", GH_ParamAccess.list);
             pManager.AddGenericParameter("-", "-", "-", GH_ParamAccess.item);
 
             gg = pManager.AddBrepParameter("GridGeometries", "GridGeometries", "Grids", GH_ParamAccess.list);
@@ -82,7 +82,7 @@ namespace MantaRay.Components
             pManager.AddTextParameter("GridNames", "GridNames", "GridNames", GH_ParamAccess.list);
             pManager.AddGenericParameter("-", "-", "-", GH_ParamAccess.item);
 
-            pManager.AddTextParameter("SkippedLayers", "SkippedLayers", "SkippedLayers", GH_ParamAccess.list);
+            pManager.AddTextParameter("SkippedLayers", "SkippedLayers", "SkippedLayers, including empty ones", GH_ParamAccess.list);
 
             pManager.AddBooleanParameter("Ran", "Ran", "Ran without any err", GH_ParamAccess.tree); //always keep ran as the last parameter
 
