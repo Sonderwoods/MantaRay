@@ -31,7 +31,8 @@ namespace MantaRay.Components
         public GH_ParseRhinoFile()
           : base("ParseRhinoFile", "ParseRhinoFile",
               "Reads rhino layers, gets geometry and prepares materials for radiance\n\n" +
-                "Double click me to recompute\n\n\n" +
+                "Double click me to recompute\n\n" +
+                "Right click to setup basic layer structure\n\n" +
                 "The layer table in Rhino (by default) could look like the below:\n" +
                 "'Daylight_Inputs' (with the below sublayers)\n" +
                 "- '_Floors_20' (will get reflectance of 0.2)\n" +
