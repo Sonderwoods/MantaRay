@@ -100,8 +100,14 @@ namespace MantaRay.Components
             TimingHelper th = new TimingHelper("ParseRhinoFile");
             _grids.Clear();
 
-            if (!DA.Fetch<bool>(this, "Run") && !forceRun)
+            bool run = DA.Fetch<bool>(this, "Run") || forceRun;
+
+            
+
+            if (!run)
             {
+                AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, "Set run to true or double click");
+                DA.SetData("Ran", new GH_Boolean(run));
                 return;
             }
 
@@ -144,7 +150,13 @@ namespace MantaRay.Components
             {
                 AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, $"Didnt find any layers starting with '{Prefix}'\n" +
                     "Right click to add default layers");
+                run = false;
             }
+
+            var runTree = new GH_Structure<GH_Boolean>();
+            runTree.Append(new GH_Boolean(run));
+            Params.Output[Params.Output.Count - 1].ClearData();
+            DA.SetDataTree(Params.Output.Count - 1, runTree);
 
 
             Parallel.ForEach<Layer>(layers, (layer) =>
@@ -316,10 +328,7 @@ namespace MantaRay.Components
 
             DA.SetDataList("SkippedLayers", missingLayers);
 
-            var runTree = new GH_Structure<GH_Boolean>();
-            runTree.Append(new GH_Boolean(DA.Fetch<bool>(this, "Run")));
-            Params.Output[Params.Output.Count - 1].ClearData();
-            DA.SetDataTree(Params.Output.Count - 1, runTree);
+            
 
 
         }
@@ -348,6 +357,7 @@ namespace MantaRay.Components
             Dictionary<string, Color> layers = new Dictionary<string, Color>()
             {
                 { "Floors_20" , Color.Beige },
+                { "Context_20" , Color.Gray },
                 { "Ground_20", Color.Brown },
                 { "Walls_50", Color.DarkOliveGreen },
                 { "Ceilings_70", Color.Orange },
