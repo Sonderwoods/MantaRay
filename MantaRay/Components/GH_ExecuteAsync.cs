@@ -128,7 +128,7 @@ namespace MantaRay
             }
             //Params.Input[0].Phase = paramPhase;
 
-
+            th.Benchmark("start3");
 
 
 
@@ -160,9 +160,9 @@ namespace MantaRay
 
                 }
             }
-            catch (Exception)
+            catch (Exception e)
             {
-                AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Failed to do the manpage section");
+                AddRuntimeMessage(GH_RuntimeMessageLevel.Error, $"Failed to do the manpage section\n{e.Message}");
                 //throw new Exception("Failed the contextmenu.." +  e.Message);
             }
 
@@ -176,6 +176,34 @@ namespace MantaRay
             {
                 Menu_AppendItem(menu, $"ManPage: {item}...", (s, e) => { ManPageHelper.Instance.OpenManual(item); });
             }
+
+
+            ToolStripMenuItem allPages = Menu_AppendItem(menu, "All Man Pages ->", CreateNew);
+            
+
+            //foreach (KeyValuePair<string, string> tt in ManPageHelper.Instance.AllRadiancePrograms)
+            //{
+            //    allPages.DropDownItems.Add(new ToolStripMenuItem($"{tt.Key}...", null, (s, e) => { ManPageHelper.Instance.OpenManual(tt.Key); }));
+            //}
+
+        }
+
+        private void CreateNew(object sender, EventArgs e)
+        {
+            var anchor = ((ToolStripMenuItem)sender).ContentRectangle;
+
+            ContextMenuStrip menu = new ContextMenuStrip();
+
+            foreach (KeyValuePair<string, string> tt in ManPageHelper.Instance.AllRadiancePrograms)
+            {
+                menu.Items.Add(new ToolStripMenuItem($"{tt.Key}...", null, (s, e2) => { ManPageHelper.Instance.OpenManual(tt.Key); }));
+            }
+
+            
+
+            menu.Show(Cursor.Position);
+
+            //throw new NotImplementedException();
         }
 
 
@@ -455,11 +483,11 @@ namespace MantaRay
 
                     SSH_Helper sshHelper = SSH_Helper.CurrentFromDocument(Parent.OnPingDocument());
 
-                    bool isConnected = sshHelper.CheckConnection() == SSH_Helper.ConnectionDetails.Connected;
+                    bool isConnected = sshHelper != null && sshHelper.CheckConnection() == SSH_Helper.ConnectionDetails.Connected;
 
                     if (!isConnected)
                     {
-                        MantaRay.Components.GH_Connect.ReconnectIfNeeded();
+                        GH_Connect.ReconnectIfNeeded();
                         ((GH_Template_Async_Extended)Parent).RunTime = new TimeSpan(0);
                         ((GH_ExecuteAsync)Parent).SetToNoConnection();
                         return;

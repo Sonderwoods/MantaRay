@@ -107,13 +107,16 @@ namespace MantaRay.Components
 
         public override void RemovedFromDocument(GH_Document document)
         {
+            if (logHelper != null)
+            {
+                logHelper.LogUpdated -= LogHelper_LogUpdated;
 
-            logHelper.LogUpdated -= LogHelper_LogUpdated;
+            }
             base.RemovedFromDocument(document);
 
         }
 
-        
+
 
         private void LogHelper_LogUpdated(object sender, EventArgs e)
         {
@@ -129,9 +132,9 @@ namespace MantaRay.Components
         public override void AppendAdditionalMenuItems(ToolStripDropDown menu)
         {
             base.AppendAdditionalMenuItems(menu);
- 
+
             Menu_AppendItem(menu, "Clear Log", (s, e) => { ClearLog(); }, true);
-        
+
         }
 
         private void ClearLog()

@@ -6,7 +6,6 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using GH_IO.Serialization;
 using Grasshopper.Kernel;
 using Grasshopper.Kernel.Data;
 using Grasshopper.Kernel.Types;
@@ -15,15 +14,16 @@ using MantaRay.Helpers;
 using MantaRay.Setup;
 using Rhino.Geometry;
 
-namespace MantaRay
+namespace MantaRay.Old
+
 {
-    public class GH_MeshToObj : GH_Template
+    [Obsolete]
+    public class GH_MeshToObj_OBSOLETE : GH_Template
     {
-        public string MapFile { get; set; }
         /// <summary>
         /// Initializes a new instance of the GH_MeshToRad class.
         /// </summary>
-        public GH_MeshToObj()
+        public GH_MeshToObj_OBSOLETE()
           : base("MeshToObj", "Mesh2Obj",
               "MeshToRad.\n\n" +
 
@@ -50,14 +50,16 @@ namespace MantaRay
 
             pManager[pManager.AddTextParameter("Name", "Name", "Name (will save name.rad)", GH_ParamAccess.tree)].DataMapping = GH_DataMapping.Graft;
 
-            pManager[pManager.AddTextParameter("ModifierName", "ModifierName", "ModifierName - Name of the radiance material", GH_ParamAccess.tree)].DataMapping = GH_DataMapping.Graft;
             pManager[pManager.AddTextParameter("MapFileName", "MapFileName", "name of mapping file name. Default is mapping (.map)", GH_ParamAccess.item, "mapping")].Optional = true;
+            pManager[pManager.AddTextParameter("ModifierName", "ModifierName", "ModifierName - Name of the radiance material", GH_ParamAccess.tree)].DataMapping = GH_DataMapping.Graft;
 
             pManager[pManager.AddTextParameter("Target folder", "Target folder", "Optional. Override the subfolder from the connection component.\n" +
                 "Example:\n" +
-                "simulation/objFiles", GH_ParamAccess.item, "objFiles")].Optional = true;
+                "simulation/objFiles", GH_ParamAccess.item, "")].Optional = true;
             pManager.AddBooleanParameter("Run", "Run", "Run", GH_ParamAccess.item);
         }
+
+        public override GH_Exposure Exposure => GH_Exposure.hidden;
 
         /// <summary>
         /// Registers all the output parameters for this component.
@@ -85,61 +87,19 @@ namespace MantaRay
             if (!DA.Fetch<bool>(this, "Run"))
                 return;
 
-            string subfolder = DA.Fetch<string>(this, "Target folder", "Subfolder Override").ApplyGlobals().Replace('/', '\\').Trim('\\'); //keep backslash as we're in windows.
-
-
-
-            SSH_Helper sshHelper;
+            SSH_Helper sshHelper = SSH_Helper.CurrentFromDocument(OnPingDocument());
 
             string workingDir;
 
-            sshHelper = SSH_Helper.CurrentFromDocument(OnPingDocument());
-
-            if (sshHelper != null)
-            {
-
-
-                if (string.IsNullOrEmpty(subfolder))
-                {
-                    workingDir = sshHelper.WinHome;
-                }
-                else
-                {
-                    workingDir = sshHelper.WindowsParentPath + @"\" + subfolder;
-                }
-
-                workingDir = (workingDir.EndsWith(@"\") || workingDir.EndsWith("/")) ? workingDir : workingDir + @"\";
-
-            }
-            else
-            {
-
-                if (!string.IsNullOrEmpty(subfolder) && Directory.Exists(subfolder.TrimEnd('\\')))
-                {
-                    workingDir = subfolder.TrimEnd('\\');
-                }
-                else if (!string.IsNullOrEmpty(subfolder))
-                {
-                    workingDir = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile) + "\\MantaRay" + "\\" + subfolder.TrimEnd('\\') + "\\";
-                    AddRuntimeMessage(GH_RuntimeMessageLevel.Remark, "We are not connected to SSH, and thus havent setup our local folders.\n" +
-                        $"This means that the files are created in {workingDir}");
-                }
-                else
-                {
-                    workingDir = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile) + "\\MantaRay" + "\\";
-                    AddRuntimeMessage(GH_RuntimeMessageLevel.Remark, "We are not connected to SSH, and thus havent setup our local folders.\n" +
-                        $"This means that the files are created in {workingDir}");
-                }
-            }
-
             string mappingName = DA.Fetch<string>(this, "MapFileName");
 
+            string subfolder = DA.Fetch<string>(this, "Target folder", "Subfolder Override").ApplyGlobals().Replace('/', '\\').Trim('\\'); //keep backslash as we're in windows.
 
-            GH_Structure<GH_Mesh> inMeshes = DA.FetchTree<GH_Mesh>(this, "Mesh");
+            Grasshopper.Kernel.Data.GH_Structure<GH_Mesh> inMeshes = DA.FetchTree<GH_Mesh>(this, "Mesh");
 
-            GH_Structure<GH_String> names = DA.FetchTree<GH_String>(this, "Name");
+            Grasshopper.Kernel.Data.GH_Structure<GH_String> names = DA.FetchTree<GH_String>(this, "Name");
 
-            GH_Structure<GH_String> modifierNames = DA.FetchTree<GH_String>(this, "ModifierName");
+            Grasshopper.Kernel.Data.GH_Structure<GH_String> modifierNames = DA.FetchTree<GH_String>(this, "ModifierName");
 
             if (modifierNames.Branches.Count != inMeshes.Branches.Count || inMeshes.Branches.Count != names.Branches.Count)
             {
@@ -152,9 +112,18 @@ namespace MantaRay
 
 
 
+            if (string.IsNullOrEmpty(subfolder))
+            {
+                workingDir = sshHelper.WinHome;
+            }
+            else
+            {
+                workingDir = sshHelper.WindowsParentPath + @"\" + subfolder;
+            }
 
+            workingDir = (workingDir.EndsWith(@"\") || workingDir.EndsWith("/")) ? workingDir : workingDir + @"\";
 
-
+            string mappingFilePath = $"{workingDir}{mappingName}.map";
 
 
             // Write the mapping.map file
@@ -176,42 +145,15 @@ namespace MantaRay
 
                 string name = names[i][0].Value.Replace(" ", "_");
 
-                if (name.Contains("\n"))
-                {
-                    AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Looks like you entered a full modifier and not the modifier name.\n" +
-                        "Please use the 'Get Modifier Names' components output 'ModName'");
-                    return;
-                }
-
                 mapping.AppendFormat("\n{0} (Group \"{1}\");", modifierName.ApplyGlobals(), name.ApplyGlobals());
 
                 localFilePaths.Add(workingDir + name + ".obj");
             }
 
+            if (!System.IO.Directory.Exists(System.IO.Path.GetDirectoryName(mappingFilePath)))
+                System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(mappingFilePath));
 
-
-
-
-            if (OnPingDocument().Objects
-                .OfType<GH_MeshToObj>()
-                .Any(o => o != null && !o.Locked && !ReferenceEquals(o, this) && o.MapFile != null && mappingName.Equals(o.MapFile)))
-            {
-                AddRuntimeMessage(GH_RuntimeMessageLevel.Error,
-                    $"A mapping file named {mappingName} already exists in your grasshopper workflow!\n" +
-                    $"Careful that you are not overriding the wrong one!\n" +
-                    $"I suggest you rename the input here");
-                return;
-            }
-
-            MapFile = mappingName;
-
-
-            string mappingFilePath = $"{workingDir}{mappingName}.map";
-
-            if (!Directory.Exists(Path.GetDirectoryName(mappingFilePath)))
-                Directory.CreateDirectory(Path.GetDirectoryName(mappingFilePath));
-
-            File.WriteAllText(mappingFilePath, mapping.ToString());
+            System.IO.File.WriteAllText(mappingFilePath, mapping.ToString());
 
             Transform unitScaler = Transform.Scale(new Point3d(0, 0, 0), 1.0.ToMeter());
 
@@ -367,23 +309,6 @@ namespace MantaRay
 
         }
 
-        public override bool Read(GH_IReader reader)
-        {
-            string mapFile = string.Empty;
-            if (reader.TryGetString("MapFile", ref mapFile))
-            {
-                MapFile = mapFile;
-            }
-            return base.Read(reader);
-        }
-
-        public override bool Write(GH_IWriter writer)
-        {
-            writer.SetString("MapFile", MapFile);
-            return base.Write(writer);
-
-        }
-
         protected override Bitmap Icon => Resources.Resources.Ra_Obj_Icon;
 
 
@@ -392,7 +317,7 @@ namespace MantaRay
         /// </summary>
         public override Guid ComponentGuid
         {
-            get { return new Guid("7262DFF6-5027-40E7-A493-840F238FFB83"); }
+            get { return new Guid("7262DFF6-5027-40E7-A493-840F258EFB83"); }
         }
 
         protected virtual bool IsFileLocked(FileInfo file)

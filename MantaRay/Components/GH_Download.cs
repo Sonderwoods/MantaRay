@@ -58,7 +58,7 @@ namespace MantaRay.Components
             if (!CheckIfRunOrUseOldResults(DA, 0)) return; //template
 
             SSH_Helper sshHelper = SSH_Helper.CurrentFromDocument(OnPingDocument());
-            if (sshHelper == null)
+            if (sshHelper == null || sshHelper.SftpClient == null || !sshHelper.SftpClient.IsConnected)
             {
                 AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, "No connection");
                 return;

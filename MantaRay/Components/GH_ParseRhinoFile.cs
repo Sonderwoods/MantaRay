@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Windows.Forms;
 using Grasshopper.GUI;
 using Grasshopper.GUI.Canvas;
 using Grasshopper.Kernel;
@@ -11,19 +13,26 @@ using Grasshopper.Kernel.Types;
 using MantaRay.Components.Templates;
 using MantaRay.Helpers;
 using Rhino.DocObjects;
+using Rhino.DocObjects.Tables;
 using Rhino.Geometry;
 
 namespace MantaRay.Components
 {
     public class GH_ParseRhinoFile : GH_Template, IHasDoubleClick
     {
+
+        private bool forceRun = false;
+
+        public string Prefix { get; set; }
+
         /// <summary>
         /// Initializes a new instance of the GH_ParseRhinoFile class.
         /// </summary>
         public GH_ParseRhinoFile()
           : base("ParseRhinoFile", "ParseRhinoFile",
               "Reads rhino layers, gets geometry and prepares materials for radiance\n\n" +
-                "Double click me to recompute\n\n\n" +
+                "Double click me to recompute\n\n" +
+                "Right click to setup basic layer structure\n\n" +
                 "The layer table in Rhino (by default) could look like the below:\n" +
                 "'Daylight_Inputs' (with the below sublayers)\n" +
                 "- '_Floors_20' (will get reflectance of 0.2)\n" +
@@ -56,15 +65,15 @@ namespace MantaRay.Components
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
             pManager.AddMeshParameter("GlassGeometries", "GlassGeometries", "Geometries", GH_ParamAccess.list);
-            pManager.AddTextParameter("GlassModifiers", "GlassModifiers", "Modifiers", GH_ParamAccess.list);
+            pManager.AddTextParameter("GlassModifiers", "GlassModifiers", "Modifiers. Connect them to a 'Get Modifier Names' component", GH_ParamAccess.list);
             pManager.AddGenericParameter("-", "-", "-", GH_ParamAccess.item);
 
             pManager.AddMeshParameter("OpaqueGeometries", "OpaqueGeometries", "Geometries", GH_ParamAccess.list);
-            pManager.AddTextParameter("OpaqueModifiers", "OpaqueModifiers", "Modifiers", GH_ParamAccess.list);
+            pManager.AddTextParameter("OpaqueModifiers", "OpaqueModifiers", "Modifiers. Connect them to a 'Get Modifier Names' component", GH_ParamAccess.list);
             pManager.AddGenericParameter("-", "-", "-", GH_ParamAccess.item);
 
             pManager.AddMeshParameter("CustomGeometries", "CustomGeometries", "Geometries", GH_ParamAccess.list);
-            pManager.AddTextParameter("ModifierNames", "ModifierNames", "ModifierNames", GH_ParamAccess.list);
+            pManager.AddTextParameter("ModifierNames", "ModifierNames", "ModifierNames. Connect them to a 'Get Modifier Names' component", GH_ParamAccess.list);
             pManager.AddGenericParameter("-", "-", "-", GH_ParamAccess.item);
 
             gg = pManager.AddBrepParameter("GridGeometries", "GridGeometries", "Grids", GH_ParamAccess.list);
@@ -73,7 +82,7 @@ namespace MantaRay.Components
             pManager.AddTextParameter("GridNames", "GridNames", "GridNames", GH_ParamAccess.list);
             pManager.AddGenericParameter("-", "-", "-", GH_ParamAccess.item);
 
-            pManager.AddTextParameter("SkippedLayers", "SkippedLayers", "SkippedLayers", GH_ParamAccess.list);
+            pManager.AddTextParameter("SkippedLayers", "SkippedLayers", "SkippedLayers, including empty ones", GH_ParamAccess.list);
 
             pManager.AddBooleanParameter("Ran", "Ran", "Ran without any err", GH_ParamAccess.tree); //always keep ran as the last parameter
 
@@ -86,13 +95,23 @@ namespace MantaRay.Components
         /// <param name="DA">The DA object is used to retrieve from inputs and store in outputs.</param>
         protected override void SolveInstance(IGH_DataAccess DA)
         {
+            Prefix = DA.Fetch<string>(this, "LayerPrefix");
+
             TimingHelper th = new TimingHelper("ParseRhinoFile");
             _grids.Clear();
 
-            if(!DA.Fetch<bool>(this, "Run"))
+            bool run = DA.Fetch<bool>(this, "Run") || forceRun;
+
+            
+
+            if (!run)
             {
+                AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, "Set run to true or double click");
+                DA.SetData("Ran", new GH_Boolean(run));
                 return;
             }
+
+            forceRun = false;
 
             List<Mesh> glassGeometries = new List<Mesh>();
             List<Radiance.Material> glassMaterials = new List<Radiance.Material>();
@@ -109,7 +128,7 @@ namespace MantaRay.Components
             List<string> gridNames = new List<string>();
 
 
-            string prefix = DA.Fetch<string>(this, "LayerPrefix");
+            
             string gridLayer = DA.Fetch<string>(this, "Grids");
 
             object opaqueLock = new object();
@@ -125,10 +144,22 @@ namespace MantaRay.Components
 
 
 
+            var layers = Rhino.RhinoDoc.ActiveDoc.Layers.Where(l => !l.IsDeleted && l.FullPath.StartsWith(Prefix));
+
+            if (!layers.Any())
+            {
+                AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, $"Didnt find any layers starting with '{Prefix}'\n" +
+                    "Right click to add default layers");
+                run = false;
+            }
+
+            var runTree = new GH_Structure<GH_Boolean>();
+            runTree.Append(new GH_Boolean(run));
+            Params.Output[Params.Output.Count - 1].ClearData();
+            DA.SetDataTree(Params.Output.Count - 1, runTree);
 
 
-
-            Parallel.ForEach<Layer>(Rhino.RhinoDoc.ActiveDoc.Layers.Where(l => l.FullPath.StartsWith(prefix)), (layer) =>
+            Parallel.ForEach<Layer>(layers, (layer) =>
             {
 
 
@@ -149,7 +180,7 @@ namespace MantaRay.Components
                     LayerIndexFilter = layer.Index
                 });
 
-                string[] ln = layer.FullPath.Substring(prefix.Length).Split('_');
+                string[] ln = layer.FullPath.Substring(Prefix.Length).Split('_');
 
                 if (ln.Length == 1 && string.Equals(ln[0], gridLayer, StringComparison.InvariantCulture))
                 {
@@ -297,10 +328,7 @@ namespace MantaRay.Components
 
             DA.SetDataList("SkippedLayers", missingLayers);
 
-            var runTree = new GH_Structure<GH_Boolean>();
-            runTree.Append(new GH_Boolean(DA.Fetch<bool>(this, "Run")));
-            Params.Output[Params.Output.Count - 1].ClearData();
-            DA.SetDataTree(Params.Output.Count - 1, runTree);
+            
 
 
         }
@@ -322,10 +350,91 @@ namespace MantaRay.Components
 
         }
 
+        public void CreateLayers()
+        {
+            if (Prefix == null) return;
+
+            Dictionary<string, Color> layers = new Dictionary<string, Color>()
+            {
+                { "Floors_20" , Color.Beige },
+                { "Context_20" , Color.Gray },
+                { "Ground_20", Color.Brown },
+                { "Walls_50", Color.DarkOliveGreen },
+                { "Ceilings_70", Color.Orange },
+                { "Frames_70", Color.Gold },
+                { "Glass_65%", Color.Blue },
+                { "Glass_70%", Color.Blue },
+                { "Grids", Color.DeepPink },
+            };
+
+
+            var doc = Rhino.RhinoDoc.ActiveDoc;
+
+            foreach (var layer in layers)
+            {
+                GetOrCreateLayer($"{Prefix ?? ""}{layer.Key}", layer.Value);
+            }
+        }
+
+        public (string, int) GetOrCreateLayer(string name, Color? color = null)
+        {
+
+            Layer prevLayer = null;
+
+            var doc = Rhino.RhinoDoc.ActiveDoc;
+
+            LayerTable layerTable = doc.Layers;
+
+            int layerIndex = layerTable.FindByFullPath(name, -1);
+
+            List<string> combinedPartNames = new List<string>();
+            if (layerIndex < 0)
+            {
+                var partNames = name.Split(new[] { "::" }, StringSplitOptions.None);
+
+                for (int i = 0; i < partNames.Length; i++)
+                {
+                    combinedPartNames.Add(string.Join("::", partNames.Take(i + 1)));
+
+                    int checkingIndex = layerTable.FindByFullPath(combinedPartNames[i], -1);
+
+                    if (checkingIndex < 0)
+                    {
+                        Layer parentLayer = new Layer() { Name = partNames[i] };
+
+                        if (i > 0)
+                        {
+                            parentLayer.ParentLayerId = prevLayer.Id;
+                        }
+
+                        layerIndex = layerTable.Add(parentLayer);
+                        prevLayer = layerTable[layerIndex];
+                    }
+                    else
+                    {
+                        prevLayer = layerTable[checkingIndex];
+                    }
+
+                }
+            }
+            if (color != null)
+            {
+                layerTable[layerIndex].Color = color.Value;
+            }
+            return (name, layerIndex);
+        }
+
         public GH_ObjectResponse OnDoubleClick(GH_Canvas sender, GH_CanvasMouseEvent e)
         {
+            forceRun = true;
             this.ExpireSolution(true);
             return GH_ObjectResponse.Handled;
+        }
+
+        public override void AppendAdditionalMenuItems(ToolStripDropDown menu)
+        {
+            var rr = Menu_AppendItem(menu, "Create default layers", (s, e) => { CreateLayers(); }, true);
+            base.AppendAdditionalMenuItems(menu);
         }
 
         /// <summary>
