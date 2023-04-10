@@ -21,6 +21,8 @@ namespace MantaRay.Components
     public class GH_ParseRhinoFile : GH_Template, IHasDoubleClick
     {
 
+        private bool forceRun = false;
+
         public string Prefix { get; set; }
 
         /// <summary>
@@ -92,13 +94,17 @@ namespace MantaRay.Components
         /// <param name="DA">The DA object is used to retrieve from inputs and store in outputs.</param>
         protected override void SolveInstance(IGH_DataAccess DA)
         {
+            Prefix = DA.Fetch<string>(this, "LayerPrefix");
+
             TimingHelper th = new TimingHelper("ParseRhinoFile");
             _grids.Clear();
 
-            if (!DA.Fetch<bool>(this, "Run"))
+            if (!DA.Fetch<bool>(this, "Run") && !forceRun)
             {
                 return;
             }
+
+            forceRun = false;
 
             List<Mesh> glassGeometries = new List<Mesh>();
             List<Radiance.Material> glassMaterials = new List<Radiance.Material>();
@@ -115,7 +121,7 @@ namespace MantaRay.Components
             List<string> gridNames = new List<string>();
 
 
-            Prefix = DA.Fetch<string>(this, "LayerPrefix");
+            
             string gridLayer = DA.Fetch<string>(this, "Grids");
 
             object opaqueLock = new object();
@@ -131,10 +137,16 @@ namespace MantaRay.Components
 
 
 
+            var layers = Rhino.RhinoDoc.ActiveDoc.Layers.Where(l => !l.IsDeleted && l.FullPath.StartsWith(Prefix));
+
+            if (!layers.Any())
+            {
+                AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, $"Didnt find any layers starting with '{Prefix}'\n" +
+                    "Right click to add default layers");
+            }
 
 
-
-            Parallel.ForEach<Layer>(Rhino.RhinoDoc.ActiveDoc.Layers.Where(l => l.FullPath.StartsWith(Prefix)), (layer) =>
+            Parallel.ForEach<Layer>(layers, (layer) =>
             {
 
 
@@ -332,7 +344,7 @@ namespace MantaRay.Components
         {
             if (Prefix == null) return;
 
-            Dictionary<string, System.Drawing.Color> layers = new Dictionary<string, System.Drawing.Color>()
+            Dictionary<string, Color> layers = new Dictionary<string, Color>()
             {
                 { "Floors_20" , Color.Beige },
                 { "Ground_20", Color.Brown },
@@ -353,53 +365,57 @@ namespace MantaRay.Components
             }
         }
 
-        public (string, int) GetOrCreateLayer(string name, System.Drawing.Color? color = null)
+        public (string, int) GetOrCreateLayer(string name, Color? color = null)
         {
 
-            Layer prev_layer = null;
-            LayerTable lt = Rhino.RhinoDoc.ActiveDoc.Layers;
-            int li = lt.FindByFullPath(name, -1);
-            List<string> combined_part_names = new List<string>();
-            if (li < 0)
+            Layer prevLayer = null;
+
+            var doc = Rhino.RhinoDoc.ActiveDoc;
+
+            LayerTable layerTable = doc.Layers;
+
+            int layerIndex = layerTable.FindByFullPath(name, -1);
+
+            List<string> combinedPartNames = new List<string>();
+            if (layerIndex < 0)
             {
-                var part_names = name.Split(new[] { "::" }, StringSplitOptions.None);
+                var partNames = name.Split(new[] { "::" }, StringSplitOptions.None);
 
-                for (int i = 0; i < part_names.Length; i++)
+                for (int i = 0; i < partNames.Length; i++)
                 {
-                    combined_part_names.Add(string.Join("::", part_names.Take(i + 1)));
+                    combinedPartNames.Add(string.Join("::", partNames.Take(i + 1)));
 
-                    int checking_index = lt.FindByFullPath(combined_part_names[i], -1);
+                    int checkingIndex = layerTable.FindByFullPath(combinedPartNames[i], -1);
 
-                    if (checking_index < 0)
+                    if (checkingIndex < 0)
                     {
-                        Layer parent_layer = new Layer()
-                        {
-                            Name = part_names[i]
+                        Layer parentLayer = new Layer() { Name = partNames[i] };
 
-                        };
                         if (i > 0)
                         {
-                            parent_layer.ParentLayerId = prev_layer.Id;
+                            parentLayer.ParentLayerId = prevLayer.Id;
                         }
-                        li = lt.Add(parent_layer);
-                        prev_layer = Rhino.RhinoDoc.ActiveDoc.Layers[li];
+
+                        layerIndex = layerTable.Add(parentLayer);
+                        prevLayer = layerTable[layerIndex];
                     }
                     else
                     {
-                        prev_layer = Rhino.RhinoDoc.ActiveDoc.Layers[checking_index];
+                        prevLayer = layerTable[checkingIndex];
                     }
 
                 }
             }
             if (color != null)
             {
-                Rhino.RhinoDoc.ActiveDoc.Layers[li].Color = color.Value;
+                layerTable[layerIndex].Color = color.Value;
             }
-            return (name, li);
+            return (name, layerIndex);
         }
 
         public GH_ObjectResponse OnDoubleClick(GH_Canvas sender, GH_CanvasMouseEvent e)
         {
+            forceRun = true;
             this.ExpireSolution(true);
             return GH_ObjectResponse.Handled;
         }
