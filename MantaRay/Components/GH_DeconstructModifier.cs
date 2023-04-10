@@ -14,7 +14,7 @@ namespace MantaRay.Components
         /// Initializes a new instance of the GH_DeconstructModifier class.
         /// </summary>
         public GH_DeconstructModifier()
-          : base("Deconstruct Modifier", "De-Modifier",
+          : base("Get Modifier Names", "Mod Names",
               "Deconstructs the modifier string to get a name and suggests a name for geometry\n\nThe strings will be cleaned to only include [^a-zA-Z0-9_.]",
               "2 Radiance")
         {
@@ -46,9 +46,13 @@ namespace MantaRay.Components
             Regex regexAdvanced = new Regex(@"[^a-zA-Z0-9_.]>", RegexOptions.Compiled);
 
 
+            var input = DA.Fetch<string>(this, 0);
+            if (!string.IsNullOrEmpty(input))
+            {
+                DA.SetData(0, regexAdvanced.Replace(GetModName(input), "_") + "_geo");
+                DA.SetData(1, regexAdvanced.Replace(GetModName(input), "_"));
 
-            DA.SetData(0, regexAdvanced.Replace(GetModName(DA.Fetch<string>(this, 0)), "_") + "_geo");
-            DA.SetData(1, regexAdvanced.Replace(GetModName(DA.Fetch<string>(this, 0)), "_"));
+            }
 
         }
 
@@ -57,7 +61,7 @@ namespace MantaRay.Components
         {
             try
             {
-            return modifier.Split('\n').First().Split(' ').Skip(2).First();
+                return modifier.Split('\n').First().Split(' ').Skip(2).First();
 
             }
             catch
@@ -66,19 +70,7 @@ namespace MantaRay.Components
             }
 
         }
-        /// <summary>
-        /// Provides an Icon for the component.
-        /// </summary>
-        protected override System.Drawing.Bitmap Icon
-        {
-            get
-            {
-                //You can add image files to your project resources and access them like this:
-                // return Resources.IconForThisComponent;
-                return null;
-            }
-        }
-
+       
         /// <summary>
         /// Gets the unique ID for this component. Do not change this ID after release.
         /// </summary>
