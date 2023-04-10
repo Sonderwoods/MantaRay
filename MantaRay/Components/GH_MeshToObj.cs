@@ -158,6 +158,7 @@ namespace MantaRay
                 {
                     AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Looks like you entered a full modifier and not the modifier name.\n" +
                         "Please use the DeconstructModifier components output 'ModName'");
+                    return;
                 }
 
                 mapping.AppendFormat("\n{0} (Group \"{1}\");", modifierName.ApplyGlobals(), name.ApplyGlobals());
