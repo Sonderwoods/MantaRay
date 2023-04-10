@@ -50,17 +50,13 @@ namespace MantaRay.Components
             string path = DA.Fetch<string>(this, 0);
 
             SSH_Helper sshHelper = SSH_Helper.CurrentFromDocument(OnPingDocument());
-            if (sshHelper == null)
+            if (sshHelper == null || sshHelper.CheckConnection() != SSH_Helper.ConnectionDetails.Connected)
             {
                 AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, "No connection");
                 return;
             }
 
-            if (sshHelper.CheckConnection() != SSH_Helper.ConnectionDetails.Connected)
-            {
-                AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "No Connection");
-                return;
-            }
+ 
             DA.SetData(0, path.ToLinuxPath());
             DA.SetData(1, path.ToWindowsPath());
 
