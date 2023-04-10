@@ -47,8 +47,8 @@ namespace MantaRay.Components
 
 
 
-            DA.SetData(0, regexAdvanced.Replace(DA.Fetch<string>(this, 0), "_") + "_geo");
-            DA.SetData(1, regexAdvanced.Replace(DA.Fetch<string>(this, 0), "_"));
+            DA.SetData(0, regexAdvanced.Replace(GetModName(DA.Fetch<string>(this, 0)), "_") + "_geo");
+            DA.SetData(1, regexAdvanced.Replace(GetModName(DA.Fetch<string>(this, 0)), "_"));
 
         }
 
