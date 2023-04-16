@@ -190,15 +190,21 @@ namespace MantaRay.Components
         //}
         public void AddMissingParameters()
         {
+            bool changed = false;
             foreach (string missingInp in missingInputs
                 .Distinct()
                 .Where(i => !Params.Input.Select(ip => ip.NickName).Contains(i)))
             {
                 IGH_Param param = new Param_String() { NickName = missingInp, Optional = true, Access = GH_ParamAccess.item, DataMapping = GH_DataMapping.Graft };
                 Params.RegisterInputParam(param);
+                changed = true;
             }
-            Params.OnParametersChanged();
-            this.ExpireSolution(true);
+            if (changed)
+            {
+
+                Params.OnParametersChanged();
+                this.ExpireSolution(true);
+            }
 
         }
 
