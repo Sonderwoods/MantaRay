@@ -66,6 +66,8 @@ namespace MantaRay.Components
         /// <param name="DA">The DA object is used to retrieve from inputs and store in outputs.</param>
         protected override void SolveInstance(IGH_DataAccess DA)
         {
+            if (PrincipalParameterIndex < 0)
+                PrincipalParameterIndex = 0;
 
             int dynamicParameterCount = Params.Input.Count - staticParameterCount;
             List<OverridableText> inputs = DA.FetchList<OverridableText>(this, "Input").Select(o => (OverridableText)o.Duplicate()).ToList();
@@ -112,7 +114,7 @@ namespace MantaRay.Components
                     if (localsTest.ContainsKey(input.NickName))
                     {
                         AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, $"Key {input.NickName} (in the dynamic parameters) already exists. Overwritten to {s.Value}");
-                    } 
+                    }
 
 
                     localsTest[input.NickName] = s.Value;
@@ -122,7 +124,7 @@ namespace MantaRay.Components
 
             }
 
-            foreach(var @input in inputs)
+            foreach (var @input in inputs)
             {
                 input.Locals = locals;
             }
@@ -131,6 +133,13 @@ namespace MantaRay.Components
             //ToArray to make sure it's enumerated and thus added to missing inputs.
             OverridableText[] outputs = inputs.Select(i => new OverridableText(i, locals, missingInputs)).ToArray();
             string[] outputsRaw = inputs.Select(i => new OverridableText(i, locals, missingInputs).Value).ToArray();
+
+            if (missingInputs.Any())
+            {
+
+                AddMissingParameters();
+
+            }
 
             missingInputs.ForEach(item => AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, $"Missing \"{item}\""));
 
@@ -143,7 +152,8 @@ namespace MantaRay.Components
                     DA.SetDataList(1, outputs);
                 }
             }
-            
+
+
 
 
         }
@@ -233,7 +243,7 @@ namespace MantaRay.Components
                 var param = new Param_GenericObject { NickName = "-" };
                 return param;
             }
-            
+
         }
 
         bool IGH_VariableParameterComponent.DestroyParameter(GH_ParameterSide side, int index)
@@ -263,7 +273,7 @@ namespace MantaRay.Components
 
             }
 
-            if(Params.Output.Count == 2)
+            if (Params.Output.Count == 2)
             {
                 var param = Params.Output[1];
                 if (param.NickName == "-")
