@@ -79,7 +79,7 @@ namespace MantaRay.Components
             gg = pManager.AddBrepParameter("GridGeometries", "GridGeometries", "Grids", GH_ParamAccess.list);
             pManager.HideParameter(gg);
 
-            pManager.AddTextParameter("GridNames", "GridNames", "GridNames", GH_ParamAccess.list);
+            pManager.AddTextParameter("GridNames", "GridNames", "GridNames. Will only output names if the rhino object has names attache to it", GH_ParamAccess.list);
             pManager.AddGenericParameter("-", "-", "-", GH_ParamAccess.item);
 
             pManager.AddTextParameter("SkippedLayers", "SkippedLayers", "SkippedLayers, including empty ones", GH_ParamAccess.list);
@@ -139,7 +139,7 @@ namespace MantaRay.Components
             //{
 
 
-            th.Benchmark("Prestuff");
+            //th.Benchmark("Prestuff");
 
 
 
