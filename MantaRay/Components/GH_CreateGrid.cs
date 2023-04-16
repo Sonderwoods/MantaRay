@@ -41,9 +41,9 @@ namespace Grasshopper_Doodles_Public
 
             // Do not change names. But ordering can be changed.
             pManager[pManager.AddGeometryParameter("Geometry", "Geo", "Input surfaces, meshes or curves", GH_ParamAccess.list)].DataMapping = GH_DataMapping.Graft;
-            pManager.AddNumberParameter("GridSize [m]", "S [m]", "Grid size in meters", GH_ParamAccess.item, 1.0.FromMeter());
-            pManager.AddNumberParameter("Vertical Offset [m]", "VO [m]", "Vertical offset", GH_ParamAccess.item, 0.75.FromMeter());
-            pManager.AddNumberParameter("Edge Offset [m]", "EO [m]*", "*Not yet implemented.\nEdge offset", GH_ParamAccess.item, 0.5.FromMeter());
+            pManager.AddNumberParameter("GridSize [m]", "S [m]", "Grid size in meters", GH_ParamAccess.item, 0.5);
+            pManager.AddNumberParameter("Vertical Offset [m]", "VO [m]", "Vertical offset", GH_ParamAccess.item, 0.75);
+            pManager.AddNumberParameter("Edge Offset [m]", "EO [m]*", "*Not yet implemented.\nEdge offset", GH_ParamAccess.item, 0.5);
             int ic = pManager.AddBooleanParameter("IsoCurves", "IC?", "Leave default to make it work with the isocurves preview! For grid pixels, set to false.\nUsing vertice points for later using to generate isocurves. If false, it will use center of faces. Default is true.", GH_ParamAccess.item, true);
             pManager[ic].Optional = true;
 
