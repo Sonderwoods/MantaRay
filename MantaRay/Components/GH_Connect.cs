@@ -90,7 +90,7 @@ namespace MantaRay.Components
         /// <param name="DA">The DA object is used to retrieve from inputs and store in outputs.</param>
         protected override void SolveInstance(IGH_DataAccess DA)
         {
-            TimingHelper th = new TimingHelper("GH_Connect");
+            TimingHelper th = null; // new TimingHelper("GH_Connect");
             sshHelper = sshHelper ?? new SSH_Helper();
 
             ManPageHelper.Initiate();
@@ -120,7 +120,7 @@ namespace MantaRay.Components
                 return;
 
             }
-            th.Benchmark("Checked other components");
+            th?.Benchmark("Checked other components");
 
             string username = DA.Fetch<string>(this, "user");
             string password = DA.Fetch<string>(this, "password");
@@ -167,7 +167,7 @@ namespace MantaRay.Components
                 sshHelper = null;
             }
 
-            th.Benchmark("...password");
+            th?.Benchmark("...password");
 
 
             if (run) // if its still on.. can be disabled above.
@@ -204,7 +204,7 @@ namespace MantaRay.Components
                 sshHelper.SshClient = new SshClient(ConnNfo);
                 sshHelper.SshClient.ConnectionInfo.Timeout = new TimeSpan(0, 0, 10);
 
-                th.Benchmark("Create Client");
+                th?.Benchmark("Create Client");
 
                 if (!string.IsNullOrEmpty(winDir))
                 {
@@ -244,7 +244,7 @@ namespace MantaRay.Components
 
 
 
-                th.Benchmark("Setup Paths");
+                th?.Benchmark("Setup Paths");
 
                 //var ConnectSSH = Task.Factory.StartNew(() =>
                 //{
@@ -319,7 +319,7 @@ namespace MantaRay.Components
 
                 //});
 
-                th.Benchmark("SSH Connected");
+                th?.Benchmark("SSH Connected");
 
 
 
@@ -427,7 +427,7 @@ namespace MantaRay.Components
 
                 sshHelper.ExportPrefixes = string.IsNullOrEmpty(prefixes) ? sshHelper.ExportPrefixesDefault : prefixes.ApplyGlobals(GlobalsHelper.GlobalsFromConnectComponent);
 
-                th.Benchmark("SFTP connected2");
+                th?.Benchmark("SFTP connected2");
 
                 WasConnected = sshHelper.SshClient.IsConnected && sshHelper.SftpClient.IsConnected;
 
