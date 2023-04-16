@@ -60,16 +60,16 @@ namespace MantaRay
         public GH_PaletteStyle AttRunningUnselected = new Grasshopper.GUI.Canvas.GH_PaletteStyle(Color.Purple);
 
         // DONE
-        public GH_PaletteStyle AttDoneSelected = new Grasshopper.GUI.Canvas.GH_PaletteStyle(Color.FromArgb(76, 128, 122));
+        public GH_PaletteStyle AttDoneSelected = new Grasshopper.GUI.Canvas.GH_PaletteStyle(Color.FromArgb(76, 138, 122)); // (76, 128, 122));
         public GH_PaletteStyle AttDoneUnselected = new Grasshopper.GUI.Canvas.GH_PaletteStyle(Color.FromArgb(95, 115, 113));
 
         // CANCELLED
-        public GH_PaletteStyle AttCancelledSelected = new Grasshopper.GUI.Canvas.GH_PaletteStyle(Color.FromArgb(76, 128, 122));
+        public GH_PaletteStyle AttCancelledSelected = new Grasshopper.GUI.Canvas.GH_PaletteStyle(Color.FromArgb(76, 138, 122));// (76, 128, 122));
         public GH_PaletteStyle AttCancelledUnselected = new Grasshopper.GUI.Canvas.GH_PaletteStyle(Color.FromArgb(95, 115, 113));
 
         // REUSING
-        public GH_PaletteStyle AttReusingSelected = new Grasshopper.GUI.Canvas.GH_PaletteStyle(Color.FromArgb(163, 158, 121));
-        public GH_PaletteStyle AttReusingUnselected = new Grasshopper.GUI.Canvas.GH_PaletteStyle(Color.FromArgb(135, 134, 115));
+        public GH_PaletteStyle AttReusingSelected = new Grasshopper.GUI.Canvas.GH_PaletteStyle(Color.FromArgb(135, 154, 115));  // (135, 134, 115));
+        public GH_PaletteStyle AttReusingUnselected = new Grasshopper.GUI.Canvas.GH_PaletteStyle(Color.FromArgb(163, 158, 121));
 
         // DISCONNECTED
         public GH_PaletteStyle AttDisconnectedSelected = new Grasshopper.GUI.Canvas.GH_PaletteStyle(Color.FromArgb(94, 46, 46));
@@ -77,6 +77,7 @@ namespace MantaRay
 
         public GH_PaletteStyle GetStyle(GH_Template_Async_Extended.AestheticPhase phase, bool? forceSelected = null)
         {
+            
             forceSelected = forceSelected ?? Selected;
             if (forceSelected.Value)
             {
@@ -380,7 +381,7 @@ namespace MantaRay
             {
                 s = s.Substring(0, MAXLEN - 1) + "...";
             }
-            
+
             //rectangle.Inflate(6, 6);
             graphics.DrawString(s, font, new SolidBrush(Selected ? (AttRunningSelected.Fill) : (AttRunningUnselected.Fill)), rectangle);
             //graphics.FillRectangle(fill, rectangle);
