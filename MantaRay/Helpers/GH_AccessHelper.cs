@@ -20,7 +20,7 @@ using System.Reflection;
 using System.Security.Cryptography;
 using static MantaRay.Helpers.ReplaceMissingComponentsHelper;
 
-namespace MantaRay
+namespace MantaRay.Helpers
 {
     /// <summary>
     /// DataAccessHelper for GH. Original from Arend van Waart  arend@studioavw.nl
@@ -67,12 +67,12 @@ namespace MantaRay
                 da.GetData(position, ref temp);
 
             }
-            catch (System.IndexOutOfRangeException e)
+            catch (IndexOutOfRangeException e)
             {
                 SchedulePlaceNewComponent(obj);
                 throw new IndexOutOfRangeException($"Input parameter not found at position {position}" + msg, e);
             }
-            catch (System.InvalidOperationException e)
+            catch (InvalidOperationException e)
             {
                 SchedulePlaceNewComponent(obj);
                 throw new InvalidOperationException($"item instead of list!?: {position}" + msg, e);
@@ -93,11 +93,11 @@ namespace MantaRay
                     da.GetData(name, ref temp);
                     return temp;
                 }
-                catch (System.IndexOutOfRangeException)
+                catch (IndexOutOfRangeException)
                 {
                     continue;
                 }
-                catch (System.InvalidOperationException e)
+                catch (InvalidOperationException e)
                 {
                     SchedulePlaceNewComponent(obj);
                     throw new InvalidOperationException($"item instead of list!?: {name}" + msg, e);
@@ -121,12 +121,12 @@ namespace MantaRay
                 da.GetData(name, ref temp);
 
             }
-            catch (System.IndexOutOfRangeException e)
+            catch (IndexOutOfRangeException e)
             {
                 SchedulePlaceNewComponent(obj);
                 throw new IndexOutOfRangeException($"Input parameter not found: {name}" + msg, e);
             }
-            catch (System.InvalidOperationException e)
+            catch (InvalidOperationException e)
             {
                 SchedulePlaceNewComponent(obj);
                 throw new InvalidOperationException($"item instead of list!?: {name}" + msg, e);
@@ -153,12 +153,12 @@ namespace MantaRay
                 da.GetDataList(position, temp);
 
             }
-            catch (System.IndexOutOfRangeException e)
+            catch (IndexOutOfRangeException e)
             {
                 SchedulePlaceNewComponent(obj);
                 throw new IndexOutOfRangeException($"Input parameter not found at position {position}" + msg, e);
             }
-            catch (System.InvalidOperationException e)
+            catch (InvalidOperationException e)
             {
                 SchedulePlaceNewComponent(obj);
                 throw new InvalidOperationException($"item instead of list!?: {position}" + msg, e);
@@ -186,11 +186,11 @@ namespace MantaRay
                     da.GetDataList(name, temp);
                     return temp;
                 }
-                catch (System.IndexOutOfRangeException)
+                catch (IndexOutOfRangeException)
                 {
                     continue;
                 }
-                catch (System.InvalidOperationException e)
+                catch (InvalidOperationException e)
                 {
                     SchedulePlaceNewComponent(obj);
                     throw new InvalidOperationException($"item instead of list!?: {name}" + msg, e);
@@ -212,18 +212,18 @@ namespace MantaRay
         /// <returns></returns>
         public static GH_Structure<T> FetchTree<T>(this IGH_DataAccess da, IGH_DocumentObject obj, int position) where T : IGH_Goo
         {
-            GH_Structure<T> temp = default(GH_Structure<T>);
+            GH_Structure<T> temp = default;
             try
             {
 
                 da.GetDataTree(position, out temp);
             }
-            catch (System.IndexOutOfRangeException e)
+            catch (IndexOutOfRangeException e)
             {
                 SchedulePlaceNewComponent(obj);
                 throw new IndexOutOfRangeException($"Input parameter not found at position {position}" + msg, e);
             }
-            catch (System.InvalidOperationException e)
+            catch (InvalidOperationException e)
             {
                 SchedulePlaceNewComponent(obj);
                 throw new InvalidOperationException($"item instead of list!?: {position}" + msg, e);
@@ -243,18 +243,18 @@ namespace MantaRay
         public static GH_Structure<T> FetchTree<T>(this IGH_DataAccess da, IGH_DocumentObject obj, string name) where T : IGH_Goo
         {
 
-            GH_Structure<T> temp = default(GH_Structure<T>);
+            GH_Structure<T> temp = default;
             try
             {
                 da.GetDataTree(name, out temp);
 
             }
-            catch (System.IndexOutOfRangeException e)
+            catch (IndexOutOfRangeException e)
             {
                 SchedulePlaceNewComponent(obj);
                 throw new IndexOutOfRangeException($"Input parameter not found: {name}" + msg, e);
             }
-            catch (System.InvalidOperationException e)
+            catch (InvalidOperationException e)
             {
                 SchedulePlaceNewComponent(obj);
                 throw new InvalidOperationException($"item instead of list!?: {name}" + msg, e);

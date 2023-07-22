@@ -1,10 +1,11 @@
-﻿using System;
+﻿using MantaRay.Helpers;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace MantaRay
+namespace MantaRay.Interfaces
 {
     /// <summary>
     /// Used for the <see cref="SSH_Helper"/> to map linux vs windows paths
@@ -13,6 +14,6 @@ namespace MantaRay
     {
         string LinuxHome { get; }
         string SftpHome { get; }
-        string WinHome { get;  }
+        string WinHome { get; }
     }
 }

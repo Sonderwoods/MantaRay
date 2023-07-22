@@ -5,13 +5,14 @@ using Grasshopper.Kernel;
 using Rhino.Geometry;
 using Grasshopper.Kernel.Types;
 using Grasshopper.Kernel.Data;
-using MantaRay;
 using Rhino.UI.Controls;
 using System.Runtime.Remoting.Metadata.W3cXsd2001;
 using System.Linq;
 using MantaRay.Helpers;
+using MantaRay.Types;
+using MantaRay.Components.Templates;
 
-namespace Grasshopper_Doodles_Public
+namespace MantaRay.Components
 {
     /// <summary>
     /// Original (C) Henning Larsen Architects 2019
@@ -36,7 +37,7 @@ namespace Grasshopper_Doodles_Public
         /// <summary>
         /// Registers all the input parameters for this component.
         /// </summary>
-        protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
+        protected override void RegisterInputParams(GH_InputParamManager pManager)
         {
 
             // Do not change names. But ordering can be changed.
@@ -61,7 +62,7 @@ namespace Grasshopper_Doodles_Public
         /// <summary>
         /// Registers all the output parameters for this component.
         /// </summary>
-        protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
+        protected override void RegisterOutputParams(GH_OutputParamManager pManager)
         {
             pManager.AddGenericParameter("Grids", "G", "Output grids. Preview these with the GridViewer component", GH_ParamAccess.list);
             pManager.AddMeshParameter("Mesh", "M", "Meshes", GH_ParamAccess.list);
@@ -78,10 +79,10 @@ namespace Grasshopper_Doodles_Public
         protected override void SolveInstance(IGH_DataAccess DA)
         {
 
-            var gridSize = UnitHelper.FromMeter(DA.Fetch<double>(this, "GridSize [m]"));
-            var edgeOffset = UnitHelper.FromMeter(DA.Fetch<double>(this, "Edge Offset [m]"));
+            var gridSize = DA.Fetch<double>(this, "GridSize [m]").FromMeter();
+            var edgeOffset = DA.Fetch<double>(this, "Edge Offset [m]").FromMeter();
 
-            var offset = UnitHelper.FromMeter(DA.Fetch<double>(this, "Vertical Offset [m]"));
+            var offset = DA.Fetch<double>(this, "Vertical Offset [m]").FromMeter();
             var useCenters = DA.Fetch<bool>(this, "IsoCurves");
             var geometries = DA.FetchList<IGH_GeometricGoo>(this, "Geometry");
             var goLarge = DA.Fetch<bool>(this, "GoLarge");
@@ -160,7 +161,7 @@ namespace Grasshopper_Doodles_Public
                     normals.AddRange(_normals.Select(v => new GH_Vector(v)));
                     centers.AddRange(myGrids[i].SimPoints.Select(pt => new GH_Point(pt)));
                 }
-                
+
             }
 
 

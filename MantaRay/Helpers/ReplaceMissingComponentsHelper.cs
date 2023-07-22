@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using System.Drawing;
 using Rhino.UI.Controls;
 using Grasshopper.Kernel.Special;
+using MantaRay.Components.Templates;
 
 namespace MantaRay.Helpers
 {

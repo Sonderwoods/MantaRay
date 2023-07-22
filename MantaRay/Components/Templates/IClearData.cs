@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace MantaRay
+namespace MantaRay.Components.Templates
 {
     public interface IClearData
     {

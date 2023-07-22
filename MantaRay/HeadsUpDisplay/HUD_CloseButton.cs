@@ -9,7 +9,7 @@ using Rhino.Display;
 using Grasshopper.Kernel;
 using Grasshopper.Kernel.Types;
 
-namespace MantaRay.Radiance.HeadsUpDisplay
+namespace MantaRay.HeadsUpDisplay
 {
 
     public class HUD_CloseButton : HUD_Item
@@ -79,7 +79,7 @@ namespace MantaRay.Radiance.HeadsUpDisplay
                 _hud.Collapsed = !_hud.Collapsed;
                 if (!_hud.Collapsed)
                 {
-                    foreach (var hu in HUD.HUDs.Where(h => !object.ReferenceEquals(h.Value, this.HUD)))
+                    foreach (var hu in HUD.HUDs.Where(h => !ReferenceEquals(h.Value, HUD)))
                     {
                         ((HUD_CloseButton)hu.Value.CloseBtn).Hide();
                     }

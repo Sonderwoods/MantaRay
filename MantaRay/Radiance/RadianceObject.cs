@@ -1,14 +1,7 @@
-﻿using MantaRay.Radiance.HeadsUpDisplay;
-using System;
-using System.Collections.Generic;
+﻿using System;
 using System.Diagnostics.Contracts;
 using System.Linq;
-using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
-using Rhino.Display;
-using Rhino.Geometry;
-using Grasshopper.Kernel;
 
 namespace MantaRay.Radiance
 {

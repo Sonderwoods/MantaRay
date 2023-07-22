@@ -6,14 +6,16 @@ using Grasshopper.Kernel;
 using Grasshopper.Kernel.Data;
 using Grasshopper.Kernel.Types;
 using MantaRay.Components;
+using MantaRay.Components.Templates;
+using MantaRay.Helpers;
 using Rhino.Geometry;
 
-namespace MantaRay
+namespace MantaRay.OldComponents
 {
     [Obsolete]
     public class GH_Execute_OBSOLETE : GH_Template
     {
-        
+
         /// <summary>
         /// Initializes a new instance of the GH_Execute class.
         /// </summary>
@@ -23,7 +25,7 @@ namespace MantaRay
               "Use me to execute a SSH Command",
               "1 SSH")
         {
-            
+
         }
 
         public override GH_Exposure Exposure => GH_Exposure.hidden;
@@ -31,7 +33,7 @@ namespace MantaRay
         /// <summary>
         /// Registers all the input parameters for this component.
         /// </summary>
-        protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
+        protected override void RegisterInputParams(GH_InputParamManager pManager)
         {
             pManager.AddTextParameter("SSH Commands", "SSH commands", "SSH commands. Each item in list will be executed", GH_ParamAccess.list);
             pManager.AddBooleanParameter("Run", "Run", "Run", GH_ParamAccess.item);
@@ -40,7 +42,7 @@ namespace MantaRay
         /// <summary>
         /// Registers all the output parameters for this component.
         /// </summary>
-        protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
+        protected override void RegisterOutputParams(GH_OutputParamManager pManager)
         {
             pManager.AddTextParameter("stdout", "stdout", "stdout", GH_ParamAccess.item);
             pManager.AddTextParameter("stderr", "stderr", "stderr", GH_ParamAccess.item);
@@ -52,7 +54,7 @@ namespace MantaRay
 
         public override void AddedToDocument(GH_Document document)
         {
-            this.Hidden = true;
+            Hidden = true;
             base.AddedToDocument(document);
         }
 
@@ -73,13 +75,13 @@ namespace MantaRay
 
             if (DA.Fetch<bool>(this, "Run"))
             {
-                this.Hidden = false;
+                Hidden = false;
 
                 StringBuilder log = new StringBuilder();
                 StringBuilder stdout = new StringBuilder();
                 StringBuilder errors = new StringBuilder();
                 List<string> commands = DA.FetchList<string>(this, "SSH Commands");
-                string command = String.Join(";", commands).ApplyGlobals();
+                string command = string.Join(";", commands).ApplyGlobals();
 
                 SSH_Helper sshHelper = SSH_Helper.CurrentFromDocument(OnPingDocument());
 
@@ -91,7 +93,7 @@ namespace MantaRay
 
                 if (success)
                 {
-                    this.Message = "Success! pid: " + pid.ToString();
+                    Message = "Success! pid: " + pid.ToString();
                     _stdout = stdout.ToString();
                     if (itsJustAWarning)
                         AddRuntimeMessage(GH_RuntimeMessageLevel.Remark, errors.ToString());
@@ -99,7 +101,7 @@ namespace MantaRay
                 }
                 else
                 {
-                    this.Message = "Error :-(";
+                    Message = "Error :-(";
                     _stdout = string.Empty;
                     AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, errors.ToString());
 
@@ -116,10 +118,10 @@ namespace MantaRay
             }
             else //run==false
             {
-                this.Message = "";
-                this.Hidden = true;
+                Message = "";
+                Hidden = true;
                 DA.SetData("stdout", _stdout);
-                if (!String.IsNullOrEmpty(_stdout))
+                if (!string.IsNullOrEmpty(_stdout))
                     AddRuntimeMessage(GH_RuntimeMessageLevel.Remark, "Using an old existing stdout\nThis can be convenient for opening old workflows and not running everything again.");
 
             }

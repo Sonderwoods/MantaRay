@@ -1,8 +1,9 @@
 ﻿using GH_IO.Serialization;
 using Grasshopper.Kernel;
+using MantaRay.Components.Templates;
+using MantaRay.HeadsUpDisplay;
 using MantaRay.Helpers;
 using MantaRay.Radiance;
-using MantaRay.Radiance.HeadsUpDisplay;
 using MantaRay.Setup;
 using Rhino.Display;
 using Rhino.Geometry;

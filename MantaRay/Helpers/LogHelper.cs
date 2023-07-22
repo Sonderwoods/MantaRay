@@ -5,10 +5,10 @@ using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using MantaRay.Helpers;
+using MantaRay.Components.Templates.Async;
 using MantaRay.Setup;
 
-namespace MantaRay
+namespace MantaRay.Helpers
 {
     public class LogHelper
     {
@@ -26,9 +26,9 @@ namespace MantaRay
         public static LogHelper GetLogHelper(string name = null)
         {
             name = name ?? ConstantsHelper.ProjectName;
-            if ((name == ConstantsHelper.ProjectName && !AllLogSystems.ContainsKey(ConstantsHelper.ProjectName))
+            if (name == ConstantsHelper.ProjectName && !AllLogSystems.ContainsKey(ConstantsHelper.ProjectName)
                || name == null
-               || String.IsNullOrEmpty(name))
+               || string.IsNullOrEmpty(name))
             {
                 return CreateLogHelper();
             }

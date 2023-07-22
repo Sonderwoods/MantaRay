@@ -5,6 +5,7 @@ using System.Drawing;
 using Grasshopper.Kernel;
 using Rhino.Geometry;
 using MantaRay.Helpers;
+using MantaRay.Components.Templates;
 
 namespace MantaRay.OldComponents
 {

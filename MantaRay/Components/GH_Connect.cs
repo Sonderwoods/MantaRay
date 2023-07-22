@@ -23,6 +23,8 @@ using MantaRay.Components.Views;
 using Eto.Forms;
 using MantaRay.Components.VM;
 using Rhino.Commands;
+using MantaRay.Components.Templates.Async;
+using MantaRay.Interfaces;
 
 namespace MantaRay.Components
 {

@@ -10,6 +10,7 @@ using Rhino.Geometry;
 using MantaRay.Helpers;
 using System.Globalization;
 using Renci.SshNet;
+using MantaRay.Components.Templates;
 
 namespace MantaRay.Components
 {

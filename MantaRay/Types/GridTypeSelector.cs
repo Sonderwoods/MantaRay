@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace MantaRay
+namespace MantaRay.Types
 {
     class GridTypeSelector : IEnumerable<double>
     {
@@ -136,7 +136,7 @@ namespace MantaRay
 
                 for (int i = 0; i < Steps.Value; i++)
                 {
-                    yield return Min.Value + (double)i / (Steps.Value - 1.0) * span;
+                    yield return Min.Value + i / (Steps.Value - 1.0) * span;
                 }
 
             }

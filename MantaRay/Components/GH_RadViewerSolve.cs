@@ -16,10 +16,11 @@ using Grasshopper.Kernel;
 using Rhino.Geometry;
 
 using MantaRay.Radiance;
-using MantaRay.Radiance.HeadsUpDisplay;
 using Grasshopper.Kernel.Data;
 using Grasshopper.Kernel.Types;
 using MantaRay.Helpers;
+using MantaRay.HeadsUpDisplay;
+using MantaRay.Components.Templates;
 
 namespace MantaRay.Components
 {

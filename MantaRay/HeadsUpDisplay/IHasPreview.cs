@@ -8,7 +8,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace MantaRay.Radiance.HeadsUpDisplay
+namespace MantaRay.HeadsUpDisplay
 {
     /// <summary>
     /// IHasPreview must be used for all HUD items
@@ -48,6 +48,6 @@ namespace MantaRay.Radiance.HeadsUpDisplay
         void DrawWires(IGH_PreviewArgs args, int thickness = 1);
         BoundingBox? GetBoundingBox();
 
-        IEnumerable<GeometryBase> GetGeometry(); 
+        IEnumerable<GeometryBase> GetGeometry();
     }
 }

@@ -1,14 +1,13 @@
-﻿using ClipperLib;
-using Grasshopper.Kernel;
+﻿using Grasshopper.Kernel;
 using Grasshopper.Kernel.Types;
-using MantaRay.Helpers;
+using MantaRay.ClipperLib;
 using Rhino.Geometry;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace MantaRay
+namespace MantaRay.Helpers
 {
     /// <summary>
     /// Original (C) Henning Larsen Architects 2019
@@ -30,10 +29,10 @@ namespace MantaRay
             List<Brep> brepsOut = new List<Brep>();
             //List<Polyline> polyOut2 = new List<Polyline>();
 
-            double tolerance = UnitHelper.FromMeter(0.01);
+            double tolerance = 0.01.FromMeter();
             var openType = new List<Polyline3D.OpenFilletType> { Polyline3D.OpenFilletType.Butt };
             List<Polyline3D.ClosedFilletType> closedType = new List<Polyline3D.ClosedFilletType>() { Polyline3D.ClosedFilletType.Miter };
-            double miter = UnitHelper.FromMeter(0.5);
+            double miter = 0.5.FromMeter();
 
 
             for (int i = 0; i < breps.Count; i++)
@@ -103,7 +102,7 @@ namespace MantaRay
                     //polyOut2.AddRange(brepHoles.SelectMany(p => p));
                     //polyOut2.AddRange(brepEdges.SelectMany(p => p));
 
-                    brepsOut.AddRange(InputGeometryHelper.UpwardsPointingBrepsFromCurves(allEdges));
+                    brepsOut.AddRange(UpwardsPointingBrepsFromCurves(allEdges));
 
                 }
                 else
@@ -123,10 +122,10 @@ namespace MantaRay
         public static List<Brep> CurvesToOffsetBreps(List<Curve> curves, double dist)
         {
 
-            double tolerance = UnitHelper.FromMeter(0.01);
+            double tolerance = 0.01.FromMeter();
             var openType = new List<Polyline3D.OpenFilletType> { Polyline3D.OpenFilletType.Butt };
             List<Polyline3D.ClosedFilletType> closedType = new List<Polyline3D.ClosedFilletType>() { Polyline3D.ClosedFilletType.Miter };
-            double miter = UnitHelper.FromMeter(0.5);
+            double miter = 0.5.FromMeter();
 
 
             List<List<Polyline>> holes = new List<List<Polyline>>();
@@ -143,7 +142,7 @@ namespace MantaRay
             {
                 holes.Add(inPolylines);
                 List<Curve> holesPoly = holes.SelectMany(p => p).Select(p => (Curve)p.ToPolylineCurve()).ToList();
-                brepsOut.AddRange(InputGeometryHelper.UpwardsPointingBrepsFromCurves(holesPoly));
+                brepsOut.AddRange(UpwardsPointingBrepsFromCurves(holesPoly));
                 //outside.Add(new List<Polyline>() { null });
             }
             else
@@ -152,7 +151,7 @@ namespace MantaRay
                 Polyline3D.Offset(inPolylines, openType, closedType, pln, tolerance, new List<double> { dist }, miter, arcTolerance: 0.25, out _, out holes, EndType.etClosedLine);
 
                 List<Curve> holesPoly = holes.SelectMany(p => p).Select(p => (Curve)p.ToPolylineCurve()).ToList();
-                brepsOut.AddRange(InputGeometryHelper.UpwardsPointingBrepsFromCurves(holesPoly));
+                brepsOut.AddRange(UpwardsPointingBrepsFromCurves(holesPoly));
             }
 
             return brepsOut;
@@ -164,7 +163,7 @@ namespace MantaRay
 
 
 
-            Brep[] srfs = Brep.CreatePlanarBreps(curves, UnitHelper.FromMeter(0.001));
+            Brep[] srfs = Brep.CreatePlanarBreps(curves, 0.001.FromMeter());
 
             if (srfs == null)
                 return new Brep[0];

@@ -14,7 +14,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace MantaRay
+namespace MantaRay.Components.Templates.Async
 {
     /// <summary>
     /// This class sets colors for the grasshopper components
@@ -30,7 +30,7 @@ namespace MantaRay
           : base(component)
         {
             this.component = component;
-            this.doubleClickComponent = component as IHasDoubleClick;
+            doubleClickComponent = component as IHasDoubleClick;
 
             palette_normal_standard = GH_Skin.palette_normal_standard;
             palette_normal_selected = GH_Skin.palette_normal_selected;
@@ -56,28 +56,28 @@ namespace MantaRay
         public GH_PaletteStyle ColorSelected { get; set; }
 
         // RUNNING
-        public GH_PaletteStyle AttRunningSelected = new Grasshopper.GUI.Canvas.GH_PaletteStyle(Color.MediumVioletRed);
-        public GH_PaletteStyle AttRunningUnselected = new Grasshopper.GUI.Canvas.GH_PaletteStyle(Color.Purple);
+        public GH_PaletteStyle AttRunningSelected = new GH_PaletteStyle(Color.MediumVioletRed);
+        public GH_PaletteStyle AttRunningUnselected = new GH_PaletteStyle(Color.Purple);
 
         // DONE
-        public GH_PaletteStyle AttDoneSelected = new Grasshopper.GUI.Canvas.GH_PaletteStyle(Color.FromArgb(76, 138, 122)); // (76, 128, 122));
-        public GH_PaletteStyle AttDoneUnselected = new Grasshopper.GUI.Canvas.GH_PaletteStyle(Color.FromArgb(95, 115, 113));
+        public GH_PaletteStyle AttDoneSelected = new GH_PaletteStyle(Color.FromArgb(76, 138, 122)); // (76, 128, 122));
+        public GH_PaletteStyle AttDoneUnselected = new GH_PaletteStyle(Color.FromArgb(95, 115, 113));
 
         // CANCELLED
-        public GH_PaletteStyle AttCancelledSelected = new Grasshopper.GUI.Canvas.GH_PaletteStyle(Color.FromArgb(76, 138, 122));// (76, 128, 122));
-        public GH_PaletteStyle AttCancelledUnselected = new Grasshopper.GUI.Canvas.GH_PaletteStyle(Color.FromArgb(95, 115, 113));
+        public GH_PaletteStyle AttCancelledSelected = new GH_PaletteStyle(Color.FromArgb(76, 138, 122));// (76, 128, 122));
+        public GH_PaletteStyle AttCancelledUnselected = new GH_PaletteStyle(Color.FromArgb(95, 115, 113));
 
         // REUSING
-        public GH_PaletteStyle AttReusingSelected = new Grasshopper.GUI.Canvas.GH_PaletteStyle(Color.FromArgb(135, 154, 115));  // (135, 134, 115));
-        public GH_PaletteStyle AttReusingUnselected = new Grasshopper.GUI.Canvas.GH_PaletteStyle(Color.FromArgb(163, 158, 121));
+        public GH_PaletteStyle AttReusingSelected = new GH_PaletteStyle(Color.FromArgb(135, 154, 115));  // (135, 134, 115));
+        public GH_PaletteStyle AttReusingUnselected = new GH_PaletteStyle(Color.FromArgb(163, 158, 121));
 
         // DISCONNECTED
-        public GH_PaletteStyle AttDisconnectedSelected = new Grasshopper.GUI.Canvas.GH_PaletteStyle(Color.FromArgb(94, 46, 46));
-        public GH_PaletteStyle AttDisconnectedUnselected = new Grasshopper.GUI.Canvas.GH_PaletteStyle(Color.FromArgb(138, 80, 80));
+        public GH_PaletteStyle AttDisconnectedSelected = new GH_PaletteStyle(Color.FromArgb(94, 46, 46));
+        public GH_PaletteStyle AttDisconnectedUnselected = new GH_PaletteStyle(Color.FromArgb(138, 80, 80));
 
         public GH_PaletteStyle GetStyle(GH_Template_Async_Extended.AestheticPhase phase, bool? forceSelected = null)
         {
-            
+
             forceSelected = forceSelected ?? Selected;
             if (forceSelected.Value)
             {
@@ -314,7 +314,7 @@ namespace MantaRay
                     return p.VolatileData.AllData(false)
                         .All(b => b is GH_String v && v.IsValid
                         && (string.Equals(v.Value, "true", StringComparison.InvariantCultureIgnoreCase)
-                        || (double.TryParse(v.Value, out double r) && r > 1.0)));
+                        || double.TryParse(v.Value, out double r) && r > 1.0));
 
                 case Param_Number p:
                     return p.VolatileData.AllData(false)
@@ -383,7 +383,7 @@ namespace MantaRay
             }
 
             //rectangle.Inflate(6, 6);
-            graphics.DrawString(s, font, new SolidBrush(Selected ? (AttRunningSelected.Fill) : (AttRunningUnselected.Fill)), rectangle);
+            graphics.DrawString(s, font, new SolidBrush(Selected ? AttRunningSelected.Fill : AttRunningUnselected.Fill), rectangle);
             //graphics.FillRectangle(fill, rectangle);
             //graphics.DrawRectangle(edge, rectangle);
         }
@@ -454,7 +454,7 @@ namespace MantaRay
                         penTypes |= PenWireTypes.Selected;
                     }
 
-                    if ((/*param.Access ==  GH_ParamAccess.tree && */ param.VolatileData.PathCount > 1) || (param.DataMapping == GH_DataMapping.Graft))
+                    if (/*param.Access ==  GH_ParamAccess.tree && */ param.VolatileData.PathCount > 1 || param.DataMapping == GH_DataMapping.Graft)
                     {
                         penTypes |= PenWireTypes.Tree;
                     }

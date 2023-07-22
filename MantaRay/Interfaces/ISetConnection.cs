@@ -1,10 +1,11 @@
-﻿using System;
+﻿using MantaRay.Helpers;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace MantaRay
+namespace MantaRay.Interfaces
 {
     public interface ISetConnection
     {

@@ -3,7 +3,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using ClipperLib;
 using Rhino;
 using Rhino.Geometry;
 
@@ -13,7 +12,7 @@ using Rhino.Geometry;
 // ReSharper disable once CheckNamespace
 
 
-namespace ClipperLib
+namespace MantaRay.ClipperLib
 {
     /// <summary>
     /// /// This file contains the glue to connect the Clipper library to RhinoCommon
@@ -191,7 +190,7 @@ namespace ClipperLib
         /// <param name="pln">The PLN.</param>
         /// <param name="tolerance">The tolerance.</param>
         /// <returns></returns>
-        public static int IsInside(this Polyline polyline, Point3d point, Plane pln, Double tolerance)
+        public static int IsInside(this Polyline polyline, Point3d point, Plane pln, double tolerance)
         {
             return Clipper.PointInPolygon(point.ToIntPoint2D(pln, tolerance), polyline.ToPath2D(pln, tolerance));
         }

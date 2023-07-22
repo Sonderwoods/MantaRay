@@ -1,10 +1,12 @@
 ﻿using Grasshopper.Kernel;
-using MantaRay;
+using MantaRay.Components.Templates;
+using MantaRay.Helpers;
+using MantaRay.Types;
 using Rhino.Geometry;
 using System;
 using System.Collections.Generic;
 
-namespace MantaRay
+namespace MantaRay.Components
 {
     /// <summary>
     /// Original (C) Henning Larsen Architects 2019
@@ -29,7 +31,7 @@ namespace MantaRay
         /// <summary>
         /// Registers all the input parameters for this component.
         /// </summary>
-        protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
+        protected override void RegisterInputParams(GH_InputParamManager pManager)
         {
             pManager.AddNumberParameter("From", "From", "From", GH_ParamAccess.item, 0);
             pManager.AddNumberParameter("To", "To", "To", GH_ParamAccess.item, 100);
@@ -49,7 +51,7 @@ namespace MantaRay
         /// <summary>
         /// Registers all the output parameters for this component.
         /// </summary>
-        protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
+        protected override void RegisterOutputParams(GH_OutputParamManager pManager)
         {
             pManager.AddGenericParameter("Input Selector", "Input Selector", "Input Selector", GH_ParamAccess.item);
         }
@@ -66,9 +68,9 @@ namespace MantaRay
             double stepSize = DA.Fetch<double>(this, "B - StepSize");
             List<double> manuallySteps = DA.FetchList<double>(this, "C - Steps");
 
-            if ((steps > 0 && stepSize > 0) ||
-                (steps > 0 && manuallySteps.Count > 0) ||
-                (stepSize > 0 && manuallySteps.Count > 0))
+            if (steps > 0 && stepSize > 0 ||
+                steps > 0 && manuallySteps.Count > 0 ||
+                stepSize > 0 && manuallySteps.Count > 0)
             {
                 throw new Exception("Unsure whether you want to A, B or C.");
             }

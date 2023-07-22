@@ -10,10 +10,12 @@ using Grasshopper.Kernel.Data;
 using Grasshopper.Kernel.Parameters;
 using Grasshopper.Kernel.Special;
 using Grasshopper.Kernel.Types;
+using MantaRay.Components.Templates;
 using MantaRay.Helpers;
+using MantaRay.Types;
 using Rhino.Geometry;
 
-namespace MantaRay
+namespace MantaRay.Components
 {
     /// <summary>
     /// Original (C) Henning Larsen Architects 2019
@@ -62,7 +64,7 @@ namespace MantaRay
         /// <summary>
         /// Registers all the input parameters for this component.
         /// </summary>
-        protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
+        protected override void RegisterInputParams(GH_InputParamManager pManager)
         {
             //0
             pManager.AddGenericParameter("Grids", "Grids", "Grids", GH_ParamAccess.list);
@@ -103,7 +105,7 @@ namespace MantaRay
         /// <summary>
         /// Registers all the output parameters for this component.
         /// </summary>
-        protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
+        protected override void RegisterOutputParams(GH_OutputParamManager pManager)
         {
             int cm = pManager.AddMeshParameter("coloredMesh", "coloredMesh", "mesh", GH_ParamAccess.list);
             pManager.HideParameter(cm);
@@ -221,9 +223,9 @@ namespace MantaRay
                 gc = (GH_GradientControl)Params.Input[i_inputGradient].Sources[0].Attributes.GetTopLevel.DocObject;
 
             }
-            catch (System.ArgumentOutOfRangeException)
+            catch (ArgumentOutOfRangeException)
             {
-                this.AddRuntimeMessage(GH_RuntimeMessageLevel.Remark, "Remember to add a gradient component in grasshopper to change colors!");
+                AddRuntimeMessage(GH_RuntimeMessageLevel.Remark, "Remember to add a gradient component in grasshopper to change colors!");
                 gc = null;
 
 
@@ -264,7 +266,7 @@ namespace MantaRay
                     outMeshes.Add(grids[i].GetColoredMesh(gp.GetColors(allResults.Branches[i].Select(p => p.Value).ToArray())));
                     Mesh m = grids[i].SimMesh;
                     Point3d[] points = grids[i].SimPoints.ToArray();
-                    outMeshes[outMeshes.Count - 1].Translate(0, 0, UnitHelper.FromMeter(0.001));
+                    outMeshes[outMeshes.Count - 1].Translate(0, 0, 0.001.FromMeter());
 
                 }
                 catch (ArgumentOutOfRangeException e)
@@ -323,7 +325,7 @@ namespace MantaRay
 
                 if (grids[g].UseCenters == true)
                 {
-                    results = Helpers.RTreeHelper.FindClosestWeightedValues(grids[g], results, true).ToList();
+                    results = RTreeHelper.FindClosestWeightedValues(grids[g], results, true).ToList();
                     // ADD CONVERSION TODO:
                 }
 
@@ -538,7 +540,7 @@ namespace MantaRay
                 return null;
 
 
-            Brep[] brepsFromCurves = Brep.CreatePlanarBreps(intersectedCurves, UnitHelper.FromMeter(0.001));
+            Brep[] brepsFromCurves = Brep.CreatePlanarBreps(intersectedCurves, 0.001.FromMeter());
 
             if (brepsFromCurves == null)
                 return null;
@@ -601,7 +603,7 @@ namespace MantaRay
         {
 
             var planeBottomToProjectTo = new Plane(cuttingPlane);
-            var normal = (Vector3f)(cuttingPlane.ZAxis);
+            var normal = (Vector3f)cuttingPlane.ZAxis;
 
 
             if (results.Count == 0)
@@ -640,7 +642,7 @@ namespace MantaRay
                     Mesh msh = new Mesh();
                     Point3d[] pts = new Point3d[4];
 
-                    int id = (j == edges[i].SegmentCount - 1) ? 0 : j + 1;
+                    int id = j == edges[i].SegmentCount - 1 ? 0 : j + 1;
 
                     pts[0] = new Point3d(edges[i].X[j], edges[i].Y[j], edges[i].Z[j]);
                     pts[1] = new Point3d(edges[i].X[id], edges[i].Y[id], edges[i].Z[id]);
@@ -730,7 +732,7 @@ namespace MantaRay
         /// <summary>
         /// Gets the unique ID for this component. Do not change this ID after release.
         /// </summary>
-        public override System.Guid ComponentGuid
+        public override Guid ComponentGuid
         {
             get { return new Guid("{ed148ded-bbd1-4f18-9768-22376b024930}"); }
         }

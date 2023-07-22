@@ -7,6 +7,7 @@ using Grasshopper.GUI.Canvas;
 using Grasshopper.Kernel;
 using MantaRay.Components;
 using MantaRay.Components.Templates;
+using MantaRay.Helpers;
 using Rhino.Geometry;
 
 namespace MantaRay.Components

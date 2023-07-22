@@ -10,7 +10,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace MantaRay
+namespace MantaRay.Types
 {
     /// <summary>
     /// Original (C) Henning Larsen Architects 2019
@@ -22,7 +22,7 @@ namespace MantaRay
     {
         // Source primarily from : https://discourse.mcneel.com/t/get-values-from-a-gradient-component/108532/6
 
-        readonly Grasshopper.GUI.Gradient.GH_Gradient Gradient = new Grasshopper.GUI.Gradient.GH_Gradient();
+        readonly GH_Gradient Gradient = new GH_Gradient();
         public double? Max { get; set; } = null;
         public double? Min { get; set; } = null;
         public Color? AboveMax { get; set; }
@@ -81,10 +81,10 @@ namespace MantaRay
                     Max = 1;
                 }
 
-                
 
 
-                
+
+
 
 
 
@@ -144,7 +144,7 @@ namespace MantaRay
 
             for (int i = 0; i < count; i++)
             {
-                colors[i] = Gradient.ColourAt((double)i / (count - 1.0));
+                colors[i] = Gradient.ColourAt(i / (count - 1.0));
             }
 
             return colors;

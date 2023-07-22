@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 
 using Grasshopper.Kernel;
+using MantaRay.Helpers;
 using Rhino.Geometry;
 
 namespace MantaRay.Components.Templates

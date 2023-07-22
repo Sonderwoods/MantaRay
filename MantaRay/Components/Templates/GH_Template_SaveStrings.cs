@@ -2,6 +2,7 @@
 using Grasshopper.Kernel;
 using Grasshopper.Kernel.Data;
 using Grasshopper.Kernel.Types;
+using MantaRay.Helpers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,7 +10,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
-namespace MantaRay
+namespace MantaRay.Components.Templates
 {
     public abstract class GH_Template_SaveStrings : GH_Template, IClearData
     {
@@ -46,13 +47,13 @@ namespace MantaRay
                     AddRuntimeMessage(GH_RuntimeMessageLevel.Remark, "Using an old result\nThis can be convenient for opening old workflows and not running everything again.");
                     DA.SetDataList(stringOutput, objs);
                 }
-                this.Hidden = true;
+                Hidden = true;
                 Running = false;
                 return false;
 
             }
             Running = true;
-            this.Hidden = false;
+            Hidden = false;
             Message = "";
             return true;
         }
@@ -74,20 +75,20 @@ namespace MantaRay
                     DA.SetDataList(stringOutput, OldResults);
                 }
 
-                this.Hidden = true;
+                Hidden = true;
                 Running = false;
                 return false;
 
             }
             Running = true;
-            this.Hidden = false;
+            Hidden = false;
             Message = "";
             return true;
         }
 
         public override bool Read(GH_IReader reader)
         {
-            string s = String.Empty;
+            string s = string.Empty;
             if (reader.TryGetString("stdouts", ref s))
             {
                 OldResults = s.Split(new[] { ">JOIN<" }, StringSplitOptions.None);
@@ -98,7 +99,7 @@ namespace MantaRay
 
         public override bool Write(GH_IWriter writer)
         {
-            writer.SetString("stdouts", String.Join(">JOIN<", OldResults));
+            writer.SetString("stdouts", string.Join(">JOIN<", OldResults));
 
             return base.Write(writer);
         }
@@ -111,7 +112,7 @@ namespace MantaRay
 
             Menu_AppendItem(menu, "Clear cached stdout", (s, e) => { ClearCachedData(); ExpireSolution(true); })
                 .ToolTipText = "Removes the data saved in the component.";
-            Menu_AppendItem(menu, "Clear cached data in ALL components", (s, e) => { GH_Template_SaveStrings.ClearAllCachedData(); ExpireSolution(true); })
+            Menu_AppendItem(menu, "Clear cached data in ALL components", (s, e) => { ClearAllCachedData(); ExpireSolution(true); })
                 .ToolTipText = "Removes the data saved in the component.";
         }
 
@@ -137,7 +138,7 @@ namespace MantaRay
                 }
                 Grasshopper.Instances.ActiveCanvas.Document.ExpireSolution();
             }
-            
+
         }
 
     }

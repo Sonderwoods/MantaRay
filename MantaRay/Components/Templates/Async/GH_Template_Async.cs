@@ -1,4 +1,5 @@
 ﻿using Grasshopper.Kernel;
+using MantaRay.Components.Templates;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -8,7 +9,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Timer = System.Timers.Timer;
 
-namespace MantaRay
+namespace MantaRay.Components.Templates.Async
 {
     /// <summary>
     /// Inherit your component from this class to make all the async goodness available. (Based on the Speckle component)
@@ -146,11 +147,11 @@ namespace MantaRay
 
         protected override void AfterSolveInstance()
         {
-            System.Diagnostics.Debug.WriteLine("After solve instance was called " + State + " ? " + Workers.Count);
+            Debug.WriteLine("After solve instance was called " + State + " ? " + Workers.Count);
             // We need to start all the tasks as close as possible to each other.
             if (State == 0 && Tasks.Count > 0 && SetData == 0)
             {
-                System.Diagnostics.Debug.WriteLine("After solve INVOKATIONM");
+                Debug.WriteLine("After solve INVOKATIONM");
                 foreach (var task in Tasks)
                 {
                     task.Start();
@@ -185,7 +186,7 @@ namespace MantaRay
         protected override void SolveInstance(IGH_DataAccess DA)
         {
 
-            
+
 
             //return;
             if (State == 0) //State 0 == START RUNNING
@@ -202,7 +203,7 @@ namespace MantaRay
                     }
                     CancellationSources.Clear();
                 }
-                
+
 
 
                 if (BaseWorker == null)
@@ -267,7 +268,7 @@ namespace MantaRay
             }
 
             PostRunning(DA);
-            
+
             //CancellationSources.Clear();
             Workers.Clear();
             ProgressReports.Clear();
@@ -275,7 +276,7 @@ namespace MantaRay
 
             Interlocked.Exchange(ref SetData, 0);
 
-            
+
 
 
             OnDisplayExpired(true);

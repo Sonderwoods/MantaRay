@@ -6,7 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using static MantaRay.SSH_Helper;
+using static MantaRay.Helpers.SSH_Helper;
 
 namespace MantaRay.Helpers
 {

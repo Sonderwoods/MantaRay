@@ -6,9 +6,9 @@ using Rhino.Geometry;
 using System.IO;
 using System.Diagnostics;
 using System.Windows.Forms;
+using MantaRay.Helpers;
 
-
-namespace MantaRay
+namespace MantaRay.Components.Templates
 {
     public class GH_Denoiser : GH_Component
     {
@@ -45,7 +45,7 @@ namespace MantaRay
         /// <summary>
         /// Registers all the input parameters for this component.
         /// </summary>
-        protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
+        protected override void RegisterInputParams(GH_InputParamManager pManager)
         {
             pManager.AddTextParameter("InputImage", "InputImage", "Path to jpg image", GH_ParamAccess.item);
             pManager.AddTextParameter("params", "params", "for instance can be \"-t 2\" for two cores", GH_ParamAccess.item, "");
@@ -62,7 +62,7 @@ namespace MantaRay
         /// <summary>
         /// Registers all the output parameters for this component.
         /// </summary>
-        protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
+        protected override void RegisterOutputParams(GH_OutputParamManager pManager)
         {
             pManager.AddTextParameter("OutputImage", "OutputImage", "input", GH_ParamAccess.item);
         }
@@ -153,7 +153,7 @@ namespace MantaRay
             //    Console.WriteLine("output>>" + e.Data);
             //process.BeginOutputReadLine();
 
-            process.ErrorDataReceived += (object sender, DataReceivedEventArgs e) =>
+            process.ErrorDataReceived += (sender, e) =>
                 Console.WriteLine("Denoiser: error>>" + e.Data);
             process.BeginErrorReadLine();
 

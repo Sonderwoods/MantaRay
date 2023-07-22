@@ -2,12 +2,12 @@
 using System.Collections.Generic;
 
 using System.Drawing;
-using ClipperLib;
 using Grasshopper.Kernel;
 using Grasshopper.Kernel.Parameters;
 using MantaRay.Components;
 using Rhino.Geometry;
 using MantaRay.Helpers;
+using MantaRay.Components.Templates;
 
 namespace MantaRay.Components
 {

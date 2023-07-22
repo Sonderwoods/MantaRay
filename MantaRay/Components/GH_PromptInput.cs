@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Windows.Forms;
 using Grasshopper.Kernel;
+using MantaRay.Components.Templates;
+using MantaRay.Helpers;
 using MantaRay.Setup;
 using Rhino.Geometry;
 

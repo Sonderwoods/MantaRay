@@ -17,7 +17,7 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using Timer = System.Timers.Timer;
 
-namespace MantaRay
+namespace MantaRay.Components.Templates.Async
 {
     public abstract class GH_Template_Async_Extended : GH_Template_Async
     {
@@ -252,7 +252,7 @@ namespace MantaRay
                 if (useDescriptionCheckBox.Checked)
                 {
                     descriptionTextBox.Enabled = true;
-                    if (!String.IsNullOrEmpty(LogDescriptionStatic))
+                    if (!string.IsNullOrEmpty(LogDescriptionStatic))
                     {
                         descriptionTextBox.Text = LogDescriptionStatic;
                     }
@@ -326,7 +326,7 @@ namespace MantaRay
 
             if (SetData == 1 || !RunInput || PhaseForColors == AestheticPhase.Reusing || PhaseForColors == AestheticPhase.NotRunning || PhaseForColors == AestheticPhase.Done)
             {
-                base.ForceExpireDownStreamObjects();
+                ForceExpireDownStreamObjects();
             }
             //base.ExpireDownStreamObjects();
             //if(firstRun)
@@ -386,7 +386,7 @@ namespace MantaRay
 
             RunInput = true;
 
-            IGH_Param runParam = this.Params.Input.Where(o => o.NickName == "Run" && o.Access == GH_ParamAccess.tree).FirstOrDefault();
+            IGH_Param runParam = Params.Input.Where(o => o.NickName == "Run" && o.Access == GH_ParamAccess.tree).FirstOrDefault();
 
             if (runParam != null)
             {
@@ -419,11 +419,11 @@ namespace MantaRay
 
 
 
-            if (HasLogAbilities() && LogSave && RunInput && RunCount == this.Params.Input[0].VolatileData.PathCount)
+            if (HasLogAbilities() && LogSave && RunInput && RunCount == Params.Input[0].VolatileData.PathCount)
             {
 
                 //logHelper.Add($"{LogName} {RunCount - 1}", (LogUseFixedDescription ? LogDescriptionStatic : LogDescriptionDynamic) + " Starting", InstanceGuid);
-                latestLogGuid = logHelper.AddTask($"{LogName}", (LogUseFixedDescription ? LogDescriptionStatic : LogDescriptionDynamic), InstanceGuid);
+                latestLogGuid = logHelper.AddTask($"{LogName}", LogUseFixedDescription ? LogDescriptionStatic : LogDescriptionDynamic, InstanceGuid);
             }
 
             return RunInput;

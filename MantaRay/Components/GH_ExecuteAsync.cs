@@ -5,8 +5,8 @@ using Grasshopper.Kernel;
 using Grasshopper.Kernel.Data;
 using Grasshopper.Kernel.Types;
 using Grasshopper.Plugin;
-using MantaRay.Components;
 using MantaRay.Components.Templates;
+using MantaRay.Components.Templates.Async;
 using MantaRay.Helpers;
 using MantaRay.Types;
 using System;
@@ -18,7 +18,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
-namespace MantaRay
+namespace MantaRay.Components
 {
 
     //TODO: Get outputs while running -> https://www.linuxfixes.com/2022/04/solved-sshnet-real-time-command-output.html
@@ -28,7 +28,7 @@ namespace MantaRay
 
         const string JOIN = "\n_JOIN_\n";
 
-        protected override System.Drawing.Bitmap Icon => Resources.Resources.Ra_Ra_Icon;
+        protected override Bitmap Icon => Resources.Resources.Ra_Ra_Icon;
 
         public override GH_Exposure Exposure => GH_Exposure.primary;
 
@@ -107,7 +107,7 @@ namespace MantaRay
             //    //this.Params.Input[0].CollectData();
 
             //}
-            foreach (IGH_Goo data in this.Params.Input[0].VolatileData.AllData(false))
+            foreach (IGH_Goo data in Params.Input[0].VolatileData.AllData(false))
             {
                 switch (data)
                 {
@@ -221,7 +221,7 @@ namespace MantaRay
 
             base.PreRunning(DA);
 
-            this.Hidden = !RunInput;
+            Hidden = !RunInput;
 
             if (RunCount == 1 && RunInput)
             {
@@ -284,7 +284,7 @@ namespace MantaRay
             }
             else
             {
-                if (Params.Output[this.Params.Output.Count - 1].VolatileDataCount == 0)
+                if (Params.Output[Params.Output.Count - 1].VolatileDataCount == 0)
                 {
                     SetOneBoolOutput(this, DA, 2, false);
 
@@ -292,7 +292,7 @@ namespace MantaRay
 
                 Message = LastRun.TotalMilliseconds > 0 ? $"Ran in {RunTime.ToShortString()} (last was {LastRun.ToShortString()})" : $"Ran in {RunTime.ToShortString()}";
                 LastRun = RunTime;
-                this.Hidden = false;
+                Hidden = false;
 
                 SetPanelColors();
             }
@@ -301,8 +301,8 @@ namespace MantaRay
 
         public void SetPanelColors()
         {
-            System.Drawing.Color color = RuntimeMessages(GH_RuntimeMessageLevel.Warning).Count + RuntimeMessages(GH_RuntimeMessageLevel.Error).Count > 0 ? Color.FromArgb(255, 250, 210, 210) : Color.FromArgb(255, 160, 190, 160);
-            if (this.PhaseForColors == AestheticPhase.NotRunning)
+            Color color = RuntimeMessages(GH_RuntimeMessageLevel.Warning).Count + RuntimeMessages(GH_RuntimeMessageLevel.Error).Count > 0 ? Color.FromArgb(255, 250, 210, 210) : Color.FromArgb(255, 160, 190, 160);
+            if (PhaseForColors == AestheticPhase.NotRunning)
             {
                 color = Color.Gray;
             }
@@ -312,11 +312,11 @@ namespace MantaRay
                 var param = (GH_Param<GH_String>)panel;
                 foreach (IGH_Param src in param.Sources)
                 {
-                    if (src.Attributes.GetTopLevel.InstanceGuid == this.InstanceGuid && object.ReferenceEquals(Params.Output[1], src))
+                    if (src.Attributes.GetTopLevel.InstanceGuid == InstanceGuid && ReferenceEquals(Params.Output[1], src))
                     {
                         panel.Properties.Colour = color;
                     }
-                    if (src.Attributes.GetTopLevel.InstanceGuid == this.InstanceGuid && object.ReferenceEquals(Params.Output[0], src))
+                    if (src.Attributes.GetTopLevel.InstanceGuid == InstanceGuid && ReferenceEquals(Params.Output[0], src))
                     {
                         panel.Properties.Colour = Color.FromArgb(200, 255, 255, 255);
                     }
@@ -352,7 +352,7 @@ namespace MantaRay
             Commands.Clear();
             Stderrs.Clear();
 
-            string s = String.Empty;
+            string s = string.Empty;
             for (int i = 0; i < int.MaxValue; i++)
             {
                 if (reader.ItemExists("results", i))
@@ -450,8 +450,8 @@ namespace MantaRay
         public class SSH_Worker : WorkerInstance
         {
 
-            public string results = String.Empty;
-            public string stderr = String.Empty;
+            public string results = string.Empty;
+            public string stderr = string.Empty;
             public List<string> commands = new List<string>();
 
             bool run = false;
@@ -464,7 +464,7 @@ namespace MantaRay
 
                 Parent.Hidden = true;
 
-                ((GH_ExecuteAsync)Parent).Commands.Add(String.Join(JOIN, commands.Distinct().Where(c => !((GH_ExecuteAsync)Parent).Commands.Contains(c))));
+                ((GH_ExecuteAsync)Parent).Commands.Add(string.Join(JOIN, commands.Distinct().Where(c => !((GH_ExecuteAsync)Parent).Commands.Contains(c))));
 
                 if (CancellationToken.IsCancellationRequested) { return; }
 
@@ -477,7 +477,7 @@ namespace MantaRay
                 if (run)
                 {
 
-                    string command = String.Join(";echo _JOIN_;", commands).Replace("\r\n", "\n").ApplyGlobals();
+                    string command = string.Join(";echo _JOIN_;", commands).Replace("\r\n", "\n").ApplyGlobals();
 
                     SSH_Helper sshHelper = SSH_Helper.CurrentFromDocument(Parent.OnPingDocument());
 
@@ -671,7 +671,7 @@ namespace MantaRay
 
 
 
-                DA.SetDataList(0, results != null && !String.Equals(results, JOIN) ? results.Split(new[] { JOIN }, StringSplitOptions.None).Select(b => b.Trim('\n', '\r')).Where(r => r != JOIN && r.Trim() != "_JOIN_") : new string[] { null });
+                DA.SetDataList(0, results != null && !string.Equals(results, JOIN) ? results.Split(new[] { JOIN }, StringSplitOptions.None).Select(b => b.Trim('\n', '\r')).Where(r => r != JOIN && r.Trim() != "_JOIN_") : new string[] { null });
 
                 DA.SetDataList(1, stderr != null ? stderr.Split(new[] { JOIN }, StringSplitOptions.None).Select(b => b.Trim('\n', '\r')) : new string[] { null });
 

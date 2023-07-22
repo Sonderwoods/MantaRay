@@ -6,10 +6,11 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Grasshopper.Kernel;
-using MantaRay.Components;
+using MantaRay.Components.Templates;
+using MantaRay.Helpers;
 using Rhino.Geometry;
 
-namespace MantaRay.Components
+namespace MantaRay.OldComponents
 {
     [Obsolete]
     public class GH_AnnualResultsTransposedOld : GH_Template
@@ -29,7 +30,7 @@ namespace MantaRay.Components
         /// <summary>
         /// Registers all the input parameters for this component.
         /// </summary>
-        protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
+        protected override void RegisterInputParams(GH_InputParamManager pManager)
         {
             pManager.AddTextParameter("illFile", "illFile", "illFile", GH_ParamAccess.item);
             pManager.AddIntegerParameter("schedule", "schedule", "schedule as 0s and 1s. Should be 8760 long??", GH_ParamAccess.list);
@@ -41,7 +42,7 @@ namespace MantaRay.Components
         /// <summary>
         /// Registers all the output parameters for this component.
         /// </summary>
-        protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
+        protected override void RegisterOutputParams(GH_OutputParamManager pManager)
 
         {
             pManager.AddTextParameter("Headers", "Headers", "Headers", GH_ParamAccess.list);
@@ -126,7 +127,7 @@ namespace MantaRay.Components
                         results.TryAdd(lineNumber,
                             fields
                             .Where((x, index) => schedule[index]) // <-- TO FILTER COLUMN BY SCHEDULE
-                            .Where(x => !String.IsNullOrWhiteSpace(x))
+                            .Where(x => !string.IsNullOrWhiteSpace(x))
                             .Select(x => double.Parse(x.Trim(' ')))
                             .Count(x => x >= min && x <= max) / (double)fields.Length
                             );

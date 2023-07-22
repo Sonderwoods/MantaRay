@@ -6,8 +6,10 @@ using Rhino.Geometry;
 using System.Drawing;
 using Grasshopper.Kernel.Types;
 using MantaRay;
+using MantaRay.Components.Templates;
+using MantaRay.Types;
 
-namespace Grasshopper_Doodles_Public
+namespace MantaRay.Components
 {
     // Source primarily from : https://discourse.mcneel.com/t/get-values-from-a-gradient-component/108532/6
 
@@ -32,7 +34,7 @@ namespace Grasshopper_Doodles_Public
         /// <summary>
         /// Registers all the input parameters for this component.
         /// </summary>
-        protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
+        protected override void RegisterInputParams(GH_InputParamManager pManager)
         {
             pManager.AddColourParameter("gradient", "G", "", GH_ParamAccess.tree);
             pManager[0].Optional = true;
@@ -45,7 +47,7 @@ namespace Grasshopper_Doodles_Public
         /// <summary>
         /// Registers all the output parameters for this component.
         /// </summary>
-        protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
+        protected override void RegisterOutputParams(GH_OutputParamManager pManager)
         {
             pManager.AddColourParameter("outColors", "C", "", GH_ParamAccess.list);
         }
@@ -61,7 +63,7 @@ namespace Grasshopper_Doodles_Public
             DA.GetData(1, ref outputs);
             if (Params.Input[0].SourceCount > 0 && Params.Input[0].Sources[0] != null)
             {
-                GH_GradientControl gc = (GH_GradientControl)this.Params.Input[0].Sources[0].Attributes.GetTopLevel.DocObject;
+                GH_GradientControl gc = (GH_GradientControl)Params.Input[0].Sources[0].Attributes.GetTopLevel.DocObject;
                 bool reverse = Params.Input[0].Reverse;
                 var colors = new GradientParser(gc) { Reverse = reverse }.GetDefaultColors(Convert.ToInt32(outputs));
                 DA.SetDataList(0, colors);

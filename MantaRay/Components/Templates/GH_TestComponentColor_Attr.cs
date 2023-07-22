@@ -8,7 +8,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace MantaRay
+namespace MantaRay.Components.Templates
 {
     /// <summary>
     /// This class sets colors for the grasshopper components
@@ -23,8 +23,8 @@ namespace MantaRay
 
         }
 
-        public System.Drawing.Color ColorSelected { get; set; } = System.Drawing.Color.White;
-        public System.Drawing.Color Color { get; set; } = System.Drawing.Color.Black;
+        public Color ColorSelected { get; set; } = Color.White;
+        public Color Color { get; set; } = Color.Black;
 
 
 

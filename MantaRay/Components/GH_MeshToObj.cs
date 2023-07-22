@@ -10,12 +10,12 @@ using GH_IO.Serialization;
 using Grasshopper.Kernel;
 using Grasshopper.Kernel.Data;
 using Grasshopper.Kernel.Types;
-using MantaRay.Components;
+using MantaRay.Components.Templates;
 using MantaRay.Helpers;
 using MantaRay.Setup;
 using Rhino.Geometry;
 
-namespace MantaRay
+namespace MantaRay.Components
 {
     public class GH_MeshToObj : GH_Template
     {
@@ -40,7 +40,7 @@ namespace MantaRay
         /// <summary>
         /// Registers all the input parameters for this component.
         /// </summary>
-        protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
+        protected override void RegisterInputParams(GH_InputParamManager pManager)
         {
             pManager[pManager.AddMeshParameter("Mesh", "Mesh", "Mesh. It's advisable to have same material meshes joined before entering this component.\n" +
                 "And if you graft the input per material then it will run in parallel.\n" +
@@ -62,7 +62,7 @@ namespace MantaRay
         /// <summary>
         /// Registers all the output parameters for this component.
         /// </summary>
-        protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
+        protected override void RegisterOutputParams(GH_OutputParamManager pManager)
         {
             pManager.AddTextParameter("Obj Files", "Obj Files", "path for exported obj files. Full local windows path. Output me into the obj2rad component.", GH_ParamAccess.list);
             pManager.AddTextParameter("Map File", "Map File", "", GH_ParamAccess.item);
@@ -108,7 +108,7 @@ namespace MantaRay
                     workingDir = sshHelper.WindowsParentPath + @"\" + subfolder;
                 }
 
-                workingDir = (workingDir.EndsWith(@"\") || workingDir.EndsWith("/")) ? workingDir : workingDir + @"\";
+                workingDir = workingDir.EndsWith(@"\") || workingDir.EndsWith("/") ? workingDir : workingDir + @"\";
 
             }
             else
@@ -143,7 +143,7 @@ namespace MantaRay
 
             if (modifierNames.Branches.Count != inMeshes.Branches.Count || inMeshes.Branches.Count != names.Branches.Count)
             {
-                throw new ArgumentOutOfRangeException(String.Format("Meshes ({0}), Names ({1}) and ModifierNames ({2}) have different branch count.",
+                throw new ArgumentOutOfRangeException(string.Format("Meshes ({0}), Names ({1}) and ModifierNames ({2}) have different branch count.",
                     inMeshes.Branches.Count,
                     names.Branches.Count,
                     modifierNames.Branches.Count));
@@ -294,7 +294,7 @@ namespace MantaRay
                     if (!File.Exists(geometryFilePath) || !IsFileLocked(new FileInfo(geometryFilePath)))
                     {
                         Directory.CreateDirectory(Path.GetDirectoryName(geometryFilePath));
-                        System.IO.File.WriteAllText(geometryFilePath, geometryFile.ToString());
+                        File.WriteAllText(geometryFilePath, geometryFile.ToString());
                     }
                     else
                     {

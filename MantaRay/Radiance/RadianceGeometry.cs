@@ -1,6 +1,6 @@
 ﻿using Grasshopper.Kernel;
 using Grasshopper.Kernel.Types;
-using MantaRay.Radiance.HeadsUpDisplay;
+using MantaRay.HeadsUpDisplay;
 using Rhino.Display;
 using Rhino.Geometry;
 using System;

@@ -9,12 +9,13 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Grasshopper.Kernel;
+using MantaRay.Interfaces;
 using Renci.SshNet;
 using Rhino.UI;
 using static MantaRay.Helpers.PathHelper;
 
 
-namespace MantaRay
+namespace MantaRay.Helpers
 {
     public class SSH_Helper : IFolderConversion
     {
@@ -120,13 +121,13 @@ namespace MantaRay
 
 
 
-        static string projectSubFolder = String.Empty;
+        static string projectSubFolder = string.Empty;
         static public string DefaultProjectSubFolder => "UnnamedProject";
 
-        static string linuxParentPath = String.Empty;
+        static string linuxParentPath = string.Empty;
         static public string DefaultLinuxParentPath => "~/MantaRay";
 
-        static string windowsParentPath = String.Empty;
+        static string windowsParentPath = string.Empty;
         static public string DefaultWindowsParentPath => Environment.GetFolderPath(Environment.SpecialFolder.UserProfile) + "\\MantaRay";
 
         static string _linuxFullpath = (linuxParentPath + "/" + projectSubFolder).Replace(@"\", "/");
@@ -254,7 +255,7 @@ namespace MantaRay
                         }
                         catch (Renci.SshNet.Common.SftpPermissionDeniedException e)
                         {
-                            if (String.Compare(targetFileName.ToLinuxPath(), serverFilePath, StringComparison.OrdinalIgnoreCase) == 0)
+                            if (string.Compare(targetFileName.ToLinuxPath(), serverFilePath, StringComparison.OrdinalIgnoreCase) == 0)
                             {
                                 log?.Append("The paths are the same, so skipping the download\n");
                                 return;
@@ -278,7 +279,7 @@ namespace MantaRay
                             }
                             catch (Renci.SshNet.Common.SftpPermissionDeniedException e2)
                             {
-                                if (String.Compare(targetFileName.ToLinuxPath(), serverFilePath, StringComparison.OrdinalIgnoreCase) == 0)
+                                if (string.Compare(targetFileName.ToLinuxPath(), serverFilePath, StringComparison.OrdinalIgnoreCase) == 0)
                                 {
                                     log?.Append("The paths are the same, so skipping the download\n");
                                     return;
@@ -299,9 +300,9 @@ namespace MantaRay
                     }
 
                 }
-                catch (System.IO.DirectoryNotFoundException e)
+                catch (DirectoryNotFoundException e)
                 {
-                    throw new System.IO.DirectoryNotFoundException("Struggles finding a local file to open. Looks like you linked to a directory and not a file\n" + e.Message);
+                    throw new DirectoryNotFoundException("Struggles finding a local file to open. Looks like you linked to a directory and not a file\n" + e.Message);
                 }
             }
             else if (SftpClient != null)
@@ -395,7 +396,7 @@ namespace MantaRay
                 throw new FileNotFoundException("Local file not found: " + localFileName);
             }
 
-            string path = targetFilePath + (String.IsNullOrEmpty(targetFilePath) ? "" : "/") + Path.GetFileName(localFileName);
+            string path = targetFilePath + (string.IsNullOrEmpty(targetFilePath) ? "" : "/") + Path.GetFileName(localFileName);
 
             string suffix = "";
 
@@ -423,7 +424,7 @@ namespace MantaRay
                     try
                     {
                         string p = Execute("pwd");
-                        if (!String.IsNullOrEmpty(targetFilePath))
+                        if (!string.IsNullOrEmpty(targetFilePath))
                         {
                             SftpClient.ChangeDirectory(p + "/" + targetFilePath);
 
@@ -468,7 +469,7 @@ namespace MantaRay
                 {
 
 
-                    if (String.Compare(Path.GetDirectoryName(localFileName).ToLinuxPath(), targetFilePath, StringComparison.OrdinalIgnoreCase) == 0)
+                    if (string.Compare(Path.GetDirectoryName(localFileName).ToLinuxPath(), targetFilePath, StringComparison.OrdinalIgnoreCase) == 0)
                     {
                         log?.Append("The paths are the same, so skipping the download\n");
                         return path;
@@ -717,7 +718,7 @@ namespace MantaRay
                     log.Append("[");
                     log.Append(DateTime.Now.ToString("G"));
                     log.Append("] $ ");
-                    log.Append(String.Join("\n", command.Replace("\n", "\n   ").Replace(";", "\n   ").Split('\n').Take(5)));
+                    log.Append(string.Join("\n", command.Replace("\n", "\n   ").Replace(";", "\n   ").Split('\n').Take(5)));
                     log.Append("\n...\n ERROR: There was no connection. Please run the connect component again");
                 }
 
@@ -726,7 +727,7 @@ namespace MantaRay
                     errors.Append("[");
                     errors.Append(DateTime.Now.ToString("G"));
                     errors.Append("] $ ");
-                    errors.Append(String.Join("\n", command.Replace("\n", "\n   ").Replace(";", "\n   ").Split('\n').Take(5)));
+                    errors.Append(string.Join("\n", command.Replace("\n", "\n   ").Replace(";", "\n   ").Split('\n').Take(5)));
                     errors.Append("\n...\n ERROR: There was no connection. Please run the connect component again");
                 }
 
@@ -830,7 +831,7 @@ namespace MantaRay
         public static SSH_Helper CurrentFromDocument(GH_Document doc)
         {
             return doc.Objects.OfType<GH_Component>().Where(c => !c.Locked).OfType<ISetConnection>().FirstOrDefault()?.SshHelper ?? null;
- 
+
 
         }
 

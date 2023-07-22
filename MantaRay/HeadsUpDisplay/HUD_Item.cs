@@ -8,7 +8,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace MantaRay.Radiance.HeadsUpDisplay
+namespace MantaRay.HeadsUpDisplay
 {
 
     public class HUD_Item
@@ -54,7 +54,7 @@ namespace MantaRay.Radiance.HeadsUpDisplay
         public override string ToString() => Name;
 
         virtual public void DrawEdges(IGH_PreviewArgs args) => Value.DrawWires(args, 1);
-   
+
 
         virtual public void DrawMesh(IGH_PreviewArgs args, DisplayMaterial material = null, Color? colorOverride = null)
         {

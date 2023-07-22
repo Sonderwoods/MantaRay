@@ -3,6 +3,7 @@
 	x:Class="MantaRay.Components.Views.LoginView"
 	xmlns="http://schema.picoe.ca/eto.forms"
 	xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+	xmlns:e="clr-namespace:MantaRay.Components.Controls;assembly=MantaRay, Version=1.0.0.3, Culture=neutral, PublicKeyToken=null" 
 	Title="MantaRay: Connect through SSH"
 	MinimumSize="250,200"
 	Width="550"
@@ -57,7 +58,7 @@
 		
 		<StackLayout x:Name="TestStack" Orientation="Horizontal" Spacing="5" HorizontalContentAlignment="Stretch">
 		
-			<Drawable>Test</Drawable>
+			<e:CustomButton x:Name="CButton"/>
 			
 		</StackLayout>
 			<StackLayout Orientation="Horizontal" Spacing="5" HorizontalContentAlignment="Stretch">

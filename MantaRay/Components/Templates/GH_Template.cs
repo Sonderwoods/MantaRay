@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using Grasshopper.Kernel;
 using MantaRay.Setup;
 
-namespace MantaRay
+namespace MantaRay.Components.Templates
 {
     public abstract class GH_Template : GH_Component
     {

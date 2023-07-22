@@ -12,6 +12,7 @@ using Grasshopper.Kernel;
 using Grasshopper.Kernel.Data;
 using Grasshopper.Kernel.Types;
 using MantaRay.Components;
+using MantaRay.Components.Templates;
 using MantaRay.Helpers;
 using Rhino.Commands;
 using Rhino.Geometry;

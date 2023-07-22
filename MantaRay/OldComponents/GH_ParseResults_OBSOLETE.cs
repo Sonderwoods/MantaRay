@@ -5,6 +5,8 @@ using System.Text;
 using Grasshopper.Kernel;
 using Grasshopper.Kernel.Data;
 using Grasshopper.Kernel.Types;
+using MantaRay.Components.Templates;
+using MantaRay.Helpers;
 using Rhino.Geometry;
 
 namespace MantaRay.OldComponents

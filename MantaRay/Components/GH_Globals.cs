@@ -6,6 +6,8 @@ using Grasshopper.Kernel;
 using Grasshopper.Kernel.Parameters;
 using Grasshopper.Kernel.Types;
 using MantaRay.Components;
+using MantaRay.Components.Templates;
+using MantaRay.Helpers;
 
 namespace MantaRay.Components
 {

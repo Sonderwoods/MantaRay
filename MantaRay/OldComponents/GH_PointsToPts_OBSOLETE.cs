@@ -5,14 +5,14 @@ using System.Text;
 using Grasshopper.Kernel;
 using Grasshopper.Kernel.Data;
 using Grasshopper.Kernel.Types;
-using MantaRay.Components;
 using Rhino.Geometry;
 using MantaRay.Helpers;
 using System.Globalization;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement.TextBox;
 using Renci.SshNet;
+using MantaRay.Components.Templates;
 
-namespace MantaRay.Components
+namespace MantaRay.OldComponents
 {
     [Obsolete]
     public class GH_PointsToPts_OBSOLETE : GH_Template
@@ -31,7 +31,7 @@ namespace MantaRay.Components
         /// <summary>
         /// Registers all the input parameters for this component.
         /// </summary>
-        protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
+        protected override void RegisterInputParams(GH_InputParamManager pManager)
         {
             pManager.AddPointParameter("Points", "Points", "Points\nIn rhino units. Will be converted to meter!", GH_ParamAccess.list);
             pManager[pManager.AddVectorParameter("Vectors", "Vectors", "Vectors. Default is 0,0,1", GH_ParamAccess.list, new Vector3d(0, 0, 1))].Optional = true;
@@ -44,7 +44,7 @@ namespace MantaRay.Components
         /// <summary>
         /// Registers all the output parameters for this component.
         /// </summary>
-        protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
+        protected override void RegisterOutputParams(GH_OutputParamManager pManager)
         {
             pManager.AddTextParameter("pts file", "pts file", "pts file in linux paths (they are uploaded already)", GH_ParamAccess.item);
             //pManager.AddTextParameter("pts string", "pts string", "pts string", GH_ParamAccess.item);
@@ -88,7 +88,7 @@ namespace MantaRay.Components
                 workingDir = sshHelper.WindowsParentPath + "\\" + subfolderOverride;
             }
 
-            workingDir = (workingDir.EndsWith("\\") || workingDir.EndsWith("/")) ? workingDir : workingDir + "\\";
+            workingDir = workingDir.EndsWith("\\") || workingDir.EndsWith("/") ? workingDir : workingDir + "\\";
 
 
             string ptsFilePath = $"{workingDir}{name}.pts";

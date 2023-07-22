@@ -5,7 +5,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
-namespace MantaRay
+namespace MantaRay.Helpers
 {
     internal static class GlobalsHelper
     {
@@ -13,7 +13,7 @@ namespace MantaRay
         public static Dictionary<string, string> GlobalsFromConnectComponent { get; set; } = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         //public static readonly Regex regexAdvanced = new Regex(@"<([\w]+?)-??([\d.]*)*?>", RegexOptions.Compiled);
         public static readonly Regex regexAdvanced = new Regex(@"<([a-zA-Z]+[\d]*)-??((?<=-)([\d]*||.))*?>", RegexOptions.Compiled);
-        
+
 
         public static object @Lock = new object();
         /*
@@ -63,7 +63,7 @@ namespace MantaRay
         }
 
 
-        private static String Replacers(Match matchResult, Dictionary<string, string> locals = null, List<string> missingKeys = null)
+        private static string Replacers(Match matchResult, Dictionary<string, string> locals = null, List<string> missingKeys = null)
         {
 
             Dictionary<string, string> dict = new Dictionary<string, string>(GlobalsFromConnectComponent);
@@ -79,7 +79,7 @@ namespace MantaRay
                 }
             }
 
-            
+
             if (!dict.ContainsKey(matchResult.Groups[1].Value))
             {
                 missingKeys?.Add(matchResult.Groups[1].Value);
@@ -101,10 +101,10 @@ namespace MantaRay
 
                     }
                 }
-                else if (String.Equals(matchResult.Groups[2].Value, ".", StringComparison.InvariantCulture))
+                else if (string.Equals(matchResult.Groups[2].Value, ".", StringComparison.InvariantCulture))
                 {
                     string[] parts = dict[matchResult.Groups[1].Value].Split('.');
-                    return String.Join(".", parts.Take(parts.Length - 1));
+                    return string.Join(".", parts.Take(parts.Length - 1));
                 }
                 else
                     throw new Exception("invalid syntax. Use <value>,  <value-22> or <value-.>");
@@ -115,6 +115,6 @@ namespace MantaRay
 
         }
 
-        
+
     }
 }

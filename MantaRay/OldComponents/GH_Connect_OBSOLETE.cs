@@ -11,6 +11,8 @@ using Grasshopper.Kernel.Types;
 using System.Linq;
 using Rhino.Geometry;
 using MantaRay.Setup;
+using MantaRay.Helpers;
+using MantaRay.Components.Templates;
 
 namespace MantaRay.OldComponents
 {

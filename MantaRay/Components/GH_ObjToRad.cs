@@ -12,6 +12,7 @@ using GH_IO.Serialization;
 using MantaRay.Components;
 using MantaRay.Helpers;
 using System.Linq;
+using MantaRay.Components.Templates;
 
 namespace MantaRay.Components
 {

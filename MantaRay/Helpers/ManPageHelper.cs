@@ -12,7 +12,7 @@ using System.Windows.Forms;
 using MantaRay.Setup;
 using System.Net;
 
-namespace MantaRay
+namespace MantaRay.Helpers
 {
     public class ManPageHelper
     {
@@ -93,7 +93,7 @@ namespace MantaRay
         public void SetGlobals()
         {
             lock (GlobalsHelper.Lock)
-                GlobalsHelper.Globals["AllRadProgs"] = String.Join("\\|", AllRadiancePrograms.Keys);
+                GlobalsHelper.Globals["AllRadProgs"] = string.Join("\\|", AllRadiancePrograms.Keys);
 
         }
 
@@ -151,7 +151,7 @@ namespace MantaRay
             Instance = new ManPageHelper();
             try
             {
-            Task.Run(async () => await Task.Run(() => Instance.Fetch().ConfigureAwait(false)));
+                Task.Run(async () => await Task.Run(() => Instance.Fetch().ConfigureAwait(false)));
 
             }
             catch (AggregateException ae)

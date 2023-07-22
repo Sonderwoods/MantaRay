@@ -13,7 +13,7 @@ using System.Threading.Tasks;
 using static Rhino.RhinoApp;
 
 
-namespace MantaRay
+namespace MantaRay.Types
 {
     /// <summary>
     /// Original (C) Henning Larsen Architects 2019
@@ -40,7 +40,7 @@ namespace MantaRay
 
         public string GetNames()
         {
-            return "Available Names: " + String.Join(", ", Resultss.Select(p => p.Name));
+            return "Available Names: " + string.Join(", ", Resultss.Select(p => p.Name));
         }
 
         public override string ToString()
@@ -71,7 +71,7 @@ namespace MantaRay
             SimPoints = pts;
             GridDist = gridDist;
 
-            this.UseCenters = useCenters;
+            UseCenters = useCenters;
             UpdateAreas();
         }
 
@@ -86,7 +86,7 @@ namespace MantaRay
             SimPoints = pts;
             //SimMesh.Normals.ComputeNormals();
 
-            this.UseCenters = useCenters;
+            UseCenters = useCenters;
             UpdateAreas();
         }
 
@@ -94,7 +94,7 @@ namespace MantaRay
         {
 
 
-            var srfs = Brep.CreatePlanarBreps(curve, UnitHelper.FromMeter(0.001)); // mesh is faster, but we do breps to automatically sort edge vs hole
+            var srfs = Brep.CreatePlanarBreps(curve, 0.001.FromMeter()); // mesh is faster, but we do breps to automatically sort edge vs hole
             var bb = srfs[0].GetBoundingBox(false);
             //Rhino.RhinoApp.WriteLine($"sqrt {Math.Sqrt(bb.Area)} and dist {gridDist}..  divided = {Math.Sqrt(bb.Area) / gridDist}");
             if (bb.Area / (gridDist * gridDist) > 60000 && goLarge)
@@ -111,7 +111,7 @@ namespace MantaRay
             SimPoints = pts;
             GridDist = gridDist;
 
-            this.UseCenters = useCenters;
+            UseCenters = useCenters;
             UpdateAreas();
         }
 
@@ -170,7 +170,7 @@ namespace MantaRay
 
         public static Mesh GeneratePoints(Mesh analysisMesh, out List<Point3d> analysisPT, out List<Plane> planes, bool useCenters = false)
         {
-            double verticalOffset = UnitHelper.FromMeter(0.5);
+            double verticalOffset = 0.5.FromMeter();
 
             analysisPT = new List<Point3d>();
             planes = new List<Plane>();
@@ -239,7 +239,7 @@ namespace MantaRay
 
             Mesh mesh = new Mesh();
 
-            double verticalOffset = UnitHelper.FromMeter(0.5);
+            double verticalOffset = 0.5.FromMeter();
             analysisPT = new List<Point3d>();
             planes = new List<Plane>();
 

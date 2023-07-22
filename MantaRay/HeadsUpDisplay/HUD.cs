@@ -12,7 +12,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
-namespace MantaRay.Radiance.HeadsUpDisplay
+namespace MantaRay.HeadsUpDisplay
 {
     public class HUD
     {
@@ -179,7 +179,7 @@ namespace MantaRay.Radiance.HeadsUpDisplay
 
                 LastMousePoint = e.ViewportPoint;
 
-                if (!object.ReferenceEquals(oldHighlighted, HUD.HighlightedItem) || oldHighlighted == null != (HUD.HighlightedItem == null))
+                if (!ReferenceEquals(oldHighlighted, HUD.HighlightedItem) || oldHighlighted == null != (HUD.HighlightedItem == null))
                     Rhino.RhinoDoc.ActiveDoc.Views.Redraw();
 
                 base.OnMouseMove(e);
@@ -199,7 +199,7 @@ namespace MantaRay.Radiance.HeadsUpDisplay
                 }
 
 
-                if (!object.ReferenceEquals(((GH_RadViewerSolve)HUD?.Component).hud.Callback, this)) // component is deleted or has got a new HUD..
+                if (!ReferenceEquals(((GH_RadViewerSolve)HUD?.Component).hud.Callback, this)) // component is deleted or has got a new HUD..
                 {
                     Enabled = false;
                     e.Cancel = false;
@@ -260,7 +260,7 @@ namespace MantaRay.Radiance.HeadsUpDisplay
                                 menu.Show(Rhino.RhinoDoc.ActiveDoc.Views.ActiveView.ActiveViewport.ClientToScreen(e.ViewportPoint));
                             }
                         }
-                        
+
                         break;
 
                     default:
