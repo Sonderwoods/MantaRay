@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using Grasshopper.Kernel;
 using Renci.SshNet;
 using System.Text;
-using System.Windows.Forms;
 using System.Drawing;
 using System.Diagnostics;
 using Grasshopper.Kernel.Data;
@@ -18,6 +17,12 @@ using System.Threading.Tasks;
 using MantaRay.Components.Templates;
 using Grasshopper.GUI.Canvas;
 using Grasshopper.GUI;
+using Rhino.UI;
+using Eto;
+using MantaRay.Components.Views;
+using Eto.Forms;
+using MantaRay.Components.VM;
+using Rhino.Commands;
 
 namespace MantaRay.Components
 {
@@ -35,7 +40,9 @@ namespace MantaRay.Components
 
         public bool WasConnected { get; set; } = false;
 
-        private string _pw;
+        private LoginVM LoginVM { get; set; }
+
+
         int connectID = 0;
         SSH_Helper sshHelper;
         SSH_Helper ISetConnection.SshHelper => sshHelper;
@@ -90,6 +97,8 @@ namespace MantaRay.Components
         /// <param name="DA">The DA object is used to retrieve from inputs and store in outputs.</param>
         protected override void SolveInstance(IGH_DataAccess DA)
         {
+            LoginVM = LoginVM ?? new LoginVM();
+
             TimingHelper th = null; // new TimingHelper("GH_Connect");
             sshHelper = sshHelper ?? new SSH_Helper();
 
@@ -140,29 +149,22 @@ namespace MantaRay.Components
 
                 if (password == "_prompt") //Default saved in the component
                 {
-                    if (_pw == null)
+                    if (LoginVM.Password == null)
                     {
-                        if (GetCredentials(username, ip, out string pw))
-                        {
-                            _pw = pw;
-
-
-                        }
-
-                        else
+                        if (!GetCredentials(LoginVM))
                             run = false;
                     }
 
                 }
                 else
                 {
-                    _pw = password;
+                    LoginVM.Password = password;
                 }
 
             }
             else
             {
-                _pw = null; //reset
+                LoginVM.Password = null; //reset
                 sshHelper.Disconnect();
                 sshHelper = null;
             }
@@ -180,7 +182,7 @@ namespace MantaRay.Components
                     {
 
                         // Pasword based Authentication
-                        new PasswordAuthenticationMethod(username, _pw),
+                        new PasswordAuthenticationMethod(username, LoginVM.Password),
 
                         //// Key Based Authentication (using keys in OpenSSH Format) Uncomment if you need the fingerprint!
                         //new PrivateKeyAuthenticationMethod(
@@ -261,12 +263,12 @@ namespace MantaRay.Components
                 catch (Renci.SshNet.Common.SshAuthenticationException e)
                 {
                     sbSSH.AppendLine("SSH: Connection Denied??\n" + e.Message);
-                    var mb = MessageBox.Show("Wrong SSH Password? Wrong username? Try again?", "SSH Connection Denied", MessageBoxButtons.RetryCancel);
-                    if (mb == DialogResult.Retry)
+                    var mb = MessageBox.Show("Wrong SSH Password? Wrong username? Try again?", "SSH Connection Denied", MessageBoxButtons.YesNo);
+                    if (mb == DialogResult.Yes)
                     {
-                        if (GetCredentials(username, ip, out string pw))
+                        if (GetCredentials(LoginVM))
                         {
-                            _pw = pw;
+                       
                             this.ExpireSolution(true);
                         }
 
@@ -297,7 +299,7 @@ namespace MantaRay.Components
                         {
                             Process proc = new System.Diagnostics.Process();
                             proc.StartInfo.FileName = @"C:\windows\system32\cmd.exe";
-                            proc.StartInfo.Arguments = $"/c \"bash -c \"echo {_pw} | sudo -S service ssh start\" \"";
+                            proc.StartInfo.Arguments = $"/c \"bash -c \"echo {LoginVM.Password} | sudo -S service ssh start\" \"";
 
                             proc.StartInfo.UseShellExecute = true;
                             proc.StartInfo.RedirectStandardOutput = false;
@@ -478,17 +480,17 @@ namespace MantaRay.Components
 
         public void UpdateAllExecutes(GH_Document doc)
         {
-            
-                foreach (var obj in OnPingDocument().Objects
-                    .OfType<GH_Template_Async_Extended>()
-                    .Where(c => c.PhaseForColors == GH_Template_Async_Extended.AestheticPhase.Disconnected))
-                {
-                    obj.ExpireSolution(false);
-                }
 
-                Grasshopper.Instances.ActiveCanvas.Document.ScheduleSolution(5);
+            foreach (var obj in OnPingDocument().Objects
+                .OfType<GH_Template_Async_Extended>()
+                .Where(c => c.PhaseForColors == GH_Template_Async_Extended.AestheticPhase.Disconnected))
+            {
+                obj.ExpireSolution(false);
+            }
 
-            
+            Grasshopper.Instances.ActiveCanvas.Document.ScheduleSolution(5);
+
+
         }
 
         public void TryDisconnect()
@@ -561,20 +563,20 @@ namespace MantaRay.Components
             base.DocumentContextChanged(document, context);
         }
 
-        public override void AddedToDocument(GH_Document document)
-        {
+        //public override void AddedToDocument(GH_Document document)
+        //{
 
-            Grasshopper.Instances.ActiveCanvas.Disposed -= ActiveCanvas_Disposed;
-            Grasshopper.Instances.ActiveCanvas.Disposed += ActiveCanvas_Disposed;
-            //TODO: Other events to subscribe to, to make sure to disconnect???
+        //    Grasshopper.Instances.ActiveCanvas. -= ActiveCanvas_Disposed;
+        //    Grasshopper.Instances.ActiveCanvas.Disposed += ActiveCanvas_Disposed;
+        //    //TODO: Other events to subscribe to, to make sure to disconnect???
 
-            base.AddedToDocument(document);
-        }
+        //    base.AddedToDocument(document);
+        //}
 
-        private void ActiveCanvas_Disposed(object sender, EventArgs e)
-        {
-            TryDisconnect();
-        }
+        //private void ActiveCanvas_Disposed(object sender, EventArgs e)
+        //{
+        //    TryDisconnect();
+        //}
 
 
         protected override Bitmap Icon => Resources.Resources.Ra_Connect_Icon;
@@ -611,122 +613,130 @@ namespace MantaRay.Components
             }
         }
 
-
-
-
-
-        private bool GetCredentials(string username, string ip, out string password)
+        private bool GetCredentials(LoginVM vm)
         {
-            bool localIp = string.Equals(ip, "127.0.0.1") || string.Equals(ip, "localhost");
-            var foreColor = localIp ? Color.FromArgb(88, 100, 84) : Color.FromArgb(128, 66, 19);
-            var backColor = localIp ? Color.FromArgb(148, 180, 140) : Color.FromArgb(250, 205, 170);
-            var background = localIp ? Color.FromArgb(255, 195, 195, 195) : Color.FromArgb(201, 165, 137);
+            var form = new LoginView(vm);
+            var rc = form.ShowModal(RhinoEtoApp.MainWindow);
 
-            Font redFont = new Font("Arial", 18.0f,
-                        FontStyle.Bold);
+            return rc == Result.Success;
 
-            Font font = new Font("Arial", 10.0f,
-                        FontStyle.Bold);
-
-            Font smallFont = new Font("Arial", 8.0f,
-                        FontStyle.Bold);
-
-            Form prompt = new Form()
-            {
-                Width = 460,
-                Height = 370,
-                FormBorderStyle = FormBorderStyle.FixedDialog,
-                Text = "Connect to SSH",
-                StartPosition = FormStartPosition.CenterScreen,
-                BackColor = background,
-                ForeColor = Color.FromArgb(255, 30, 30, 30),
-                Font = font
-
-            };
-
-
-            Label label = new Label()
-            {
-                Left = 50,
-                Top = 45,
-                Width = 340,
-                Height = 28,
-                Text = $"Connecting to SSH on {ip}:"
-            };
-
-
-            TextBox usernameTextBox = new TextBox()
-            {
-                Left = 50,
-                Top = 75,
-                Width = 340,
-                Height = 28,
-                Text = string.IsNullOrEmpty(username) ? "username" : username,
-                ForeColor = foreColor,
-                Font = redFont,
-                BackColor = backColor,
-                Enabled = false,
-                Margin = new Padding(2)
-            };
-
-
-            TextBox passwordTextBox = new TextBox()
-            {
-                Left = 50,
-                Top = 125,
-                Width = 340,
-                Height = 28,
-                Text = "",
-                ForeColor = foreColor,
-                PasswordChar = '*',
-                Font = redFont,
-                BackColor = backColor,
-                Margin = new Padding(2),
-
-            };
-
-
-            Button connectButton = new Button() { Text = "Connect", Left = 50, Width = 120, Top = 190, Height = 40, DialogResult = DialogResult.OK };
-            Button cancel = new Button() { Text = "Cancel", Left = 270, Width = 120, Top = 190, Height = 40, DialogResult = DialogResult.Cancel };
-
-
-            Label label2 = new Label()
-            {
-                Font = smallFont,
-                Left = 50,
-                Top = 270,
-                Width = 340,
-                Height = 60,
-                Text = $"Part of the {ConstantsHelper.ProjectName} plugin\n" +
-                "(C) Mathias Sønderskov Schaltz 2022"
-            };
-            prompt.Controls.AddRange(new Control[] { label, usernameTextBox, passwordTextBox, connectButton, cancel, label2 });
-
-            if (usernameTextBox.Text != "username")
-            {
-                passwordTextBox.Focus();
-            }
-
-            prompt.AcceptButton = connectButton;
-
-
-            DialogResult result = prompt.ShowDialog();
-
-            if (result == DialogResult.OK)
-            {
-                password = passwordTextBox.Text;
-                //_usr = usernameTextBox.Text;
-                //outUsername = usernameTextBox.Text;
-                return true;
-            }
-            else
-            {
-                password = null;
-                //outUsername = null;
-                return false;
-
-            }
         }
+
+
+
+        //private bool GetCredentials2(string username, string ip, out string password)
+        //{
+        //    bool localIp = string.Equals(ip, "127.0.0.1") || string.Equals(ip, "localhost");
+        //    var foreColor = localIp ? Color.FromArgb(88, 100, 84) : Color.FromArgb(128, 66, 19);
+        //    var backColor = localIp ? Color.FromArgb(148, 180, 140) : Color.FromArgb(250, 205, 170);
+        //    var background = localIp ? Color.FromArgb(255, 195, 195, 195) : Color.FromArgb(201, 165, 137);
+
+        //    Font redFont = new Font("Arial", 18.0f,
+        //                FontStyle.Bold);
+
+        //    Font font = new Font("Arial", 10.0f,
+        //                FontStyle.Bold);
+
+        //    Font smallFont = new Font("Arial", 8.0f,
+        //                FontStyle.Bold);
+
+        //    Form prompt = new Form()
+        //    {
+
+        //        Width = 460,
+        //        Height = 370,
+        //        FormBorderStyle = FormBorderStyle.FixedDialog,
+        //        Text = "Connect to SSH",
+        //        StartPosition = FormStartPosition.CenterScreen,
+        //        BackColor = background,
+        //        ForeColor = Color.FromArgb(255, 30, 30, 30),
+        //        Font = font
+
+        //    };
+
+
+        //    Label label = new Label()
+        //    {
+        //        Left = 50,
+        //        Top = 45,
+        //        Width = 340,
+        //        Height = 28,
+        //        Text = $"Connecting to SSH on {ip}:"
+        //    };
+
+
+        //    TextBox usernameTextBox = new TextBox()
+        //    {
+        //        Left = 50,
+        //        Top = 75,
+        //        Width = 340,
+        //        Height = 28,
+        //        Text = string.IsNullOrEmpty(username) ? "username" : username,
+        //        ForeColor = foreColor,
+        //        Font = redFont,
+        //        BackColor = backColor,
+        //        Enabled = false,
+        //        Margin = new Padding(2)
+        //    };
+
+
+        //    TextBox passwordTextBox = new TextBox()
+        //    {
+        //        Left = 50,
+        //        Top = 125,
+        //        Width = 340,
+        //        Height = 28,
+        //        Text = "",
+        //        ForeColor = foreColor,
+        //        PasswordChar = '*',
+        //        Font = redFont,
+        //        BackColor = backColor,
+        //        Margin = new Padding(2),
+
+        //    };
+
+
+        //    Button connectButton = new Button() { Text = "Connect", Left = 50, Width = 120, Top = 190, Height = 40, DialogResult = DialogResult.OK };
+        //    Button cancel = new Button() { Text = "Cancel", Left = 270, Width = 120, Top = 190, Height = 40, DialogResult = DialogResult.Cancel };
+
+
+        //    Label label2 = new Label()
+        //    {
+        //        Font = smallFont,
+        //        Left = 50,
+        //        Top = 270,
+        //        Width = 340,
+        //        Height = 60,
+        //        Text = $"Part of the {ConstantsHelper.ProjectName} plugin\n" +
+        //        "(C) Mathias Sønderskov Schaltz 2022"
+        //    };
+        //    prompt.Controls.AddRange(new Control[] { label, usernameTextBox, passwordTextBox, connectButton, cancel, label2 });
+
+        //    if (usernameTextBox.Text != "username")
+        //    {
+        //        passwordTextBox.Focus();
+        //    }
+
+        //    prompt.AcceptButton = connectButton;
+
+
+        //    DialogResult result = prompt.ShowDialog();
+
+        //    if (result == DialogResult.OK)
+        //    {
+        //        password = passwordTextBox.Text;
+        //        //_usr = usernameTextBox.Text;
+        //        //outUsername = usernameTextBox.Text;
+        //        return true;
+        //    }
+        //    else
+        //    {
+        //        password = null;
+        //        //outUsername = null;
+        //        return false;
+
+        //    }
+        //}
 
         public GH_ObjectResponse OnDoubleClick(GH_Canvas sender, GH_CanvasMouseEvent e)
         {

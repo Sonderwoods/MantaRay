@@ -9,7 +9,6 @@ using MantaRay.Components;
 using Rhino.Geometry;
 using MantaRay.Helpers;
 using System.Globalization;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement.TextBox;
 using Renci.SshNet;
 
 namespace MantaRay.Components

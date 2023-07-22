@@ -15,6 +15,13 @@
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageProjectUrl>https://github.com/Sonderwoods/MantaRay</PackageProjectUrl>
   </PropertyGroup>
+
+	<PropertyGroup>
+		<ProjectTypeGuids>
+			{60dc8134-eba5-43b8-bcc9-bb4bc16c2548};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}
+		</ProjectTypeGuids>
+	</PropertyGroup>
+	
 	
   <ItemGroup>
     <Compile Remove="HoneyBee\**" />
@@ -24,6 +31,13 @@
 	
   <ItemGroup>
     <None Remove="Components\GH_AnnualResultsTransposed.Oldcs" />
+    <None Remove="Components\Views\LoginView.xeto" />
+  </ItemGroup>
+	
+  <ItemGroup>
+    <EmbeddedResource Include="Components\Views\LoginView.xeto">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </EmbeddedResource>
   </ItemGroup>
 	
   <ItemGroup>
@@ -41,8 +55,27 @@
   </ItemGroup>
   
   <ItemGroup>
+    <Reference Include="Eto">
+      <HintPath>..\..\..\..\..\..\Program Files\Rhino 7\System\Eto.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Eto.Serialization.Xaml">
+      <HintPath>..\..\..\..\..\..\Program Files\Rhino 7\System\Eto.Serialization.Xaml.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Eto.Wpf">
+      <HintPath>..\..\..\..\..\..\Program Files\Rhino 7\System\Eto.Wpf.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="PresentationCore">
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="PresentationFramework">
+      <Private>False</Private>
+    </Reference>
     <Reference Include="System.Net.Http" />
     <Reference Include="System.Windows.Forms" />
+    <Reference Include="WindowsBase" />
   </ItemGroup>
   
   <ItemGroup>

@@ -11,7 +11,6 @@ using System.Threading.Tasks;
 using Grasshopper.Kernel;
 using Renci.SshNet;
 using Rhino.UI;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement.TextBox;
 using static MantaRay.Helpers.PathHelper;
 
 
