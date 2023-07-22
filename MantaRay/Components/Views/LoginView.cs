@@ -10,51 +10,54 @@ using Renci.SshNet;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement.StartPanel;
 using System.Linq;
 using System.Diagnostics;
+using System.Security.Cryptography;
 
 namespace MantaRay.Components.Views
 {
     public class LoginView : Dialog<Rhino.Commands.Result>
     {
-        protected LoginVM ViewModel => DataContext as LoginVM;
-
-
-
-
 
         protected TextBox IpTextBox { get; set; }
         protected TextBox UserNameTextBox { get; set; }
         protected PasswordBox PasswordBox { get; set; }
         protected Label StatusLabel { get; set; }
-
         protected Button TestButton { get; set; }
 
+        protected LoginVM ViewModel => DataContext as LoginVM;
 
 
 
         public LoginView(LoginVM vm)
         {
 
-
             DataContext = vm;
-
 
             XamlReader.Load(this);
 
+
+            SetupStyles();
+
+            SetupBinding();
+
             UpdateColors();
 
-            //Eto.Style.Add<Eto.Wpf.Forms.Controls.GroupBoxHandler>(null, h => {
-            //    h.Control.BorderThickness = new System.Windows.Thickness(2);
-            //    h.Control.BorderBrush = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(255, 0, 255));
-            //});
 
+        }
 
+        private void SetupStyles()
+        {
+            Eto.Style.Add<Eto.Wpf.Forms.Controls.ButtonHandler>(null, h =>
+            {
+                h.Control.BorderThickness = new System.Windows.Thickness(20);
+                h.Control.BorderBrush = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(255, 0, 255));
+            });
+        }
+
+        private void SetupBinding()
+        {
             AbortButton.Click += AbortButton_Click;
             DefaultButton.Click += DefaultButton_Click;
             TestButton.Click += TestButton_Click;
-
-
-
-
         }
 
         private void DefaultButton_Click(object sender, EventArgs e)
@@ -74,17 +77,18 @@ namespace MantaRay.Components.Views
 
         private void TestButton_Click(object sender, EventArgs e)
         {
-            // Need to look into PropertyNotified  and more async stuff
+            // TODO: Need to look into PropertyNotified  and more async stuff + ui updates
 
 
             Stopwatch stopwatch1 = new Stopwatch();
-            //throw new NotImplementedException();
 
             string ip = IpTextBox.Text.Split(':').First();
             int port = int.Parse(IpTextBox.Text.Split(':').Last());
             string username = UserNameTextBox.Text;
             string password = PasswordBox.Text;
 
+
+            // TODO: Need to add below to the ssh helper class and not view
             StringBuilder sbSSH = new StringBuilder();
 
 
@@ -93,6 +97,7 @@ namespace MantaRay.Components.Views
                     new AuthenticationMethod[]
                     { new PasswordAuthenticationMethod(username, password),}
                 );
+
             SSH_Helper sshHelper = new SSH_Helper();
             sshHelper.SshClient = new SshClient(ConnNfo);
             sshHelper.SshClient.ConnectionInfo.Timeout = new TimeSpan(0, 0, 10);
@@ -140,8 +145,8 @@ namespace MantaRay.Components.Views
         protected void HandleIpChanged(object sender, EventArgs e)
         {
             Rhino.RhinoApp.WriteLine("Updated Test..");
+
             UpdateColors();
-            //ViewModel.
 
         }
 
