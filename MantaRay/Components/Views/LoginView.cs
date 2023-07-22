@@ -41,7 +41,19 @@ namespace MantaRay.Components.Views
 
             UpdateColors();
 
+            PasswordBox.Focus();
 
+            PasswordBox.KeyDown += PasswordBox_KeyDown;
+
+
+        }
+
+        private void PasswordBox_KeyDown(object sender, KeyEventArgs e)
+        {
+            if(e.Key == Keys.Enter)
+            {
+                SaveAndClose();
+            }
         }
 
         private void SetupStyles()
@@ -61,6 +73,11 @@ namespace MantaRay.Components.Views
         }
 
         private void DefaultButton_Click(object sender, EventArgs e)
+        {
+            SaveAndClose();
+        }
+
+        private void SaveAndClose()
         {
             ViewModel.Ip = IpTextBox.Text.Split(':').First();
             ViewModel.Port = int.Parse(IpTextBox.Text.Split(':').Last());
