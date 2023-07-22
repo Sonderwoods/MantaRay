@@ -31,7 +31,7 @@ namespace MantaRay.Components
         /// </summary>
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
-            pManager.AddTextParameter("SftpPaths", "SftpPaths", "Linux file path\nor in case you are on windows SFTP it will be a windows path\n" +
+            pManager.AddTextParameter("SftpPaths", "SftpPaths", "Linux file path\nsuch as ~/mystuff/ or local paths inside your project folder such as radFiles/materials.mat\nor in case you are on windows SFTP it will be a windows path\n" +
                 "however that window path will be in a weird shape such as:\n" +
                 "'/C:/Users/MyUsername'", GH_ParamAccess.list);
             pManager[pManager.AddTextParameter("Target local folder", "target folder", "Local target folder in windows", GH_ParamAccess.item, "")].Optional = true;
