@@ -25,7 +25,9 @@ namespace MantaRay.Components.Views
         protected TextBox UserNameTextBox { get; set; }
         protected PasswordBox PasswordBox { get; set; }
         protected Label StatusLabel { get; set; }
-        protected CustomButton CButton { get; set; }
+
+        protected Drawable CButton { get; set; }
+        
      
 
         protected LoginVM ViewModel => DataContext as LoginVM;
@@ -82,7 +84,7 @@ namespace MantaRay.Components.Views
         {
             AbortButton.Click += AbortButton_Click;
             DefaultButton.Click += DefaultButton_Click;
-            CButton.Click += TestButton_Click;
+            ((CustomButton)CButton).Click += TestButton_Click;
         }
 
         private void DefaultButton_Click(object sender, EventArgs e)
