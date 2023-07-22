@@ -132,7 +132,7 @@ namespace MantaRay.Components
             th?.Benchmark("Checked other components");
 
             LoginVM.Username= DA.Fetch<string>(this, "user");
-            LoginVM.Password = DA.Fetch<string>(this, "password");
+            string password = DA.Fetch<string>(this, "password");
             string linDir = DA.Fetch<string>(this, "LinuxDir");
             string winDir = DA.Fetch<string>(this, "WindowsDir");
             string sftpDir = DA.Fetch<string>(this, "SftpDir");
@@ -149,7 +149,7 @@ namespace MantaRay.Components
             {
                 Rhino.RhinoApp.WriteLine("MantaRay: Starting connect command. This may take a while especially if there is no command or wrong password...");
 
-                if (LoginVM.Password == "_prompt") //Default saved in the component
+                if (password == "_prompt") //Default saved in the component
                 {
                     if (LoginVM.Password == null)
                     {

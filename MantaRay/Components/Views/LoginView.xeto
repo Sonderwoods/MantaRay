@@ -14,7 +14,11 @@
 	Padding="10"
 >
 
+		
+
+
 	<DynamicLayout Spacing="2,5">
+		
 		<StackLayout>
 			<StackLayoutItem>
 				<Label Height="40">Please input your credentials for the SSH Connection</Label>
@@ -51,9 +55,9 @@
 
 		</TableLayout>
 		
-		<StackLayout Orientation="Horizontal" Spacing="5" HorizontalContentAlignment="Stretch">
+		<StackLayout x:Name="TestStack" Orientation="Horizontal" Spacing="5" HorizontalContentAlignment="Stretch">
 		
-			<Button x:Name="TestButton">Test</Button>
+			<Drawable>Test</Drawable>
 			
 		</StackLayout>
 			<StackLayout Orientation="Horizontal" Spacing="5" HorizontalContentAlignment="Stretch">

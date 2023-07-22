@@ -11,6 +11,8 @@ using static System.Windows.Forms.VisualStyles.VisualStyleElement.StartPanel;
 using System.Linq;
 using System.Diagnostics;
 using System.Security.Cryptography;
+using Eto.Wpf;
+using MantaRay.Components.Controls;
 
 namespace MantaRay.Components.Views
 {
@@ -21,7 +23,7 @@ namespace MantaRay.Components.Views
         protected TextBox UserNameTextBox { get; set; }
         protected PasswordBox PasswordBox { get; set; }
         protected Label StatusLabel { get; set; }
-        protected Button TestButton { get; set; }
+        protected StackLayout TestStack { get; set; }
 
         protected LoginVM ViewModel => DataContext as LoginVM;
 
@@ -34,6 +36,10 @@ namespace MantaRay.Components.Views
 
             XamlReader.Load(this);
 
+            TestStack.Content = new CustomButton();
+
+            TestStack.Invalidate();
+
 
             SetupStyles();
 
@@ -44,6 +50,8 @@ namespace MantaRay.Components.Views
             PasswordBox.Focus();
 
             PasswordBox.KeyDown += PasswordBox_KeyDown;
+
+            Invalidate();
 
 
         }
@@ -60,8 +68,9 @@ namespace MantaRay.Components.Views
         {
             Eto.Style.Add<Eto.Wpf.Forms.Controls.ButtonHandler>(null, h =>
             {
-                h.Control.BorderThickness = new System.Windows.Thickness(20);
-                h.Control.BorderBrush = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(255, 0, 255));
+                h.Control.BorderThickness = new System.Windows.Thickness(3);
+                h.Control.BorderBrush = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(20, 100, 30));
+
             });
         }
 
@@ -69,7 +78,7 @@ namespace MantaRay.Components.Views
         {
             AbortButton.Click += AbortButton_Click;
             DefaultButton.Click += DefaultButton_Click;
-            TestButton.Click += TestButton_Click;
+            ((CustomButton)TestStack.Content).Click += TestButton_Click;
         }
 
         private void DefaultButton_Click(object sender, EventArgs e)
