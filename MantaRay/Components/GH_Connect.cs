@@ -131,15 +131,17 @@ namespace MantaRay.Components
             }
             th?.Benchmark("Checked other components");
 
-            string username = DA.Fetch<string>(this, "user");
-            string password = DA.Fetch<string>(this, "password");
+            LoginVM.Username= DA.Fetch<string>(this, "user");
+            LoginVM.Password = DA.Fetch<string>(this, "password");
             string linDir = DA.Fetch<string>(this, "LinuxDir");
             string winDir = DA.Fetch<string>(this, "WindowsDir");
             string sftpDir = DA.Fetch<string>(this, "SftpDir");
             string projectName = DA.Fetch<string>(this, "ProjectName", "ProjectName");
-            string ip = DA.Fetch<string>(this, "ip");
-            int port = DA.Fetch<int>(this, "_port");
+            LoginVM.Ip = DA.Fetch<string>(this, "ip");
+            LoginVM.Port = DA.Fetch<int>(this, "_port");
             string prefixes = DA.Fetch<string>(this, "prefixes");
+
+            
 
             StringBuilder sb = new StringBuilder();
 
@@ -147,7 +149,7 @@ namespace MantaRay.Components
             {
                 Rhino.RhinoApp.WriteLine("MantaRay: Starting connect command. This may take a while especially if there is no command or wrong password...");
 
-                if (password == "_prompt") //Default saved in the component
+                if (LoginVM.Password == "_prompt") //Default saved in the component
                 {
                     if (LoginVM.Password == null)
                     {
@@ -156,11 +158,7 @@ namespace MantaRay.Components
                     }
 
                 }
-                else
-                {
-                    LoginVM.Password = password;
-                }
-
+                
             }
             else
             {
@@ -177,12 +175,12 @@ namespace MantaRay.Components
 
                 //Inspiration from https://gist.github.com/piccaso/d963331dcbf20611b094
                 ConnectionInfo ConnNfo = new ConnectionInfo(
-                    ip, port, username,
+                    LoginVM.Ip, LoginVM.Port, LoginVM.Username,
                     new AuthenticationMethod[]
                     {
 
                         // Pasword based Authentication
-                        new PasswordAuthenticationMethod(username, LoginVM.Password),
+                        new PasswordAuthenticationMethod(LoginVM.Username, LoginVM.Password),
 
                         //// Key Based Authentication (using keys in OpenSSH Format) Uncomment if you need the fingerprint!
                         //new PrivateKeyAuthenticationMethod(
@@ -288,7 +286,7 @@ namespace MantaRay.Components
                     sbSSH.AppendFormat("SSH:  Could not find the SSH server\n      {0}\n      Try restarting it locally in " +
                         "your bash with the command:\n    $ sudo service ssh start\n", e.Message);
 
-                    if (String.Equals(ip, "127.0.0.1") || String.Equals(ip, "localhost"))
+                    if (String.Equals(LoginVM.Ip, "127.0.0.1") || String.Equals(LoginVM.Ip, "localhost"))
                     {
                         var mb = MessageBox.Show("No SSH, try opening it with\nsudo service ssh start\n\nWant me to start it for you??" +
                             "\n\n\nI'll simply run the below bash command for you:\n\n" +
