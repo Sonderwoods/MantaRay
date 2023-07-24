@@ -7,18 +7,14 @@ using MantaRay.Components.VM;
 using Rhino.UI;
 using System.Text;
 using Renci.SshNet;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement.StartPanel;
 using System.Linq;
 using System.Diagnostics;
-using System.Security.Cryptography;
-using Eto.Wpf;
 using MantaRay.Components.Controls;
 using MantaRay.Helpers;
-using System.ComponentModel;
 
 namespace MantaRay.Components.Views
 {
-    public class LoginView : Dialog<Rhino.Commands.Result>
+    public partial class LoginView : Dialog<Rhino.Commands.Result>
     {
 
         protected TextBox IpTextBox { get; set; }
@@ -26,9 +22,11 @@ namespace MantaRay.Components.Views
         protected PasswordBox PasswordBox { get; set; }
         protected Label StatusLabel { get; set; }
 
-        protected Drawable CButton { get; set; }
-        
-     
+        protected CustomButton CButton { get; set; }
+
+        protected StackLayout TestStack { get; set; }
+
+
 
         protected LoginVM ViewModel => DataContext as LoginVM;
 
@@ -63,7 +61,7 @@ namespace MantaRay.Components.Views
 
         private void PasswordBox_KeyDown(object sender, KeyEventArgs e)
         {
-            if(e.Key == Keys.Enter)
+            if (e.Key == Keys.Enter)
             {
                 SaveAndClose();
             }
@@ -75,7 +73,7 @@ namespace MantaRay.Components.Views
             {
                 h.Control.BorderThickness = new System.Windows.Thickness(3);
                 h.Control.BorderBrush = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(20, 100, 30));
-                
+
 
             });
         }
@@ -84,7 +82,16 @@ namespace MantaRay.Components.Views
         {
             AbortButton.Click += AbortButton_Click;
             DefaultButton.Click += DefaultButton_Click;
-            ((CustomButton)CButton).Click += TestButton_Click;
+            if(TestStack?.Controls?.First() is CustomButton but)
+            {
+                but.Height = 50;
+                but.Width = 50;
+                but.Click += TestButton_Click;
+                but.Invalidate();
+            }
+            var x = CButton;
+
+
         }
 
         private void DefaultButton_Click(object sender, EventArgs e)
@@ -182,7 +189,7 @@ namespace MantaRay.Components.Views
 
         }
 
-      
+
 
 
         protected void UpdateColors()

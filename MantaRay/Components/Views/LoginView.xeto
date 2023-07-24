@@ -1,9 +1,9 @@
 ﻿<?xml version="1.0" encoding="UTF-8"?>
 <Dialog
-	x:Class="MantaRay.Components.Views.LoginView"
 	xmlns="http://schema.picoe.ca/eto.forms"
 	xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-	xmlns:e="clr-namespace:MantaRay.Components.Controls;assembly=MantaRay, Version=1.0.0.3, Culture=neutral, PublicKeyToken=null" 
+	xmlns:e="clr-namespace:MantaRay.Components.Controls" 
+	x:Class="MantaRay.Components.Views.LoginView"
 	Title="MantaRay: Connect through SSH"
 	MinimumSize="250,200"
 	Width="550"
@@ -14,8 +14,6 @@
 	WindowStyle="None" 
 	Padding="10"
 >
-
-		
 
 
 	<DynamicLayout Spacing="2,5">
@@ -41,6 +39,7 @@
 				</TableCell>
 				<TableCell>
 					<TextBox ToolTip="The SSH Username" x:Name="UserNameTextBox" Text="{Binding Username}" PlaceholderText="SSH Username"/>
+					
 				</TableCell>
 			</TableRow>
 			<TableRow>
@@ -58,7 +57,7 @@
 		
 		<StackLayout x:Name="TestStack" Orientation="Horizontal" Spacing="5" HorizontalContentAlignment="Stretch">
 		
-			<e:CustomButton x:Name="CButton"/>
+			<e:CustomButton x:Name="CButton" Height="50" Width="50"/>
 			
 		</StackLayout>
 			<StackLayout Orientation="Horizontal" Spacing="5" HorizontalContentAlignment="Stretch">

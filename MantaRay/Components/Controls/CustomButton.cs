@@ -146,10 +146,10 @@ namespace MantaRay.Components.Controls
                 pe.Graphics.FillRectangle(col, rect);
                 pe.Graphics.DrawInsetRectangle(Colors.White, Colors.Gray, rect);
             }
-
+            
             Rectangle rect2 = new Rectangle(rect.X + 5, rect.Y + 5, rect.Width - 10, rect.Height - 10);
             Brush brush = new SolidBrush(Colors.Blue);
-            Pen pen = new Pen(brush, 3);
+            Pen pen = new Pen(brush, 10);
             pe.Graphics.DrawRectangle(pen, rect2);
 
             base.OnPaint(pe);
