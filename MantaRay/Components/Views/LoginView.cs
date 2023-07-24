@@ -14,6 +14,19 @@ using MantaRay.Helpers;
 
 namespace MantaRay.Components.Views
 {
+    public class MyConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+        {
+            return System.Convert.ToString(value) + " (converted)";
+        }
+        public object ConvertBack(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+        {
+            return System.Convert.ToString(value) + " (converted back)";
+        }
+    }
+
+
     public partial class LoginView : Dialog<Rhino.Commands.Result>
     {
 
@@ -54,6 +67,8 @@ namespace MantaRay.Components.Views
 
             Invalidate();
 
+            IpTextBox.Text = $"{vm.Ip}:{vm.Port}";
+
 
         }
 
@@ -67,28 +82,21 @@ namespace MantaRay.Components.Views
 
         private void SetupStyles()
         {
-            Eto.Style.Add<Eto.Wpf.Forms.Controls.ButtonHandler>(null, h =>
-            {
-                h.Control.BorderThickness = new System.Windows.Thickness(3);
-                h.Control.BorderBrush = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(20, 100, 30));
+            //Eto.Style.Add<Eto.Wpf.Forms.Controls.ButtonHandler>(null, h =>
+            //{
+            //    h.Control.BorderThickness = new System.Windows.Thickness(3);
+            //    h.Control.BorderBrush = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(20, 100, 30));
 
 
-            });
+            //});
         }
 
         private void SetupBinding()
         {
             AbortButton.Click += AbortButton_Click;
             DefaultButton.Click += DefaultButton_Click;
-            if(TestStack?.Controls?.First() is CustomButton but)
-            {
-                but.Height = 50;
-                but.Width = 50;
-                but.Click += TestButton_Click;
-                but.Invalidate();
-            }
-            var x = CButton;
 
+            CButton.Click += TestButton_Click;
 
         }
 
@@ -97,13 +105,34 @@ namespace MantaRay.Components.Views
             SaveAndClose();
         }
 
+
+        /// <summary>
+        /// updates VM, saves and closes
+        /// </summary>
         private void SaveAndClose()
         {
+            UpdateVM();
+            Close(Rhino.Commands.Result.Success);
+        }
+
+        /// <summary>
+        /// Sets the ip etc into the viewmodel
+        /// </summary>
+        private void UpdateVM()
+        {
             ViewModel.Ip = IpTextBox.Text.Split(':').First();
-            ViewModel.Port = int.Parse(IpTextBox.Text.Split(':').Last());
+            int port;
+            if (IpTextBox.Text.Contains(":"))
+            {
+                if (!int.TryParse(IpTextBox.Text.Split(':').Last(), out port)) port = 22;
+            }
+            else
+            {
+                port = 22;
+            }
+            ViewModel.Port = port;
             ViewModel.Username = UserNameTextBox.Text;
             ViewModel.Password = PasswordBox.Text;
-            Close(Rhino.Commands.Result.Success);
         }
 
         private void AbortButton_Click(object sender, EventArgs e)
@@ -114,77 +143,10 @@ namespace MantaRay.Components.Views
 
         private void TestButton_Click(object sender, EventArgs e)
         {
+            UpdateVM();
+            ViewModel.Connect();
             // TODO: Need to look into PropertyNotified  and more async stuff + ui updates
 
-
-            Stopwatch stopwatch1 = new Stopwatch();
-
-            string ip = IpTextBox.Text.Split(':').First();
-            int port;
-            if (IpTextBox.Text.Contains(":"))
-            {
-                if(!int.TryParse(IpTextBox.Text.Split(':').Last(), out port)) port = 22;
-            }
-            else
-            {
-                port = 22;
-            }
-            string username = UserNameTextBox.Text;
-            string password = PasswordBox.Text;
-
-
-            // TODO: Need to add below to the ssh helper class and not view
-            StringBuilder sbSSH = new StringBuilder();
-
-
-            ConnectionInfo ConnNfo = new ConnectionInfo(
-                    ip, port, username,
-                    new AuthenticationMethod[]
-                    { new PasswordAuthenticationMethod(username, password),}
-                );
-
-            SSH_Helper sshHelper = new SSH_Helper();
-            sshHelper.SshClient = new SshClient(ConnNfo);
-            sshHelper.SshClient.ConnectionInfo.Timeout = new TimeSpan(0, 0, 10);
-
-            try
-            {
-                sshHelper.HomeDirectory = null;
-                sshHelper.SshClient.Connect();
-                sbSSH.AppendFormat("SSH:  Connected in {0} ms\n", stopwatch1.ElapsedMilliseconds);
-
-
-            }
-            catch (Renci.SshNet.Common.SshAuthenticationException ee)
-            {
-                sbSSH.AppendLine("SSH: Connection Denied??\n" + ee.Message);
-                sbSSH.AppendFormat("Wrong SSH Password? Wrong username? Try again?\n");
-
-            }
-
-            catch (System.Net.Sockets.SocketException ee)
-            {
-                sbSSH.AppendFormat("SSH:  Could not find the SSH server\n      {0}\n      Try restarting it locally in " +
-                    "your bash with the command:\n    $ sudo service ssh start\n", ee.Message);
-
-                if (String.Equals(ip, "127.0.0.1") || String.Equals(ip, "localhost"))
-                {
-                    sbSSH.Append("No SSH, try opening it with\nsudo service ssh start\n\nWant me to start it for you??" +
-                        "\n\n\nI'll simply run the below bash command for you:\n\n" +
-                        "C:\\windows\\system32\\cmd.exe\n\n" +
-                        $"/c \"bash -c \"echo {{_pw}} | sudo -S service ssh start\" \"");
-
-
-                }
-
-
-            }
-            catch (Exception ee)
-            {
-                sbSSH.AppendFormat("SSH:  {0}\n", ee.Message);
-            }
-
-            StatusLabel.Text = sbSSH.ToString();
         }
 
         protected void HandleIpChanged(object sender, EventArgs e)

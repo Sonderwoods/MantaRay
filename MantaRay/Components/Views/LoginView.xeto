@@ -57,11 +57,18 @@
 		
 		<StackLayout x:Name="TestStack" Orientation="Horizontal" Spacing="5" HorizontalContentAlignment="Stretch">
 		
-			<e:CustomButton x:Name="CButton" Height="30" Width="150" Persistant="False" Toggle="True"/>
+			<e:CustomButton x:Name="CButton" Height="30" Width="150" Persistent="False" Toggle="True"/>
 			
 		</StackLayout>
 			<StackLayout Orientation="Horizontal" Spacing="5" HorizontalContentAlignment="Stretch">
-				<Label x:Name="StatusLabel" Enabled="False" Height="2"></Label>
+
+			
+				<Label Text="{Binding ConnectionStatus}" Visible="{Binding old_ConnectionStatus.IsNotFaulted}" Enabled="False"/>
+				<!-- Error details -->
+				<Label Text="{Binding old_ConnectionStatus.ErrorMessage}" BackgroundColor="Red" Visible="{Binding old_ConnectionStatus.IsFaulted}" Enabled="False"/>
+
+				<!--
+				<Label x:Name="StatusLabel" Enabled="False" Height="2"  Text="{Binding ConnectionStatus.Result}"/>-->
 		</StackLayout>
 		<StackLayout Orientation="Horizontal" Spacing="5" HorizontalContentAlignment="Stretch">
 			<Button x:Name="DefaultButton">OK</Button>

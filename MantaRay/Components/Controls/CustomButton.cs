@@ -118,8 +118,8 @@ namespace MantaRay.Components.Controls
 
             var rect = new Rectangle(this.Location.X, this.Location.Y, this.Size.Width, this.Size.Height);
 
-            if (mouseDown && hover/* && rect.Contains((Eto.Drawing.Point)e.Location)*/)
-            {
+            if (hover/* && rect.Contains((Eto.Drawing.Point)e.Location)*/)
+             {
                 if (Toggle)
                     pressed = !pressed;
                 else if (Persistent)
