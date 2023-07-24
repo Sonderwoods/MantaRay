@@ -9,12 +9,12 @@
 	Width="550"
 	Height="300"
 	Maximizable="False"
-	MovableByWindowBackground="True"
+	
 	Resizable="True"
 	WindowStyle="None" 
 	Padding="10"
 >
-
+<!--MovableByWindowBackground="True"-->
 
 	<DynamicLayout Spacing="2,5">
 		
@@ -57,7 +57,7 @@
 		
 		<StackLayout x:Name="TestStack" Orientation="Horizontal" Spacing="5" HorizontalContentAlignment="Stretch">
 		
-			<e:CustomButton x:Name="CButton" Height="50" Width="50"/>
+			<e:CustomButton x:Name="CButton" Height="30" Width="150" Persistant="False" Toggle="True"/>
 			
 		</StackLayout>
 			<StackLayout Orientation="Horizontal" Spacing="5" HorizontalContentAlignment="Stretch">

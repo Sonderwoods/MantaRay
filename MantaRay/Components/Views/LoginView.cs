@@ -36,9 +36,7 @@ namespace MantaRay.Components.Views
         {
 
             DataContext = vm;
-            var x = vm.GetType().Assembly.GetName().FullName;
 
-            var y = x;
 
 
             XamlReader.Load(this);
@@ -122,7 +120,15 @@ namespace MantaRay.Components.Views
             Stopwatch stopwatch1 = new Stopwatch();
 
             string ip = IpTextBox.Text.Split(':').First();
-            int port = int.Parse(IpTextBox.Text.Split(':').Last());
+            int port;
+            if (IpTextBox.Text.Contains(":"))
+            {
+                if(!int.TryParse(IpTextBox.Text.Split(':').Last(), out port)) port = 22;
+            }
+            else
+            {
+                port = 22;
+            }
             string username = UserNameTextBox.Text;
             string password = PasswordBox.Text;
 

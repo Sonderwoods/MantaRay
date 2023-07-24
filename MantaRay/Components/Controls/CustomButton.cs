@@ -62,13 +62,15 @@ namespace MantaRay.Components.Controls
 
         public bool Persistent { get; set; }
 
-        public event EventHandler<EventArgs> Click;
+        public event EventHandler<MouseEventArgs> Click;
 
-        protected virtual void OnClick(EventArgs e)
+        protected virtual void OnClick(MouseEventArgs e)
         {
-            if (Click != null)
-                Click(this, e);
+            if (e.Buttons == MouseButtons.Primary)
+                Click?.Invoke(this, e);
         }
+
+        
 
         public CustomButton()
         {
@@ -84,12 +86,15 @@ namespace MantaRay.Components.Controls
 
         protected override void OnMouseDown(MouseEventArgs e)
         {
-            base.OnMouseDown(e);
-            if (Enabled)
+            
+            if (Enabled && e.Buttons == MouseButtons.Primary)
             {
                 mouseDown = true;
                 Invalidate();
+                return;
             }
+
+            base.OnMouseDown(e);
         }
 
         protected override void OnMouseEnter(MouseEventArgs e)
@@ -103,14 +108,17 @@ namespace MantaRay.Components.Controls
         {
             base.OnMouseLeave(e);
             hover = false;
+  
             Invalidate();
         }
 
         protected override void OnMouseUp(MouseEventArgs e)
         {
-            base.OnMouseUp(e);
-            var rect = new Rectangle(this.Size);
-            if (mouseDown && rect.Contains((Eto.Drawing.Point)e.Location))
+            mouseDown = false;
+
+            var rect = new Rectangle(this.Location.X, this.Location.Y, this.Size.Width, this.Size.Height);
+
+            if (mouseDown && hover/* && rect.Contains((Eto.Drawing.Point)e.Location)*/)
             {
                 if (Toggle)
                     pressed = !pressed;
@@ -121,36 +129,61 @@ namespace MantaRay.Components.Controls
                 mouseDown = false;
 
                 this.Invalidate();
-                if (Enabled)
-                    OnClick(EventArgs.Empty);
+
+                if (Enabled && e.Buttons == MouseButtons.Primary)
+                {
+                    OnClick(e);
+                    return;
+                }
             }
             else
             {
                 mouseDown = false;
                 this.Invalidate();
             }
+
+            base.OnMouseUp(e);
         }
 
         protected override void OnPaint(PaintEventArgs pe)
         {
-            var rect = new Rectangle(this.Size);
-            var col = Color.FromGrayscale(hover && Enabled ? 0.95f : 0.8f);
-            if (Enabled && (pressed || mouseDown))
-            {
-                pe.Graphics.FillRectangle(col, rect);
-                pe.Graphics.DrawInsetRectangle(Colors.Gray, Colors.White, rect);
-                
-            }
-            else if (hover && Enabled)
-            {
-                pe.Graphics.FillRectangle(col, rect);
-                pe.Graphics.DrawInsetRectangle(Colors.White, Colors.Gray, rect);
-            }
-            
-            Rectangle rect2 = new Rectangle(rect.X + 5, rect.Y + 5, rect.Width - 10, rect.Height - 10);
-            Brush brush = new SolidBrush(Colors.Blue);
-            Pen pen = new Pen(brush, 10);
-            pe.Graphics.DrawRectangle(pen, rect2);
+            var rect = new Rectangle(new Size(this.Size.Width - 2, this.Size.Height - 2));
+            var roundPath = GraphicsPath.GetRoundRect(rect, 10);
+
+
+
+            var bgCol = Color.FromGrayscale(Enabled ? (mouseDown ? 0.5f : (hover ? 0.75f : 0.8f)) : 0.6f);
+            var borderCol = Color.FromGrayscale(hover && Enabled ? 0.95f : 0.87f);
+
+            Brush bgBrush = new SolidBrush(bgCol);
+            Brush borderBrush = new SolidBrush(borderCol);
+
+            var fontFamily = new FontFamily("Montserrat") ?? new FontFamily("Times New Roman");
+
+            pe.Graphics.FillPath(bgBrush, roundPath);
+
+            pe.Graphics.DrawPath(borderCol, roundPath);
+
+            RectangleF rectf = new RectangleF(rect.X + 2, rect.Y + 2, rect.Width - 4, rect.Height - 4);
+
+            pe.Graphics.DrawText(new Font(fontFamily, 12), borderBrush, rectf, "hrello", alignment: FormattedTextAlignment.Center);
+
+            //pe.Graphics.FillRectangle(bgCol, rect);
+            //pe.Graphics.DrawInsetRectangle(Colors.Gray, Colors.White, rect);
+
+
+
+            //Rectangle rect2 = new Rectangle(rect.X + 5, rect.Y + 5, rect.Width - 10, rect.Height - 10);
+            //Pen pen = new Pen(bgBrush, 10);
+            //pe.Graphics.DrawRectangle(pen, rect2);
+            //pe.Graphics.DrawPath(Colors.Green, GraphicsPath.GetRoundRect(rect2, 10));
+            //FormattedText t = new FormattedText()
+            //{
+            //    Text = "hi",
+            //    Font = new Font(fontFamily, 12)
+
+            //};
+
 
             base.OnPaint(pe);
         }
