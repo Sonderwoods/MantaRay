@@ -57,7 +57,7 @@
 		
 		<StackLayout x:Name="TestStack" Orientation="Horizontal" Spacing="5" HorizontalContentAlignment="Stretch">
 		
-			<e:RoundedButton x:Name="CButton" Text="Test Connection" Height="25" Width="100" CornerRadius="7" Persistent="False" Enabled="{Binding CanTestNewConnection}"/>
+			<e:RoundedButton x:Name="CButton" Text="Test Connection" Height="25" Width="130" FontSize="9" CornerRadius="7" Persistent="False" Enabled="{Binding CanTestNewConnection}"/>
 			
 			<!-- OK details -->
 			<Label Text="{Binding ConnectionStatus}" Visible="{Binding IsOk}" Enabled="False"/>
