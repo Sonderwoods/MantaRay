@@ -35,7 +35,7 @@ namespace MantaRay.Components.Views
         protected PasswordBox PasswordBox { get; set; }
         protected Label StatusLabel { get; set; }
 
-        protected CustomButton CButton { get; set; }
+        protected RoundedButton CButton { get; set; }
 
         protected StackLayout TestStack { get; set; }
 
@@ -53,6 +53,8 @@ namespace MantaRay.Components.Views
 
 
             XamlReader.Load(this);
+
+            CButton.ToggleMode = RoundedButton.ToggleModes.Press;
 
 
             SetupStyles();
@@ -151,25 +153,32 @@ namespace MantaRay.Components.Views
 
         protected void HandleIpChanged(object sender, EventArgs e)
         {
-            Rhino.RhinoApp.WriteLine("Updated Test..");
-
             UpdateColors();
+            ChangeDetails();
 
         }
 
+        protected void DetailsChanged(object sender, EventArgs e)
+        {
+            ChangeDetails();
+        }
 
+
+        private void ChangeDetails()
+        {
+            ViewModel.CanTestNewConnection = true;
+        }
 
 
         protected void UpdateColors()
         {
             if (IpTextBox is null) { return; }
 
-
             bool IsLocalIp = ViewModel.LocalIp(IpTextBox.Text);
 
-            Color foregroundColor = IsLocalIp ? Color.FromArgb(88, 100, 84) : Color.FromArgb(128, 66, 19);
+            Color foregroundColor = IsLocalIp ? Color.FromArgb(88, 100, 84) : Color.FromArgb(128, 96, 59);
             Color backColor = IsLocalIp ? Color.FromArgb(148, 180, 140) : Color.FromArgb(250, 205, 170);
-            Color backGroundColor = IsLocalIp ? Color.FromArgb(255, 195, 195, 195) : Color.FromArgb(201, 165, 137);
+            Color backGroundColor = IsLocalIp ? Color.FromArgb(195, 195, 195) : Color.FromArgb(201, 195, 157);
 
             IpTextBox.BackgroundColor = backColor;
             IpTextBox.TextColor = foregroundColor;
@@ -182,8 +191,6 @@ namespace MantaRay.Components.Views
 
             BackgroundColor = backGroundColor;
 
-
-            //Invalidate();
         }
 
 

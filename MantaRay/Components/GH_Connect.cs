@@ -133,7 +133,7 @@ namespace MantaRay.Components
             }
             th?.Benchmark("Checked other components");
 
-            LoginVM.Username= DA.Fetch<string>(this, "user");
+            LoginVM.Username = DA.Fetch<string>(this, "user");
             string password = DA.Fetch<string>(this, "password");
             string linDir = DA.Fetch<string>(this, "LinuxDir");
             string winDir = DA.Fetch<string>(this, "WindowsDir");
@@ -143,7 +143,7 @@ namespace MantaRay.Components
             LoginVM.Port = DA.Fetch<int>(this, "_port");
             string prefixes = DA.Fetch<string>(this, "prefixes");
 
-            
+
 
             StringBuilder sb = new StringBuilder();
 
@@ -160,7 +160,7 @@ namespace MantaRay.Components
                     }
 
                 }
-                
+
             }
             else
             {
@@ -268,8 +268,8 @@ namespace MantaRay.Components
                     {
                         if (GetCredentials(LoginVM))
                         {
-                       
-                            this.ExpireSolution(true);
+
+                            ExpireSolution(true);
                         }
 
                     }
@@ -615,10 +615,22 @@ namespace MantaRay.Components
 
         private bool GetCredentials(LoginVM vm)
         {
+
+            vm.CanTestNewConnection = true;
+            vm.IsConnected = false;
+
             var form = new LoginView(vm);
             var rc = form.ShowModal(RhinoEtoApp.MainWindow);
 
-            return rc == Result.Success;
+            if (rc == Result.Success)
+            {
+                sshHelper = vm.SSH_Helper;
+
+                return sshHelper.CheckConnection() == SSH_Helper.ConnectionDetails.Connected; // return false = no expiresolution
+            }
+
+            else
+                return false;
 
         }
 

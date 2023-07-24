@@ -27,7 +27,7 @@
 			
 			<TableRow>
 				<TableCell >
-					<Label ToolTip="Target of the SSH queries" VerticalAlignment="Center" Text="IP Address"/>
+					<Label ToolTip="Target of the SSH queries" VerticalAlignment="Center" Text="IP Address" KeyUp="DetailsChanged"/>
 				</TableCell>
 				<TableCell>
 					<TextBox ToolTip="Target of the SSH queries" x:Name="IpTextBox" Text="{Binding Ip}" KeyUp="HandleIpChanged" PlaceholderText="IP Address / ComputerName"/>
@@ -35,10 +35,10 @@
 			</TableRow>
 			<TableRow>
 				<TableCell >
-					<Label VerticalAlignment="Center" ToolTip="The SSH Username" Text="Username"/>
+					<Label VerticalAlignment="Center" ToolTip="The SSH Username" Text="Username" KeyUp="DetailsChanged"/>
 				</TableCell>
 				<TableCell>
-					<TextBox ToolTip="The SSH Username" x:Name="UserNameTextBox" Text="{Binding Username}" PlaceholderText="SSH Username"/>
+					<TextBox ToolTip="The SSH Username" x:Name="UserNameTextBox" Text="{Binding Username}" PlaceholderText="SSH Username" KeyUp="DetailsChanged"/>
 					
 				</TableCell>
 			</TableRow>
@@ -47,7 +47,7 @@
 					<Label VerticalAlignment="Center" ToolTip="The SSH Password">Password</Label>
 				</TableCell>
 				<TableCell>
-					<PasswordBox ToolTip="The SSH Password" Height="24" x:Name="PasswordBox" Text="{Binding Password}" PasswordChar="*"/>
+					<PasswordBox ToolTip="The SSH Password" Height="24" x:Name="PasswordBox" Text="{Binding Password}" PasswordChar="*" KeyUp="DetailsChanged"/>
 				</TableCell>
 			</TableRow>
 			
@@ -57,21 +57,18 @@
 		
 		<StackLayout x:Name="TestStack" Orientation="Horizontal" Spacing="5" HorizontalContentAlignment="Stretch">
 		
-			<e:CustomButton x:Name="CButton" Height="30" Width="150" Persistent="False" Toggle="True"/>
+			<e:RoundedButton x:Name="CButton" Text="Test Connection" Height="25" Width="100" CornerRadius="7" Persistent="False" Enabled="{Binding CanTestNewConnection}"/>
 			
-		</StackLayout>
-			<StackLayout Orientation="Horizontal" Spacing="5" HorizontalContentAlignment="Stretch">
-
+			<!-- OK details -->
+			<Label Text="{Binding ConnectionStatus}" Visible="{Binding IsOk}" Enabled="False"/>
 			
-				<Label Text="{Binding ConnectionStatus}" Visible="{Binding old_ConnectionStatus.IsNotFaulted}" Enabled="False"/>
-				<!-- Error details -->
-				<Label Text="{Binding old_ConnectionStatus.ErrorMessage}" BackgroundColor="Red" Visible="{Binding old_ConnectionStatus.IsFaulted}" Enabled="False"/>
+			<!-- Error details -->
+			<Label Text="{Binding ConnectionStatus}" TextColor="Red" Visible="{Binding IsFailed}" Enabled="True"/>
+		
 
-				<!--
-				<Label x:Name="StatusLabel" Enabled="False" Height="2"  Text="{Binding ConnectionStatus.Result}"/>-->
 		</StackLayout>
 		<StackLayout Orientation="Horizontal" Spacing="5" HorizontalContentAlignment="Stretch">
-			<Button x:Name="DefaultButton">OK</Button>
+			<Button x:Name="DefaultButton" Enabled="{Binding IsConnected}">OK</Button>
 			
 			<Button x:Name="AbortButton">Cancel</Button>
 		</StackLayout>
