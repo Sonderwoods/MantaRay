@@ -36,7 +36,7 @@ namespace MantaRay.Components.Controls
         public Color TextColorDisabled { get; set; }
         public Color TextColorDown { get; set; }
 
-        public FormattedTextAlignment HorizontalAlignment {get;set;}
+        public FormattedTextAlignment HorizontalAlignment { get; set; }
 
 
         bool pressed;
@@ -127,9 +127,9 @@ namespace MantaRay.Components.Controls
                 Click?.Invoke(this, e);
         }
 
-        
 
-        
+
+
 
         protected override void OnSizeChanged(EventArgs e)
         {
@@ -140,7 +140,7 @@ namespace MantaRay.Components.Controls
 
         protected override void OnMouseDown(MouseEventArgs e)
         {
-            
+
             if (Enabled && e.Buttons == MouseButtons.Primary)
             {
                 mouseDown = true;
@@ -162,7 +162,7 @@ namespace MantaRay.Components.Controls
         {
             base.OnMouseLeave(e);
             hover = false;
-  
+
             Invalidate();
         }
 
@@ -171,7 +171,7 @@ namespace MantaRay.Components.Controls
             mouseDown = false;
 
             if (hover)
-             {
+            {
                 if (ToggleMode == ToggleModes.Toggle)
                     pressed = !pressed;
                 else if (Persistent)
@@ -202,9 +202,11 @@ namespace MantaRay.Components.Controls
         {
 
             // For some odd reason we have to reduce the rectangle size a bit
-            var rectBorder = new Rectangle(new Size(this.Size.Width - BorderThickness * 2, this.Size.Height - BorderThickness * 2));
-            rectBorder.Left = (int)(BorderThickness);
-            rectBorder.Top = (int)(BorderThickness);
+            var rectBorder = new Rectangle(new Size(this.Size.Width - BorderThickness * 2, this.Size.Height - BorderThickness * 2))
+            {
+                Left = BorderThickness,
+                Top = BorderThickness
+            };
             var roundPathBorder = GraphicsPath.GetRoundRect(rectBorder, CornerRadius);
 
             // FILL
@@ -218,11 +220,11 @@ namespace MantaRay.Components.Controls
             Pen pen = new Pen(new SolidBrush(borderCol), BorderThickness);
             pe.Graphics.DrawPath(pen, roundPathBorder);
 
-            
+
 
             // TEXT
-            var rectText = new Rectangle(new Size(this.Size.Width - BorderThickness * 2, this.Size.Height - BorderThickness*2));
-            rectBorder.Top = (int)((this.Size.Height - FontSize) * 0.5) - BorderThickness * 2;
+            //var rectText = new Rectangle(new Size(Size.Width - BorderThickness * 2, Size.Height - BorderThickness * 2));
+            rectBorder.Top = (int)((Size.Height - FontSize) * 0.5) - BorderThickness * 2;
             var textColor = Enabled ? (mouseDown ? TextColorDown : (hover ? TextColorSelected : TextColor)) : TextColorDisabled;
             var fontFamily = new FontFamily("Montserrat") ?? new FontFamily("Times New Roman");
             Brush textBrush = new SolidBrush(textColor);

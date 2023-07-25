@@ -6,6 +6,7 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Net.Http;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Navigation;
@@ -79,7 +80,7 @@ namespace MantaRay.Components.VM
                 if (isConnected != value)
                 {
                     isConnected = value;
-                    PropertyChanged(this, new PropertyChangedEventArgs(nameof(IsConnected)));
+                    OnPropertyChanged();
 
 
                 }
@@ -103,6 +104,13 @@ namespace MantaRay.Components.VM
         
 
         public event PropertyChangedEventHandler PropertyChanged;
+
+
+        private void OnPropertyChanged([CallerMemberName] string propertyName = null)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
+
 
         public bool LocalIp(string ip) => string.Equals(ip.Split(':').First(), "127.0.0.1") || string.Equals(ip.Split(':').First(), "localhost");
 
