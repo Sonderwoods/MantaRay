@@ -53,6 +53,9 @@ namespace MantaRay.Components
                 "Do a grafted tree input to run in parallel. However there is no checks if this starts too many CPUs on the host\n" +
                 "Use with caution!!", GH_ParamAccess.list);
             pManager[pManager.AddBooleanParameter("Run", "Run", "Run", GH_ParamAccess.tree, false)].Optional = true;
+
+            if (PrincipalParameterIndex < 0)
+                PrincipalParameterIndex = 0;
         }
 
         protected override void RegisterOutputParams(GH_OutputParamManager pManager)

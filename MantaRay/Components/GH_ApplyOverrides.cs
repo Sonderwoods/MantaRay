@@ -45,7 +45,9 @@ namespace MantaRay.Components
         {
             staticParameterCount = this.Params.Input.Count;
 
-            pManager.AddGenericParameter("Input", "Input", "Input string", GH_ParamAccess.list);
+            int ipx = pManager.AddGenericParameter("Input", "Input", "Input string", GH_ParamAccess.list);
+            if (PrincipalParameterIndex < 0)
+                PrincipalParameterIndex = 0;
 
             staticParameterCount = this.Params.Input.Count - staticParameterCount;
         }
