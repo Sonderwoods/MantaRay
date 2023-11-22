@@ -1,5 +1,6 @@
 ﻿using Grasshopper.Kernel;
 using MantaRay.Components.Templates;
+using Renci.SshNet;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -234,17 +235,30 @@ namespace MantaRay.Components.Templates.Async
                 currentWorker.CancellationToken = tokenSource.Token;
                 currentWorker.Id = DA.Iteration;
 
-                var currentRun = TaskCreationOptions != null
-                  ? new Task(() => currentWorker.DoWork(ReportProgress, Done), tokenSource.Token, (TaskCreationOptions)TaskCreationOptions)
-                  : new Task(() => currentWorker.DoWork(ReportProgress, Done), tokenSource.Token);
 
-                // Add cancellation source to our bag
-                CancellationSources.Add(tokenSource);
+                try
+                {
+                    Task currentRun = TaskCreationOptions != null
+                      ? new Task(() => currentWorker.DoWork(ReportProgress, Done), tokenSource.Token, (TaskCreationOptions)TaskCreationOptions)
+                      : new Task(() => currentWorker.DoWork(ReportProgress, Done), tokenSource.Token);
 
-                // Add the worker to our list
-                Workers.Add(currentWorker);
+                    // Add cancellation source to our bag
+                    CancellationSources.Add(tokenSource);
 
-                Tasks.Add(currentRun);
+                    // Add the worker to our list
+                    Workers.Add(currentWorker);
+
+                    Tasks.Add(currentRun);
+                }
+                catch (AggregateException ae)
+                {
+                    foreach (var item in ae.InnerExceptions)
+                    {
+                        Debug.Write(item.ToString()); 
+                    }
+                }
+
+              
 
                 return;
             }
@@ -312,6 +326,12 @@ namespace MantaRay.Components.Templates.Async
             foreach (var source in CancellationSources)
             {
                 source.Cancel();
+            }
+
+            if (ActiveCommands == null) ActiveCommands = new List<ShellStream>();
+            foreach (var cmd in ActiveCommands)
+            {
+                cmd.WriteLine("\x03");
             }
 
             CancellationSources.Clear();

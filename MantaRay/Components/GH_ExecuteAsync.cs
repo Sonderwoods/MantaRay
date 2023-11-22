@@ -9,8 +9,10 @@ using MantaRay.Components.Templates;
 using MantaRay.Components.Templates.Async;
 using MantaRay.Helpers;
 using MantaRay.Types;
+using Renci.SshNet;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
 using System.Text;
@@ -46,6 +48,9 @@ namespace MantaRay.Components
         public List<string> Commands { get; set; } = new List<string>();
         public List<string> Results { get; set; } = new List<string>();
         public List<string> Stderrs { get; set; } = new List<string>();
+
+
+        
 
         protected override void RegisterInputParams(GH_InputParamManager pManager)
         {
@@ -466,8 +471,9 @@ namespace MantaRay.Components
             {
 
                 Parent.Hidden = true;
+                GH_ExecuteAsync parent = (GH_ExecuteAsync)Parent;
 
-                ((GH_ExecuteAsync)Parent).Commands.Add(string.Join(JOIN, commands.Distinct().Where(c => !((GH_ExecuteAsync)Parent).Commands.Contains(c))));
+                parent.Commands.Add(string.Join(JOIN, commands.Distinct().Where(c => !((GH_ExecuteAsync)Parent).Commands.Contains(c))));
 
                 if (CancellationToken.IsCancellationRequested) { return; }
 
@@ -489,8 +495,8 @@ namespace MantaRay.Components
                     if (!isConnected)
                     {
                         GH_Connect.ReconnectIfNeeded();
-                        ((GH_Template_Async_Extended)Parent).RunTime = new TimeSpan(0);
-                        ((GH_ExecuteAsync)Parent).SetToNoConnection();
+                        parent.RunTime = new TimeSpan(0);
+                        parent.SetToNoConnection();
                         return;
                     }
 
