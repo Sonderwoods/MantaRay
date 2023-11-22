@@ -328,11 +328,7 @@ namespace MantaRay.Components.Templates.Async
                 source.Cancel();
             }
 
-            if (ActiveCommands == null) ActiveCommands = new List<ShellStream>();
-            foreach (var cmd in ActiveCommands)
-            {
-                cmd.WriteLine("\x03");
-            }
+        
 
             CancellationSources.Clear();
             Workers.Clear();
