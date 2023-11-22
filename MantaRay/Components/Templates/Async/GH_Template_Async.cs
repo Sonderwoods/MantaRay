@@ -27,6 +27,8 @@ namespace MantaRay.Components.Templates.Async
         /// </summary>
         protected Action Done;
 
+        public List<ShellStream> ActiveCommands { get; set; } = new List<ShellStream>();
+
         protected Timer DisplayProgressTimer;
 
         /// <summary>

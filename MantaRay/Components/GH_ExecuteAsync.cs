@@ -480,6 +480,11 @@ namespace MantaRay.Components
                 if (run)
                 {
 
+                    if (Parent.RunCount == 0)
+                    {
+                        parent.ActiveCommands.Clear();
+                    }
+
                     string command = string.Join(";echo _JOIN_;", commands).Replace("\r\n", "\n").ApplyGlobals();
 
                     SSH_Helper sshHelper = SSH_Helper.CurrentFromDocument(Parent.OnPingDocument());
@@ -497,7 +502,15 @@ namespace MantaRay.Components
 
 
                     Renci.SshNet.SshCommand cmd = null;
-                    (asyncResult, cmd, pid) = sshHelper.ExecuteAsync(command, prependPrefix: ((GH_ExecuteAsync)Parent).addPrefix, ((GH_ExecuteAsync)Parent).addSuffix, HasZeroAreaPolygons);
+                    (asyncResult, cmd, pid) = sshHelper.ExecuteAsync(command, prependPrefix: parent.addPrefix, ((GH_ExecuteAsync)Parent).addSuffix, HasZeroAreaPolygons);
+
+
+                    
+                    ShellStream shellStream = sshHelper.SshClient.CreateShellStream("xterm", 80, 50, 1024, 1024, 1024);
+                    shellStream.WriteLine((parent.addPrefix ? sshHelper.ExportPrefixes + ";" + command : command) + ";echo EEOOFF");
+
+                    if (parent.ActiveCommands == null) parent.ActiveCommands = new List<ShellStream>();
+                    parent.ActiveCommands.Add(shellStream);
 
 
                     // TODO Need to get pid through "beginexecute" instead of "execute" of SSH.
@@ -506,8 +519,15 @@ namespace MantaRay.Components
                     //int waitingForNewConnection = 5; // max iterations after checkconnection fails before throwing cancellation (this will give 1000ms to reconnect before changing context)
                     int dotCounter = 0;
                     string[] dots = new[] { "", ".", "..", "..." };
-                    while (true && asyncResult != null)
+                    //while (asyncResult != null)
+                    while (shellStream.DataAvailable)
                     {
+
+                        shellStream.Expect(new ExpectAction("EEOOFF", (output) =>
+                        {
+                           
+                                Debug.WriteLine(output);
+                        }));
                         // Update progress bar as we run
                         if (counter++ % 5 == 0)
                         {
@@ -571,7 +591,13 @@ namespace MantaRay.Components
                         // Cancelled
                         if (CancellationToken.IsCancellationRequested)
                         {
-                            cmd.CancelAsync();
+                            foreach (var _cmd in parent.ActiveCommands)
+                            {
+                                _cmd.WriteLine("\x3"); // CTRL+C to kill
+               
+                                
+                            }
+                            cmd.CancelAsync(); // does not actually stop the thread.
                             ran = false;
                             break;
                             //return;
