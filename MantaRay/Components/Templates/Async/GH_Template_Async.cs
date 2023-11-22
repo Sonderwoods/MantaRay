@@ -1,5 +1,6 @@
 ﻿using Grasshopper.Kernel;
 using MantaRay.Components.Templates;
+using Renci.SshNet;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -314,6 +315,12 @@ namespace MantaRay.Components.Templates.Async
             foreach (var source in CancellationSources)
             {
                 source.Cancel();
+            }
+
+            if (ActiveCommands == null) ActiveCommands = new List<ShellStream>();
+            foreach (var cmd in ActiveCommands)
+            {
+                cmd.WriteLine("\x03");
             }
 
             CancellationSources.Clear();
