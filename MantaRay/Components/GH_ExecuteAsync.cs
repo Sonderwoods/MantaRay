@@ -503,8 +503,10 @@ namespace MantaRay.Components
 
 
                     Renci.SshNet.SshCommand cmd = null;
-                    (asyncResult, cmd, pid) = sshHelper.ExecuteAsync(command, prependPrefix: ((GH_ExecuteAsync)Parent).addPrefix, ((GH_ExecuteAsync)Parent).addSuffix, HasZeroAreaPolygons);
 
+
+                    (asyncResult, cmd, pid) = sshHelper.ExecuteAsync(command, prependPrefix: ((GH_ExecuteAsync)Parent).addPrefix, ((GH_ExecuteAsync)Parent).addSuffix, HasZeroAreaPolygons);
+                    // TODO: Need to add exception handling on too large commands.
 
                     // TODO Need to get pid through "beginexecute" instead of "execute" of SSH.
                     int counter = 0;
@@ -565,6 +567,7 @@ namespace MantaRay.Components
                         {
                             ((GH_ExecuteAsync)Parent).SetToNoConnection();
                             GH_Connect.ReconnectIfNeeded();
+                            Debug.WriteLine("An execute was ran, but there is no connection. Force rerunning the connect component. GOod or bad i don't know.");
                             return;
                             //ran = false;
                             //break;

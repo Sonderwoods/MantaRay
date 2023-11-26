@@ -91,7 +91,7 @@ namespace MantaRay.Components.VM
         bool isConnected;
 
 
-
+        
 
         public bool IsFailed
         {
@@ -117,10 +117,10 @@ namespace MantaRay.Components.VM
 
         public NotifyTaskCompletion<string> old_ConnectionStatus { get; private set; }
 
-        public void Connect()
+        public void Connect(Action done = null)
         {
 
-            old_ConnectionStatus = new NotifyTaskCompletion<string>(connect());
+            old_ConnectionStatus = new NotifyTaskCompletion<string>(connect(done, IsOk));
 
         }
 
@@ -153,7 +153,7 @@ namespace MantaRay.Components.VM
 
 
 
-        private async Task<string> connect()
+        private async Task<string> connect(Action Done = null, bool? success = null)
         {
             //StringBuilder sbSSH = new StringBuilder();
 
@@ -240,6 +240,10 @@ namespace MantaRay.Components.VM
                 Eto.Forms.Application.Instance.Invoke(() =>
                 {
                     SSH_Helper = sshHelper;
+                    if(Done != null && (success ?? false))
+                    {
+                        Done();
+                    }
 
                 });
 

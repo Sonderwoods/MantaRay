@@ -11,6 +11,7 @@ using System.Linq;
 using System.Diagnostics;
 using MantaRay.Components.Controls;
 using MantaRay.Helpers;
+using System.Data;
 
 namespace MantaRay.Components.Views
 {
@@ -71,6 +72,12 @@ namespace MantaRay.Components.Views
 
             IpTextBox.Text = $"{vm.Ip}:{vm.Port}";
 
+            //PasswordBox.KeyDown += (s, e) => TestButton_Click(s, e);
+            //IpTextBox.KeyDown += (s, e) => TestButton_Click(s, e);
+            //PasswordBox.KeyDown += (s, e) => TestButton_Click(s, e);
+
+            vm.ConnectionStatus = "";
+
 
         }
 
@@ -78,7 +85,8 @@ namespace MantaRay.Components.Views
         {
             if (e.Key == Keys.Enter)
             {
-                SaveAndClose();
+                TestButton_Click(sender, e);
+                //SaveAndClose();
             }
         }
 
@@ -146,7 +154,9 @@ namespace MantaRay.Components.Views
         private void TestButton_Click(object sender, EventArgs e)
         {
             UpdateVM();
-            ViewModel.Connect();
+            ViewModel.Connect(new Action(() => Close(result: Rhino.Commands.Result.Success)));
+
+
             // TODO: Need to look into PropertyNotified  and more async stuff + ui updates
 
         }

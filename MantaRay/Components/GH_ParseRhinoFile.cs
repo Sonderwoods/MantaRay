@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Globalization;
@@ -102,7 +103,7 @@ namespace MantaRay.Components
 
             bool run = DA.Fetch<bool>(this, "Run") || forceRun;
 
-            
+
 
             if (!run)
             {
@@ -122,15 +123,16 @@ namespace MantaRay.Components
             List<Mesh> customGeometries = new List<Mesh>();
             List<string> customModifierNames = new List<string>();
 
-            List<string> missingLayers = new List<string>();
+            ConcurrentBag<string> missingLayers = new ConcurrentBag<string>();
 
             List<IGH_GeometricGoo> grids = new List<IGH_GeometricGoo>();
             List<string> gridNames = new List<string>();
 
 
-            
+
             string gridLayer = DA.Fetch<string>(this, "Grids");
 
+            object gridLock = new object();
             object opaqueLock = new object();
             object glassLock = new object();
             object customLock = new object();
@@ -157,11 +159,16 @@ namespace MantaRay.Components
             runTree.Append(new GH_Boolean(run));
             Params.Output[Params.Output.Count - 1].ClearData();
             DA.SetDataTree(Params.Output.Count - 1, runTree);
+            ConcurrentBag<Layer> hiddenLayers = new ConcurrentBag<Layer>();
 
 
-            Parallel.ForEach<Layer>(layers, (layer) =>
+            Parallel.ForEach(layers, (layer) =>
             {
-
+                if (!layer.IsVisible)
+                {
+                    hiddenLayers.Add(layer);
+                    return;
+                }
 
                 //    foreach (Layer layer in Rhino.RhinoDoc.ActiveDoc.Layers.Where(l => l.FullPath.StartsWith(prefix)).AsParallel())
                 //{
@@ -196,26 +203,40 @@ namespace MantaRay.Components
                             case Curve curve:
                                 if (curve.IsClosed)
                                 {
-                                    grids.Add(new GH_Brep(InputGeometryHelper.UpwardsPointingBrepsFromCurves(new List<Curve> { curve.DuplicateCurve() })[0]));
-                                    gridNames.Add(_name);
+                                    lock (gridLock)
+                                    {
+                                        grids.Add(new GH_Brep(InputGeometryHelper.UpwardsPointingBrepsFromCurves(new List<Curve> { curve.DuplicateCurve() })[0]));
+                                        gridNames.Add(_name);
+
+                                    }
 
                                 }
                                 break;
                             case Brep brep:
                                 brep.TurnUp();
-                                grids.Add(new GH_Brep(brep.DuplicateBrep()));
-                                gridNames.Add(_name);
+                                lock (gridLock)
+                                {
+                                    grids.Add(new GH_Brep(brep.DuplicateBrep()));
+                                    gridNames.Add(_name);
+                                }
 
                                 break;
                             case Mesh mesh:
-                                grids.Add(new GH_Mesh(mesh.DuplicateMesh()));
+                                lock (gridLock)
+                                {
+                                    grids.Add(new GH_Mesh(mesh.DuplicateMesh()));
+                                    gridNames.Add(string.Empty);
+                                }
                                 break;
 
                             case Surface surface:
                                 Brep b = Brep.CreateFromSurface((Surface)surface.Duplicate());
                                 b.TurnUp();
-                                grids.Add(new GH_Brep(b));
-                                gridNames.Add(_name);
+                                lock (gridLock)
+                                {
+                                    grids.Add(new GH_Brep(b));
+                                    gridNames.Add(_name);
+                                }
 
                                 break;
                         }
@@ -306,7 +327,10 @@ namespace MantaRay.Components
             th.Benchmark("Parsed layers in parallel");
 
 
-
+            if (missingLayers.Any())
+            {
+                AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, $"Skipped {hiddenLayers.Count} hidden layers:\n{string.Join("\n", hiddenLayers)}");
+            }
 
 
 
@@ -328,7 +352,7 @@ namespace MantaRay.Components
 
             DA.SetDataList("SkippedLayers", missingLayers);
 
-            
+
 
 
         }
