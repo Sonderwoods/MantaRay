@@ -39,7 +39,10 @@ namespace MantaRay.Components
                 "- '_Floors_20' (will get reflectance of 0.2)\n" +
                 "- '_MyWindows_70%' (will become glass with the transmittance of 0.7, due to the '%' suffix\n" +
                 "- '_Grids' (will output grid geometries for points)",
-              "1 Setup")
+              "1 Setup\n\n" +
+                "Including: locked files\n" +
+                "Excluding: Files referenced through worksession\n" +
+                "Excluding: Hidden objects and layers")
         {
         }
 
@@ -124,6 +127,7 @@ namespace MantaRay.Components
             List<string> customModifierNames = new List<string>();
 
             ConcurrentBag<string> missingLayers = new ConcurrentBag<string>();
+            ConcurrentBag<string> okLayers = new ConcurrentBag<string>();
 
             List<IGH_GeometricGoo> grids = new List<IGH_GeometricGoo>();
             List<string> gridNames = new List<string>();
@@ -164,28 +168,33 @@ namespace MantaRay.Components
 
             Parallel.ForEach(layers, (layer) =>
             {
-                if (!layer.IsVisible)
-                {
-                    hiddenLayers.Add(layer);
-                    return;
-                }
+            if (!layer.IsVisible)
+            {
+                hiddenLayers.Add(layer);
+                missingLayers.Add(layer.FullPath);
+                return;
+            }
 
-                //    foreach (Layer layer in Rhino.RhinoDoc.ActiveDoc.Layers.Where(l => l.FullPath.StartsWith(prefix)).AsParallel())
-                //{
-                IEnumerable<RhinoObject> objs = Rhino.RhinoDoc.ActiveDoc.Objects.GetObjectList(new ObjectEnumeratorSettings()
-                {
-                    ActiveObjects = true,
-                    LockedObjects = true,
-                    HiddenObjects = true,
-                    IncludeGrips = false,
-                    IncludeLights = false,
-                    IncludePhantoms = false,
-                    ReferenceObjects = true,
-                    IdefObjects = false,
-                    ObjectTypeFilter = ObjectType.Brep | ObjectType.Mesh | ObjectType.Surface | ObjectType.Extrusion,
-                    NormalObjects = true,
-                    LayerIndexFilter = layer.Index
-                });
+                okLayers.Add(layer.FullPath);
+
+            //    foreach (Layer layer in Rhino.RhinoDoc.ActiveDoc.Layers.Where(l => l.FullPath.StartsWith(prefix)).AsParallel())
+            //{
+            IEnumerable<RhinoObject> objs = Rhino.RhinoDoc.ActiveDoc.Objects.GetObjectList(new ObjectEnumeratorSettings()
+            {
+                ActiveObjects = true,
+                LockedObjects = true,
+                HiddenObjects = false,
+                IncludeGrips = false,
+                IncludeLights = false,
+                IncludePhantoms = false,
+                ReferenceObjects = true,
+                IdefObjects = false,
+                ObjectTypeFilter = ObjectType.Brep | ObjectType.Mesh | ObjectType.Surface | ObjectType.Extrusion,
+                NormalObjects = true,
+                LayerIndexFilter = layer.Index
+            });
+
+            
 
                 string[] ln = layer.FullPath.Substring(Prefix.Length).Split('_');
 
@@ -327,7 +336,7 @@ namespace MantaRay.Components
             th.Benchmark("Parsed layers in parallel");
 
 
-            if (missingLayers.Any())
+            if (hiddenLayers.Any())
             {
                 AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, $"Skipped {hiddenLayers.Count} hidden layers:\n{string.Join("\n", hiddenLayers)}");
             }
@@ -350,7 +359,7 @@ namespace MantaRay.Components
             DA.SetDataList(gg, grids);
             DA.SetDataList("GridNames", gridNames);
 
-            DA.SetDataList("SkippedLayers", missingLayers);
+            DA.SetDataList("SkippedLayers", missingLayers.Concat(new[] { "OK LAYERS:" }).Concat(okLayers));
 
 
 
